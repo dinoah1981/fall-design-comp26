@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Official Rules — AI For The People</title>
+  <meta name="description" content="Complete rules for AI For The People, the Fall 2026 Design Competition at Comp Sci High — including the official 2026 Congressional App Challenge rules.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="subpage.css">
+</head>
+<body>
+
+  <!-- ============ NAV ============ -->
+  <header class="nav" id="top">
+    <div class="nav-inner">
+      <a href="index.html" class="nav-logo"><span class="logo-bracket">[</span>AI4TP<span class="logo-bracket">]</span></a>
+      <nav class="nav-links" id="navLinks">
+        <a href="index.html#challenge">The Challenge</a>
+        <a href="index.html#week">The Week</a>
+        <a href="index.html#submit">Submission</a>
+        <a href="index.html#judging">Judging</a>
+      </nav>
+      <button class="nav-toggle" id="navToggle" aria-label="Toggle menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </header>
+
+  <!-- ============ SUBPAGE HERO ============ -->
+  <section class="sub-hero">
+    <div class="sub-hero-inner">
+      <a href="index.html" class="back-link mono">&larr; cd ../home</a>
+      <p class="hero-eyebrow mono">$ cat official_rules.md</p>
+      <h1 class="sub-hero-title">The Rules</h1>
+      <p class="sub-hero-lead">
+        Everything below governs AI For The People — our house rules first, then the
+        official 2026 Congressional App Challenge rules that your submission must follow.
+        Read it once now. It beats finding out on Friday.
+      </p>
+    </div>
+  </section>
+
+  <!-- ============ CONTENT ============ -->
+  <main class="sub-content">
+
+    <!-- HOUSE RULES -->
+    <section class="rule-section" id="house-rules">
+      <h2 class="rs-title"><span class="rs-num mono">§0</span> CSH House Rules</h2>
+      <p class="rs-intro">These three requirements are specific to our competition and sit on top of everything else:</p>
+
+      <div class="house-rule-grid">
+        <div class="house-rule">
+          <p class="hr-num mono">HOUSE_01</p>
+          <h3>Solve for the community</h3>
+          <p>Your app must help solve or address a real problem in the community — inside
+             Comp Sci High or in the Bronx. The official challenge allows any topic;
+             ours doesn't. If you can't name who it helps, pick a different problem.</p>
+        </div>
+        <div class="house-rule">
+          <p class="hr-num mono">HOUSE_02</p>
+          <h3>Ship an AI-built MVP</h3>
+          <p>Your team must deliver a minimum viable product built with AI tools — working
+             software, not a prototype on paper. Remember the official AI rule still applies:
+             disclose every AI tool you use, and make sure the project shows real technical
+             understanding from your team. AI is your power tool, not your ghostwriter.</p>
+        </div>
+        <div class="house-rule">
+          <p class="hr-num mono">HOUSE_03</p>
+          <h3>Pitch like a founder</h3>
+          <p>Your video is a VC-style pitch: the problem, the market (your community), the
+             product, and the ask. It must also hit every official demo-video requirement —
+             see <a href="#submission">§4</a> — because the same video is your official
+             Congressional App Challenge submission video.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 1. ELIGIBILITY -->
+    <section class="rule-section" id="eligibility">
+      <h2 class="rs-title"><span class="rs-num mono">§1</span> Eligibility</h2>
+      <ul class="rs-list">
+        <li><strong>Age / enrollment:</strong> You must be enrolled in middle school or high school on October 26, 2026.</li>
+        <li><strong>Location:</strong> You compete in a Congressional District that hosts an App Challenge — either the district where you live or the district where you attend school. One district only; you cannot enter in multiple districts.</li>
+        <li><strong>Teams:</strong> Compete solo or in a team of up to <strong>four</strong>. A team of five or more is not eligible. At least half of any team must live or attend school in the same Congressional District.</li>
+        <li><strong>Prior projects:</strong> Any app created after <strong>October 30, 2025</strong> may be submitted. Submitting a 2.0 of an older app? Only the new code counts — highlight it.</li>
+        <li><strong>One entry per person per year:</strong> One app, one team. You can't enter multiple apps or appear on multiple teams.</li>
+      </ul>
+    </section>
+
+    <!-- 2. REGISTRATION -->
+    <section class="rule-section" id="registration">
+      <h2 class="rs-title"><span class="rs-num mono">§2</span> Registration</h2>
+      <p class="rs-intro">Registration happens at
+        <a href="https://www.congressionalappchallenge.us/" target="_blank" rel="noopener">congressionalappchallenge.us</a>.
+        Every student needs:</p>
+      <ul class="rs-list">
+        <li>A <strong>personal email address</strong> — not your school account.</li>
+        <li>Your <strong>home address</strong> with the 9-digit ZIP, your Congressional District, and your Member of Congress.</li>
+        <li>Your <strong>school address</strong> with the same details.</li>
+        <li>A <strong>parent or guardian's</strong> name and email.</li>
+        <li>Optionally, the name and email of your coding teacher or mentor.</li>
+      </ul>
+      <div class="rs-note">
+        <p><strong>Teams:</strong> one teammate creates the team profile and invites up to three others
+        to edit the application. Everyone completes a personal profile and an eligibility quiz;
+        eligible teams get a confirmation email to proceed. One team participates once as a group.</p>
+      </div>
+    </section>
+
+    <!-- 3. APP PARAMETERS -->
+    <section class="rule-section" id="app-parameters">
+      <h2 class="rs-title"><span class="rs-num mono">§3</span> App Parameters</h2>
+      <ul class="rs-list">
+        <li><strong>Topic:</strong> The official challenge allows any topic — but our House Rule narrows it: your app must address a school or Bronx community problem.</li>
+        <li><strong>Platform:</strong> Anything — web apps, desktop, mobile, browser extensions, robots, AR/VR, wearables, smart devices, embedded systems.</li>
+        <li><strong>Language:</strong> Any programming language, including block-based languages.</li>
+        <li><strong>Functionality:</strong> The app must demonstrate real functionality to be competitive. It has to work.</li>
+        <li><strong>Content suitability:</strong> Keep it decent and respectful. Nothing defamatory, hateful, threatening, obscene, or in obvious bad taste — and nothing that violates anyone's intellectual property or privacy rights.</li>
+        <li><strong>Originality:</strong> The app must be original and created entirely by you or your team. Open-source libraries, frameworks, and external tools are allowed — but document what you used, and make sure the project reflects your own significant effort and understanding. Nobody else can hold rights to your app.</li>
+        <li><strong>AI usage:</strong> AI tools are permitted — required, in our competition — but every use must be fully disclosed in your submission. AI may support specific parts of the project; it cannot BE the project. Judges expect significant individual contribution and real technical understanding from your team.</li>
+      </ul>
+    </section>
+
+    <!-- 4. SUBMISSION -->
+    <section class="rule-section" id="submission">
+      <h2 class="rs-title"><span class="rs-num mono">§4</span> Online Submission</h2>
+      <p class="rs-intro">Submissions run through the CAC portal and <strong>cannot be modified after the
+        submission period ends</strong>. The application includes questions about your app plus the
+        video — the most important piece.</p>
+
+      <h3 class="rs-sub mono">// the video (1–3 minutes)</h3>
+      <p class="rs-intro">Your VC pitch video must include all of the following, per the official rules:</p>
+      <ul class="rs-list check">
+        <li>The name of each participant</li>
+        <li>The name of the app</li>
+        <li>The app's purpose — in one clear sentence</li>
+        <li>The target audience: who is this app for?</li>
+        <li>The tools and coding languages used to build it</li>
+        <li>A demonstration of the app actually functioning</li>
+      </ul>
+      <div class="rs-note">
+        <p>Keep it between 1 and 3 minutes — videos outside the limit can be penalized at the judges'
+        discretion. Upload to <strong>YouTube or Vimeo</strong> and set it to <strong>public</strong>.
+        Official reminder: this is not a video-production contest — judges watch it to understand
+        your app. Clear beats cinematic. (But ours should be both.)</p>
+      </div>
+
+      <h3 class="rs-sub mono">// the written questions</h3>
+      <ul class="rs-list">
+        <li>What is the title of your app?</li>
+        <li>Explain the app's purpose.</li>
+        <li>What inspired you to create this app?</li>
+        <li>What technical difficulty did you face, and how did you solve it?</li>
+        <li>What did you learn? What was your biggest takeaway?</li>
+        <li>What would you change in a 2.0 version?</li>
+      </ul>
+    </section>
+
+    <!-- 5. DEADLINE -->
+    <section class="rule-section" id="deadline">
+      <h2 class="rs-title"><span class="rs-num mono">§5</span> Deadline</h2>
+      <div class="deadline-banner sub-deadline">
+        <p class="mono deadline-label">// submissions accepted may 2026 through</p>
+        <p class="deadline-date">OCT 26, 2026 — 12:00 PM EDT</p>
+        <p class="deadline-note">Noon, not midnight. Plan accordingly.</p>
+      </div>
+    </section>
+
+    <!-- 6. EXIT QUESTIONNAIRE -->
+    <section class="rule-section" id="exit">
+      <h2 class="rs-title"><span class="rs-num mono">§6</span> Exit Questionnaire</h2>
+      <p class="rs-intro">After the deadline, every participant receives an Exit Questionnaire link.
+        On teams, <strong>every member</strong> completes it individually — same link, separate
+        responses. The data helps improve the Challenge.</p>
+    </section>
+
+    <!-- 7. WINNER SELECTION -->
+    <section class="rule-section" id="winners">
+      <h2 class="rs-title"><span class="rs-num mono">§7</span> Winner Selection</h2>
+      <ul class="rs-list">
+        <li>Videos and submission answers are evaluated by the <strong>Member of Congress</strong> and their office — sometimes with a judging panel.</li>
+        <li>Judging criteria: <strong>quality of the idea</strong> (creativity and originality), <strong>implementation</strong> (user experience and design), and <strong>demonstrated coding skill</strong>.</li>
+        <li>Judges may request access to your app and source code to verify it works as claimed. Refusing the request means <strong>immediate disqualification</strong>.</li>
+        <li>Members of Congress may modify the judging process or criteria; judging is fair and impartial but entirely at their discretion.</li>
+      </ul>
+    </section>
+
+    <!-- 8. ANNOUNCEMENTS -->
+    <section class="rule-section" id="announcements">
+      <h2 class="rs-title"><span class="rs-num mono">§8</span> Winner Announcements</h2>
+      <p class="rs-intro">CSH winners are announced <strong>Friday of competition week</strong>, by grade band.
+        Official CAC winners are announced by the hosting Member of Congress — results are embargoed
+        until <strong>January 15, 2027</strong>, so national results can't be disclosed before then.</p>
+    </section>
+
+    <!-- 9. PRIZES -->
+    <section class="rule-section" id="prizes">
+      <h2 class="rs-title"><span class="rs-num mono">§9</span> Prizes</h2>
+      <ul class="rs-list">
+        <li>Each district's winning app is featured on <strong>House.gov</strong> and <strong>CongressionalAppChallenge.us</strong>.</li>
+        <li>District winners can receive a <strong>copyright fee waiver</strong> through the ARTS Act.</li>
+        <li>The program administrator (the Internet Education Foundation) may distribute additional prizes to participating districts, and each district may award prizes of its own.</li>
+        <li>CSH prizes and recognition for school winners — announced at launch.</li>
+      </ul>
+    </section>
+
+    <!-- 10. FINE PRINT -->
+    <section class="rule-section" id="fine-print">
+      <h2 class="rs-title"><span class="rs-num mono">§10</span> The Fine Print</h2>
+      <ul class="rs-list">
+        <li><strong>Entry conditions:</strong> By entering, you agree to the official rules and to the decisions of the administrators and judges, which are final.</li>
+        <li><strong>Your IP:</strong> You own the intellectual property rights to your submission. You grant Congress and the administrator a royalty-free license to post submissions online, feature winners during and shortly after the competition, and use submissions for noncommercial purposes.</li>
+        <li><strong>Publicity:</strong> Participation means winners' names, likenesses, schools, and hometowns may be used for promotion.</li>
+        <li><strong>Integrity:</strong> Administrators can disqualify anyone tampering with the competition or acting in an unsportsmanlike way, and can modify or suspend the competition if fraud or technical failure compromises it.</li>
+        <li><strong>Liability:</strong> Administrators aren't responsible for technical failures, lost submissions, or errors in processing. If your submission is lost or corrupted, the remedy is to submit again.</li>
+        <li><strong>Privacy:</strong> Personal info collected at registration is governed by the CAC and House.gov privacy policies.</li>
+        <li><strong>Administrator:</strong> The Internet Education Foundation, Washington, DC.</li>
+      </ul>
+      <div class="rs-note">
+        <p>This page summarizes the official rules for students. The complete official rulebook lives at
+        <a href="https://www.congressionalappchallenge.us/" target="_blank" rel="noopener">congressionalappchallenge.us</a> —
+        if anything here conflicts with the official rules, the official rules win.</p>
+      </div>
+    </section>
+
+    <div class="sub-footer-actions">
+      <a href="index.html" class="btn btn-solid">&larr; Back to the Competition</a>
+      <a href="https://www.congressionalappchallenge.us/" class="btn btn-ghost" target="_blank" rel="noopener">Official CAC Site ↗</a>
+    </div>
+  </main>
+
+  <!-- ============ FOOTER ============ -->
+  <footer class="footer">
+    <div class="footer-inner">
+      <p class="footer-brand mono">[AI4TP]</p>
+      <p class="footer-line">AI For The People — Fall 2026 Design Competition</p>
+      <p class="footer-school mono">$ comp_sci_high · the_bronx · 2026</p>
+    </div>
+  </footer>
+
+  <script src="subpage.js"></script>
+</body>
+</html>

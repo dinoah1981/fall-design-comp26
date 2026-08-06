@@ -1,0 +1,224 @@
+/* ===================================================================
+   Subpage styles — extends styles.css
+   Black hero with back link, white content column, rule sections.
+   =================================================================== */
+
+/* ============ SUBPAGE HERO ============ */
+.sub-hero {
+  background: var(--color-black);
+  color: var(--color-white);
+  padding: 140px 24px 72px;
+  position: relative;
+  overflow: hidden;
+}
+
+.sub-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent 0px,
+    transparent 3px,
+    rgba(255, 255, 255, 0.025) 3px,
+    rgba(255, 255, 255, 0.025) 4px
+  );
+  pointer-events: none;
+}
+
+.sub-hero-inner {
+  position: relative;
+  max-width: 860px;
+  margin: 0 auto;
+}
+
+.back-link {
+  display: inline-block;
+  font-size: 0.82rem;
+  color: var(--color-gray-400);
+  text-decoration: none;
+  margin-bottom: 32px;
+  transition: color var(--transition-fast);
+}
+
+.back-link:hover { color: var(--green); }
+
+.sub-hero .hero-eyebrow { margin-bottom: 16px; }
+
+.sub-hero-title {
+  font-size: clamp(2.6rem, 7vw, 4.5rem);
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: -0.01em;
+  line-height: 1;
+}
+
+.sub-hero-lead {
+  margin-top: 20px;
+  max-width: 640px;
+  font-size: 1.08rem;
+  line-height: 1.7;
+  color: var(--color-gray-300);
+}
+
+/* ============ CONTENT ============ */
+.sub-content {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 72px 24px 96px;
+}
+
+.rule-section {
+  padding: 40px 0;
+  border-bottom: 1px solid var(--color-gray-100);
+}
+
+.rule-section:first-child { padding-top: 0; }
+
+.rs-title {
+  font-size: clamp(1.5rem, 3.5vw, 2.1rem);
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+}
+
+.rs-num {
+  font-size: 0.55em;
+  font-weight: 700;
+  color: var(--green-dark);
+  border: 1px solid var(--green-dark);
+  padding: 3px 8px;
+  flex-shrink: 0;
+  transform: translateY(-0.2em);
+}
+
+.rs-intro {
+  color: var(--color-gray-500);
+  max-width: 720px;
+  margin-bottom: 18px;
+}
+
+.rs-intro a { color: var(--green-dark); font-weight: 600; }
+
+.rs-sub {
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--green-dark);
+  margin: 28px 0 12px;
+}
+
+.rs-list {
+  list-style: none;
+  max-width: 760px;
+}
+
+.rs-list li {
+  position: relative;
+  padding: 11px 0 11px 26px;
+  border-bottom: 1px solid var(--color-gray-100);
+  color: var(--color-gray-500);
+  font-size: 0.98rem;
+  line-height: 1.6;
+}
+
+.rs-list li:last-child { border-bottom: none; }
+
+.rs-list li::before {
+  content: '›';
+  position: absolute;
+  left: 2px;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  color: var(--color-black);
+}
+
+.rs-list.check li::before {
+  content: '[x]';
+  font-size: 0.75rem;
+  left: 0;
+  top: 15px;
+  color: var(--green-dark);
+}
+
+.rs-list.check li { padding-left: 36px; }
+
+.rs-list strong { color: var(--color-black); }
+
+.rs-list a { color: var(--green-dark); font-weight: 600; }
+
+.rs-note {
+  margin-top: 20px;
+  border-left: 4px solid var(--green-dark);
+  background: var(--color-off-white);
+  padding: 18px 22px;
+  max-width: 760px;
+}
+
+.rs-note p { color: var(--color-gray-500); font-size: 0.95rem; }
+.rs-note strong { color: var(--color-black); }
+.rs-note a { color: var(--green-dark); font-weight: 600; }
+
+/* ============ HOUSE RULES GRID ============ */
+.house-rule-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 18px;
+  margin-top: 8px;
+}
+
+.house-rule {
+  border: 2px solid var(--color-black);
+  padding: 26px 26px 28px;
+  transition: transform var(--transition-medium), box-shadow var(--transition-medium);
+}
+
+.house-rule:hover {
+  transform: translateY(-3px);
+  box-shadow: 6px 6px 0 var(--green-dark);
+}
+
+.hr-num {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--green-dark);
+  margin-bottom: 10px;
+}
+
+.house-rule h3 {
+  font-size: 1.2rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+
+.house-rule p { color: var(--color-gray-500); font-size: 0.97rem; }
+.house-rule a { color: var(--green-dark); font-weight: 600; }
+
+/* ============ DEADLINE (subpage variant) ============ */
+.sub-deadline {
+  margin-top: 8px;
+  background: var(--color-black);
+}
+
+.sub-deadline .deadline-note { color: var(--color-gray-300); }
+
+/* ============ FOOTER ACTIONS ============ */
+.sub-footer-actions {
+  margin-top: 56px;
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+/* ============ RESPONSIVE ============ */
+@media (max-width: 768px) {
+  .sub-hero { padding: 110px 20px 56px; }
+  .sub-content { padding: 48px 20px 72px; }
+  .rule-section { padding: 32px 0; }
+}

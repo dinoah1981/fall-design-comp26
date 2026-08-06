@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI For The People — Fall 2026 Design Competition</title>
+  <meta name="description" content="AI For The People: the Fall 2026 Design Competition at Comp Sci High. Build an AI-powered app that solves a real problem in your school or the Bronx. Pitch it like a founder.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+
+  <!-- ===================================================================
+       LINK CONFIGURATION
+       Edit URLs here. script.js applies them to elements with matching
+       data-link attributes. Do NOT add links to script.js.
+       =================================================================== -->
+  <script>
+    const LINKS = {
+      // Core competition materials
+      masterSchedule: 'https://docs.google.com/spreadsheets/d/1jkBUFN_jJ8ayi0iisOerzBu-zBKzkYuO8aq5lYYa8pk/edit?gid=19588253#gid=19588253',
+      rubric: '#',                // Judging rubric (Google Doc) — TBD
+      roleSheet: '#',             // Team role assignment sheet — TBD
+      advisorDeck: '#',           // Advisor slide deck — TBD
+
+      // Rules
+      rulesPage: 'rules.html',
+      cacSite: 'https://www.congressionalappchallenge.us/',
+
+      // Workshop materials — TBD until decks are ready
+      workshop1: '#',             // Mon — Community Centered Design
+      workshop2: '#',             // Mon — Brainstorming
+      workshop3: '#',             // Tue — Building With AI 1
+      workshop4: '#',             // Tue — Building With AI 2
+      workshop5: '#',             // Wed — Demo Videos + Pitches
+      pitchPractice: '#',         // Thu — Mixed Grade Pitch Practice
+    };
+  </script>
+</head>
+<body>
+
+  <!-- ============ NAV ============ -->
+  <header class="nav" id="top">
+    <div class="nav-inner">
+      <a href="#top" class="nav-logo"><span class="logo-bracket">[</span>AI4TP<span class="logo-bracket">]</span></a>
+      <nav class="nav-links" id="navLinks">
+        <a href="#challenge">The Challenge</a>
+        <a href="#roles">Roles</a>
+        <a href="#week">The Week</a>
+        <a href="#workshops">Workshops</a>
+        <a href="#rules">Rules</a>
+        <a href="#submit">Submission</a>
+        <a href="#judging">Judging</a>
+      </nav>
+      <button class="nav-toggle" id="navToggle" aria-label="Toggle menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </header>
+
+  <!-- ============ HERO ============ -->
+  <section class="hero">
+    <div class="hero-scanlines" aria-hidden="true"></div>
+    <div class="hero-inner">
+      <p class="hero-eyebrow">$ csh --init fall_2026_design_competition</p>
+      <h1 class="hero-title">
+        <span class="hero-line">AI FOR</span>
+        <span class="hero-line">THE <span class="accent">PEOPLE</span><span class="cursor" aria-hidden="true"></span></span>
+      </h1>
+      <p class="hero-sub">Fall 2026 Design Competition</p>
+      <p class="hero-tagline">Build. Pitch. Launch.</p>
+
+      <div class="hero-terminal" aria-hidden="true">
+        <div class="terminal-bar">
+          <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+          <span class="terminal-name">mission.log</span>
+        </div>
+        <div class="terminal-body">
+          <p class="t-line t-1"><span class="t-prompt">&gt;</span> find a real problem in your school or the Bronx</p>
+          <p class="t-line t-2"><span class="t-prompt">&gt;</span> build a working app with AI</p>
+          <p class="t-line t-3"><span class="t-prompt">&gt;</span> pitch it like a founder</p>
+          <p class="t-line t-4"><span class="t-prompt">&gt;</span> <span class="t-status">status:</span> <span class="accent">ready_</span></p>
+        </div>
+      </div>
+
+      <div class="hero-actions">
+        <a href="#challenge" class="btn btn-solid">The Challenge</a>
+        <a href="rules.html" class="btn btn-ghost" data-link="rulesPage">Official Rules</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ STAT STRIP ============ -->
+  <div class="stat-strip" aria-label="Competition quick facts">
+    <div class="stat"><span class="stat-num">1</span><span class="stat-label">week to build</span></div>
+    <div class="stat"><span class="stat-num">4</span><span class="stat-label">max team size</span></div>
+    <div class="stat"><span class="stat-num">5</span><span class="stat-label">workshops</span></div>
+    <div class="stat"><span class="stat-num">1–3</span><span class="stat-label">min pitch video</span></div>
+    <div class="stat"><span class="stat-num">OCT 26</span><span class="stat-label">CAC deadline</span></div>
+  </div>
+
+  <!-- ============ THE CHALLENGE ============ -->
+  <section class="section section-white" id="challenge">
+    <div class="section-inner">
+      <p class="eyebrow">// 01 — the challenge</p>
+      <h2 class="section-title">One week. One problem.<br>One working app.</h2>
+      <p class="section-lead">
+        Your team will identify a real problem in our community — inside Comp Sci High
+        or out in the Bronx — and build a working app that helps solve it. You'll use AI
+        tools to move at startup speed, and at the end of the week you'll pitch your
+        product to judges like founders pitching investors.
+      </p>
+
+      <div class="card-grid three">
+        <div class="req-card reveal">
+          <p class="req-num">REQ_01</p>
+          <h3>Community Problem</h3>
+          <p>Your app must help solve or address a real problem in the community —
+             your school or the Bronx. Real users, real stakes. If it doesn't help
+             somebody, it doesn't count.</p>
+        </div>
+        <div class="req-card reveal">
+          <p class="req-num">REQ_02</p>
+          <h3>AI-Built MVP</h3>
+          <p>Ship a minimum viable product built with AI tools. Not a mockup, not a
+             slide — working software people can actually touch. Every AI tool you
+             use must be disclosed in your submission.</p>
+        </div>
+        <div class="req-card reveal">
+          <p class="req-num">REQ_03</p>
+          <h3>VC Pitch Video</h3>
+          <p>One 1–3 minute video that pitches your product like you're raising a
+             round — and doubles as your official Congressional App Challenge demo
+             video. One take, two jobs.</p>
+        </div>
+      </div>
+
+      <div class="info-note reveal">
+        <p><span class="accent-dark mono">→</span> This competition feeds directly into the
+        <strong>2026 Congressional App Challenge</strong> — the official app competition
+        of the U.S. House of Representatives. Top teams' apps will be submitted before the
+        national deadline: <strong>Monday, October 26, 2026, 12:00 PM EDT</strong>.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ ROLES ============ -->
+  <section class="section section-black" id="roles">
+    <div class="section-inner">
+      <p class="eyebrow">// 02 — your team</p>
+      <h2 class="section-title">Four roles. One startup.</h2>
+      <p class="section-lead">
+        Teams of up to four, and every member owns a job. Small teams ship —
+        yours will run like an early-stage startup for one week.
+      </p>
+
+      <div class="card-grid four">
+        <div class="role-card reveal">
+          <div class="terminal-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="terminal-name">role_01.md</span></div>
+          <div class="role-body">
+            <h3>Product Manager</h3>
+            <p class="role-tag mono">// the operator</p>
+            <p>Owns the problem statement and the plan. Keeps the team scoped, on
+               schedule, and honest about what ships by Friday.</p>
+          </div>
+        </div>
+        <div class="role-card reveal">
+          <div class="terminal-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="terminal-name">role_02.md</span></div>
+          <div class="role-body">
+            <h3>Product Designer</h3>
+            <p class="role-tag mono">// the architect</p>
+            <p>Owns the user experience — who it's for, how it flows, why it's
+               obvious to use. Turns a community problem into screens that make sense.</p>
+          </div>
+        </div>
+        <div class="role-card reveal">
+          <div class="terminal-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="terminal-name">role_03.md</span></div>
+          <div class="role-body">
+            <h3>Lead Engineer</h3>
+            <p class="role-tag mono">// the builder</p>
+            <p>Owns the build. Drives the AI tools, wires the pieces together, and
+               makes sure there's a working MVP on demo day — not a demo of excuses.</p>
+          </div>
+        </div>
+        <div class="role-card reveal">
+          <div class="terminal-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="terminal-name">role_04.md</span></div>
+          <div class="role-body">
+            <h3>Pitch Lead</h3>
+            <p class="role-tag mono">// the closer</p>
+            <p>Owns the story. Scripts and fronts the VC pitch video, runs pitch
+               practice, and sells the vision to judges on expo day.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-actions">
+        <a href="#" class="btn btn-ghost-light" data-link="roleSheet" target="_blank" rel="noopener">Role Assignment Sheet</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ THE WEEK ============ -->
+  <section class="section section-white" id="week">
+    <div class="section-inner">
+      <p class="eyebrow">// 03 — competition week</p>
+      <h2 class="section-title">The Week</h2>
+      <p class="section-lead">
+        Five days from blank page to judged product. Workshops teach the skill right
+        before you need it; team time is where the work gets done.
+      </p>
+
+      <div class="week-grid">
+        <div class="day-card reveal">
+          <div class="day-head">
+            <span class="day-name">MON</span>
+            <span class="day-theme mono">discover</span>
+          </div>
+          <ul class="day-list">
+            <li><span class="t">9:30</span> Launch</li>
+            <li><span class="t">10:35</span> Workshop 1 — Community Centered Design</li>
+            <li><span class="t">11:25</span> Workshop 2 — Brainstorming</li>
+            <li><span class="t">1:45</span> Community Org / Issues Expo</li>
+            <li><span class="t">3:30</span> Team Time</li>
+          </ul>
+        </div>
+        <div class="day-card reveal">
+          <div class="day-head">
+            <span class="day-name">TUE</span>
+            <span class="day-theme mono">build</span>
+          </div>
+          <ul class="day-list">
+            <li><span class="t">9:30</span> Team Time</li>
+            <li><span class="t">10:35</span> Workshop 3 — Building With AI 1</li>
+            <li><span class="t">11:25</span> Workshop 4 — Building With AI 2</li>
+            <li><span class="t">1:45</span> Engineering Expo</li>
+            <li><span class="t">3:30</span> Team Time</li>
+          </ul>
+        </div>
+        <div class="day-card reveal">
+          <div class="day-head">
+            <span class="day-name">WED</span>
+            <span class="day-theme mono">tell it</span>
+          </div>
+          <ul class="day-list">
+            <li><span class="t">9:40</span> Team Time</li>
+            <li><span class="t">10:43</span> Team Time</li>
+            <li><span class="t">11:46</span> Workshop 5 — Demo Videos + Pitches</li>
+            <li><span class="t">12:46</span> Dismissal</li>
+          </ul>
+        </div>
+        <div class="day-card reveal">
+          <div class="day-head">
+            <span class="day-name">THU</span>
+            <span class="day-theme mono">rehearse</span>
+          </div>
+          <ul class="day-list">
+            <li><span class="t">9:40</span> Team Time</li>
+            <li><span class="t">10:43</span> Mixed Grade Pitch Practice</li>
+            <li><span class="t">11:46</span> Team Time</li>
+            <li><span class="t">12:46</span> Dismissal</li>
+          </ul>
+        </div>
+        <div class="day-card day-card-final reveal">
+          <div class="day-head">
+            <span class="day-name">FRI</span>
+            <span class="day-theme mono">ship it</span>
+          </div>
+          <ul class="day-list">
+            <li><span class="t">9:30</span> Final Team Time</li>
+            <li><span class="t">10:35</span> 11/12 Judging Expo</li>
+            <li><span class="t">11:40</span> 9/10 Judging Expo</li>
+            <li><span class="t">1:45</span> 11/12 Winners Announced</li>
+            <li><span class="t">2:00</span> 9/10 Winners Announced</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="section-actions">
+        <a href="#" class="btn btn-solid" data-link="masterSchedule" target="_blank" rel="noopener">Full Master Schedule ↗</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ WORKSHOPS ============ -->
+  <section class="section section-black" id="workshops">
+    <div class="section-inner">
+      <p class="eyebrow">// 04 — workshops</p>
+      <h2 class="section-title">Learn it, then use it.</h2>
+      <p class="section-lead">
+        Five workshops, sequenced to hit right before each phase of the build.
+        Materials drop here as the week approaches.
+      </p>
+
+      <div class="workshop-list">
+        <a href="#" class="workshop-row reveal" data-link="workshop1" target="_blank" rel="noopener">
+          <span class="ws-num mono">W1</span>
+          <div class="ws-info">
+            <h3>Community Centered Design</h3>
+            <p>Monday · Finding problems worth solving — and the people they matter to.</p>
+          </div>
+          <span class="ws-day mono">MON</span>
+        </a>
+        <a href="#" class="workshop-row reveal" data-link="workshop2" target="_blank" rel="noopener">
+          <span class="ws-num mono">W2</span>
+          <div class="ws-info">
+            <h3>Brainstorming</h3>
+            <p>Monday · From fifty bad ideas to one great one, fast.</p>
+          </div>
+          <span class="ws-day mono">MON</span>
+        </a>
+        <a href="#" class="workshop-row reveal" data-link="workshop3" target="_blank" rel="noopener">
+          <span class="ws-num mono">W3</span>
+          <div class="ws-info">
+            <h3>Building With AI — Part 1</h3>
+            <p>Tuesday · Prompting, scaffolding, and getting your first working screen.</p>
+          </div>
+          <span class="ws-day mono">TUE</span>
+        </a>
+        <a href="#" class="workshop-row reveal" data-link="workshop4" target="_blank" rel="noopener">
+          <span class="ws-num mono">W4</span>
+          <div class="ws-info">
+            <h3>Building With AI — Part 2</h3>
+            <p>Tuesday · Debugging, iterating, and shipping an MVP you can demo.</p>
+          </div>
+          <span class="ws-day mono">TUE</span>
+        </a>
+        <a href="#" class="workshop-row reveal" data-link="workshop5" target="_blank" rel="noopener">
+          <span class="ws-num mono">W5</span>
+          <div class="ws-info">
+            <h3>Demo Videos + Pitches</h3>
+            <p>Wednesday · Turning a working app into a 1–3 minute pitch that lands.</p>
+          </div>
+          <span class="ws-day mono">WED</span>
+        </a>
+        <a href="#" class="workshop-row reveal" data-link="pitchPractice" target="_blank" rel="noopener">
+          <span class="ws-num mono">PP</span>
+          <div class="ws-info">
+            <h3>Mixed Grade Pitch Practice</h3>
+            <p>Thursday · Pitch across grade bands, get feedback, tighten the story.</p>
+          </div>
+          <span class="ws-day mono">THU</span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ RULES ============ -->
+  <section class="section section-white" id="rules">
+    <div class="section-inner">
+      <p class="eyebrow">// 05 — the rules</p>
+      <h2 class="section-title">Know the rules.<br>Then play to win.</h2>
+      <p class="section-lead">
+        We run on the official 2026 Congressional App Challenge rulebook, plus three
+        house rules that make this competition ours. The highlights:
+      </p>
+
+      <div class="card-grid three">
+        <div class="rule-card reveal">
+          <h3 class="mono">eligibility</h3>
+          <ul>
+            <li>Teams of up to <strong>4</strong> — or compete solo</li>
+            <li>One app per student per year, one district</li>
+            <li>Apps created after <strong>Oct 30, 2025</strong> are fair game</li>
+          </ul>
+        </div>
+        <div class="rule-card reveal">
+          <h3 class="mono">the build</h3>
+          <ul>
+            <li>Any platform, any language</li>
+            <li>Must actually <strong>work</strong> — functionality counts</li>
+            <li>All AI use must be <strong>disclosed</strong> — and AI can't be the whole build</li>
+          </ul>
+        </div>
+        <div class="rule-card reveal">
+          <h3 class="mono">the video</h3>
+          <ul>
+            <li><strong>1–3 minutes</strong>, public on YouTube or Vimeo</li>
+            <li>Names, app name, purpose, audience, tools</li>
+            <li>Show the app <strong>actually running</strong></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="section-actions">
+        <a href="rules.html" class="btn btn-solid" data-link="rulesPage">Read the Full Rules</a>
+        <a href="#" class="btn btn-ghost" data-link="cacSite" target="_blank" rel="noopener">Congressional App Challenge ↗</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SUBMISSION ============ -->
+  <section class="section section-black" id="submit">
+    <div class="section-inner">
+      <p class="eyebrow">// 06 — deliverables</p>
+      <h2 class="section-title">What you ship.</h2>
+
+      <div class="deliverable-stack">
+        <div class="deliv-row reveal">
+          <span class="deliv-num mono">01</span>
+          <div>
+            <h3>The MVP</h3>
+            <p>A working, AI-built minimum viable product that addresses your community
+               problem. Judges can ask to see it run — and the source behind it.</p>
+          </div>
+        </div>
+        <div class="deliv-row reveal">
+          <span class="deliv-num mono">02</span>
+          <div>
+            <h3>The Pitch Video</h3>
+            <p>One video, two jobs: a VC-style pitch that also satisfies every official
+               demo-video requirement — team names, app name, one-sentence purpose,
+               target audience, tools and languages used, and the app in action.
+               1–3 minutes, uploaded public to YouTube or Vimeo.</p>
+          </div>
+        </div>
+        <div class="deliv-row reveal">
+          <span class="deliv-num mono">03</span>
+          <div>
+            <h3>The Written Answers</h3>
+            <p>The CAC submission questions: what your app does, what inspired it, the
+               technical challenge you overcame, what you learned, and what a 2.0
+               would look like.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="deadline-banner reveal">
+        <p class="mono deadline-label">// national deadline</p>
+        <p class="deadline-date">OCT 26, 2026 — 12:00 PM EDT</p>
+        <p class="deadline-note">Congressional App Challenge submissions close. Top CSH teams submit before the bell.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ JUDGING & PRIZES ============ -->
+  <section class="section section-white" id="judging">
+    <div class="section-inner">
+      <p class="eyebrow">// 07 — judging &amp; prizes</p>
+      <h2 class="section-title">Demo day.</h2>
+      <p class="section-lead">
+        Friday is the judging expo — 11/12 in the morning, 9/10 before lunch, winners
+        announced by early afternoon. Judges score three things:
+      </p>
+
+      <div class="card-grid three">
+        <div class="judge-card reveal">
+          <p class="judge-num mono">/idea</p>
+          <h3>Quality of the Idea</h3>
+          <p>Creativity, originality, and how squarely it hits a real community problem.</p>
+        </div>
+        <div class="judge-card reveal">
+          <p class="judge-num mono">/build</p>
+          <h3>Implementation</h3>
+          <p>User experience and design — does the MVP feel like a product, not a project?</p>
+        </div>
+        <div class="judge-card reveal">
+          <p class="judge-num mono">/skill</p>
+          <h3>Technical Excellence</h3>
+          <p>Demonstrated coding and programming skill — including how intelligently you drove your AI tools.</p>
+        </div>
+      </div>
+
+      <div class="prize-block reveal">
+        <h3 class="prize-title">What winners get</h3>
+        <ul class="prize-list">
+          <li><span class="mono accent-dark">&gt;</span> School winners crowned Friday — by grade band, in front of everyone</li>
+          <li><span class="mono accent-dark">&gt;</span> Top apps submitted to the <strong>2026 Congressional App Challenge</strong></li>
+          <li><span class="mono accent-dark">&gt;</span> CAC district winners are featured on <strong>House.gov</strong> and the official CAC site</li>
+          <li><span class="mono accent-dark">&gt;</span> District winners qualify for a <strong>copyright fee waiver</strong> under the ARTS Act</li>
+        </ul>
+        <div class="section-actions">
+          <a href="#" class="btn btn-solid" data-link="rubric" target="_blank" rel="noopener">Judging Rubric</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ FOOTER ============ -->
+  <footer class="footer">
+    <div class="footer-inner">
+      <p class="footer-brand mono">[AI4TP]</p>
+      <p class="footer-line">AI For The People — Fall 2026 Design Competition</p>
+      <p class="footer-school mono">$ comp_sci_high · the_bronx · 2026</p>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
