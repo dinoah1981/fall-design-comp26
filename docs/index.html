@@ -18,7 +18,7 @@
   <script>
     const LINKS = {
       // Core competition materials
-      masterSchedule: 'https://docs.google.com/spreadsheets/d/1jkBUFN_jJ8ayi0iisOerzBu-zBKzkYuO8aq5lYYa8pk/edit?gid=19588253#gid=19588253',
+      masterSchedule: 'https://docs.google.com/spreadsheets/d/1jkBUFN_jJ8ayi0iisOerzBu-zBKzkYuO8aq5lYYa8pk/edit?gid=1800147146#gid=1800147146',
       rubric: '#',                // Judging rubric (Google Doc) — TBD
       roleSheet: '#',             // Team role assignment sheet — TBD
       advisorDeck: '#',           // Advisor slide deck — TBD
@@ -30,9 +30,10 @@
       // Workshop materials — TBD until decks are ready
       workshop1: '#',             // Mon — Community Centered Design
       workshop2: '#',             // Mon — Brainstorming
-      workshop3: '#',             // Tue — Building With AI 1
-      workshop4: '#',             // Tue — Building With AI 2
-      workshop5: '#',             // Wed — Demo Videos + Pitches
+      workshop3: '#',             // Mon — Why (and Why Not) Build With AI
+      workshop4: '#',             // Tue — Building With AI 1
+      workshop5: '#',             // Tue — Building With AI 2
+      workshop6: '#',             // Wed — Pitches
       pitchPractice: '#',         // Thu — Mixed Grade Pitch Practice
     };
   </script>
@@ -94,7 +95,7 @@
   <div class="stat-strip" aria-label="Competition quick facts">
     <div class="stat"><span class="stat-num">1</span><span class="stat-label">week to build</span></div>
     <div class="stat"><span class="stat-num">4</span><span class="stat-label">max team size</span></div>
-    <div class="stat"><span class="stat-num">5</span><span class="stat-label">workshops</span></div>
+    <div class="stat"><span class="stat-num">6</span><span class="stat-label">workshops</span></div>
     <div class="stat"><span class="stat-num">1–3</span><span class="stat-label">min pitch video</span></div>
     <div class="stat"><span class="stat-num">OCT 26</span><span class="stat-label">CAC deadline</span></div>
   </div>
@@ -216,11 +217,11 @@
             <span class="day-theme mono">discover</span>
           </div>
           <ul class="day-list">
-            <li><span class="t">9:30</span> Launch</li>
-            <li><span class="t">10:35</span> Workshop 1 — Community Centered Design</li>
-            <li><span class="t">11:25</span> Workshop 2 — Brainstorming</li>
-            <li><span class="t">1:45</span> Community Org / Issues Expo</li>
-            <li><span class="t">3:30</span> Team Time</li>
+            <li><span class="t">9:30</span> Launch + team selection (by grade band)</li>
+            <li><span class="t">10:40</span> Workshop 1 — Community Centered Design</li>
+            <li><span class="t">11:30</span> Workshop 2 — Brainstorming</li>
+            <li><span class="t">1:45</span> Workshop 3 — Why (and Why Not) Build With AI</li>
+            <li><span class="t">3:15</span> Team Time — write up your community solution</li>
           </ul>
         </div>
         <div class="day-card reveal">
@@ -229,11 +230,11 @@
             <span class="day-theme mono">build</span>
           </div>
           <ul class="day-list">
-            <li><span class="t">9:30</span> Team Time</li>
-            <li><span class="t">10:35</span> Workshop 3 — Building With AI 1</li>
-            <li><span class="t">11:25</span> Workshop 4 — Building With AI 2</li>
-            <li><span class="t">1:45</span> Engineering Expo</li>
-            <li><span class="t">3:30</span> Team Time</li>
+            <li><span class="t">9:30</span> Team Time — prep for the expo</li>
+            <li><span class="t">10:00</span> Engineering &amp; Community Org Expo</li>
+            <li><span class="t">1:45</span> Workshop 4 — Building With AI 1</li>
+            <li><span class="t">2:50</span> Workshop 5 — Building With AI 2</li>
+            <li><span class="t">3:55</span> Team Time — status update + screenshot</li>
           </ul>
         </div>
         <div class="day-card reveal">
@@ -242,9 +243,9 @@
             <span class="day-theme mono">tell it</span>
           </div>
           <ul class="day-list">
-            <li><span class="t">9:40</span> Team Time</li>
-            <li><span class="t">10:43</span> Team Time</li>
-            <li><span class="t">11:46</span> Workshop 5 — Demo Videos + Pitches</li>
+            <li><span class="t">9:40</span> Team Time — finish the app, prep the pitch</li>
+            <li><span class="t">10:43</span> Workshop 6 — Pitches</li>
+            <li><span class="t">11:46</span> Team Time</li>
             <li><span class="t">12:46</span> Dismissal</li>
           </ul>
         </div>
@@ -287,7 +288,7 @@
       <p class="eyebrow">// 04 — workshops</p>
       <h2 class="section-title">Learn it, then use it.</h2>
       <p class="section-lead">
-        Five workshops, sequenced to hit right before each phase of the build.
+        Six workshops, sequenced to hit right before each phase of the build.
         Materials drop here as the week approaches.
       </p>
 
@@ -311,24 +312,32 @@
         <a href="#" class="workshop-row reveal" data-link="workshop3" target="_blank" rel="noopener">
           <span class="ws-num mono">W3</span>
           <div class="ws-info">
-            <h3>Building With AI — Part 1</h3>
-            <p>Tuesday · Prompting, scaffolding, and getting your first working screen.</p>
+            <h3>Why (and Why Not) Build With AI</h3>
+            <p>Monday · When AI is the right tool, when it isn't — and how to use it with judgment.</p>
           </div>
-          <span class="ws-day mono">TUE</span>
+          <span class="ws-day mono">MON</span>
         </a>
         <a href="#" class="workshop-row reveal" data-link="workshop4" target="_blank" rel="noopener">
           <span class="ws-num mono">W4</span>
           <div class="ws-info">
-            <h3>Building With AI — Part 2</h3>
-            <p>Tuesday · Debugging, iterating, and shipping an MVP you can demo.</p>
+            <h3>Building With AI — Part 1</h3>
+            <p>Tuesday · From idea to wireframe to first working screens, AI at the wheel.</p>
           </div>
           <span class="ws-day mono">TUE</span>
         </a>
         <a href="#" class="workshop-row reveal" data-link="workshop5" target="_blank" rel="noopener">
           <span class="ws-num mono">W5</span>
           <div class="ws-info">
-            <h3>Demo Videos + Pitches</h3>
-            <p>Wednesday · Turning a working app into a 1–3 minute pitch that lands.</p>
+            <h3>Building With AI — Part 2</h3>
+            <p>Tuesday · The build sprint, in teams — iterate, debug, get the MVP standing.</p>
+          </div>
+          <span class="ws-day mono">TUE</span>
+        </a>
+        <a href="#" class="workshop-row reveal" data-link="workshop6" target="_blank" rel="noopener">
+          <span class="ws-num mono">W6</span>
+          <div class="ws-info">
+            <h3>Pitches</h3>
+            <p>Wednesday · Title, purpose, inspiration, the hard problem you cracked, what you learned, what's next — the story judges want.</p>
           </div>
           <span class="ws-day mono">WED</span>
         </a>
