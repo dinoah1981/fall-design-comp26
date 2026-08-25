@@ -1,4 +1,4 @@
-# Apps For The People — Fall 2026 Design Competition
+# AI For The People — Fall 2026 Design Competition
 
 Site for Comp Sci High's Fall 2026 design competition: teams of up to 4 build an
 AI-powered app that addresses a real problem in the school or Bronx community,
