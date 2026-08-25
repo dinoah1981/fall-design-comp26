@@ -14,27 +14,38 @@
        LINK CONFIGURATION
        Edit URLs here. script.js applies them to elements with matching
        data-link attributes. Do NOT add links to script.js.
+       Entries set to '#' render as disabled "// soon".
+       Source of truth: "Design Comp - Fall 2026 Master Schedule" sheet,
+       tab "WAG 2.0" — materials column.
        =================================================================== -->
   <script>
     const LINKS = {
       // Core competition materials
       masterSchedule: 'https://docs.google.com/spreadsheets/d/1jkBUFN_jJ8ayi0iisOerzBu-zBKzkYuO8aq5lYYa8pk/edit?gid=1800147146#gid=1800147146',
-      rubric: '#',                // Judging rubric (Google Doc) — TBD
-      roleSheet: '#',             // Team role assignment sheet — TBD
-      advisorDeck: '#',           // Advisor slide deck — TBD
+      rubric: '#',                // Judging rubric (finals) — TBD
+      roleSheet: 'https://docs.google.com/spreadsheets/d/17dOHgqd6Ae-xRvu7f_5I29JhQbZka1CSd97b6MPB3j4/edit?gid=0#gid=0',
+      advisorDeck: 'https://docs.google.com/presentation/d/1e_fa6IbmZyQAqMZDjbpXouD-wFqBoNiQIbP0MNGZXEE/edit',   // Running advisory slides
+      launchDeck: '#',            // Monday launch slides — TBD
+      expoPOA: 'https://docs.google.com/document/d/1cgvWIEIYx-n269IMjNWwtwWp6K8Vmbm05I_0Qp2IUMI/edit',          // Tue expo plan of action
 
-      // Rules
+      // Rules & inspiration
       rulesPage: 'rules.html',
       cacSite: 'https://www.congressionalappchallenge.us/',
+      pastWinners: 'https://www.congressionalappchallenge.us/2025-winners/#NewYork',
 
-      // Workshop materials — TBD until decks are ready
-      workshop1: '#',             // Mon — Community Centered Design
-      workshop2: '#',             // Mon — Brainstorming
+      // Workshop materials — '#' until the deck lands
+      workshop1: 'https://docs.google.com/presentation/d/12zvZlhJFxRoYkin7b6ASxvhGPNh5j-wJeDebJ099QvU/edit',    // Mon — Identify the Problem
+      workshop1Worksheet: 'https://docs.google.com/document/d/1rNBZ7NwM1WXNshbWaFs99qAUqTOxD3kehH0QxuAwQ6w/edit',
+      workshop2: 'https://docs.google.com/presentation/d/15Njfq53g2XYSXlS9gkbCOgztOU5Adxyz53ZXsSM-Fpk/edit',    // Mon — Brainstorm the Solution
+      workshop2Worksheet: 'https://docs.google.com/document/d/1Sjin0mxyciei651MEgKGIHfrvc7HhT-lwmm0SSg8JNM/edit',
       workshop3: '#',             // Mon — Why (and Why Not) Build With AI
-      workshop4: '#',             // Tue — Building With AI 1
-      workshop5: '#',             // Tue — Building With AI 2
+      workshop3Worksheet: '#',
+      workshop4Wireframe: '#',    // Tue — Building With AI 1: AI-to-wireframe track
+      workshop4Build: '#',        // Tue — Building With AI 1: AI-to-build track
+      workshop5: '#',             // Tue — Building With AI 2 (group coding)
       workshop6: '#',             // Wed — Pitches
-      pitchPractice: '#',         // Thu — Mixed Grade Pitch Practice
+      workshop7: '#',             // Thu — Practice Pitches (mixed grade)
+      pitchRubric: '#',           // Thu — rubric for judging practice pitches
     };
   </script>
 </head>
@@ -50,8 +61,8 @@
         <a href="#week">The Week</a>
         <a href="#workshops">Workshops</a>
         <a href="#rules">Rules</a>
-        <a href="#submit">Submission</a>
-        <a href="#judging">Judging</a>
+        <a href="#submit">Deliverables</a>
+        <a href="#judging">Judging &amp; Prizes</a>
       </nav>
       <button class="nav-toggle" id="navToggle" aria-label="Toggle menu" aria-expanded="false">
         <span></span><span></span><span></span>
@@ -95,8 +106,8 @@
   <div class="stat-strip" aria-label="Competition quick facts">
     <div class="stat"><span class="stat-num">1</span><span class="stat-label">week to build</span></div>
     <div class="stat"><span class="stat-num">4</span><span class="stat-label">max team size</span></div>
-    <div class="stat"><span class="stat-num">6</span><span class="stat-label">workshops</span></div>
-    <div class="stat"><span class="stat-num">1–3</span><span class="stat-label">min pitch video</span></div>
+    <div class="stat"><span class="stat-num">7</span><span class="stat-label">workshops</span></div>
+    <div class="stat"><span class="stat-num">$300</span><span class="stat-label">per winning team</span></div>
     <div class="stat"><span class="stat-num">OCT 26</span><span class="stat-label">CAC deadline</span></div>
   </div>
 
@@ -109,7 +120,7 @@
         Your team will identify a real problem in our community — inside Comp Sci High
         or out in the Bronx — and build a working app that helps solve it. You'll use AI
         tools to move at startup speed, and at the end of the week you'll pitch your
-        product to judges like founders pitching investors.
+        product live to judges like founders pitching investors.
       </p>
 
       <div class="card-grid three">
@@ -129,18 +140,21 @@
         </div>
         <div class="req-card reveal">
           <p class="req-num">REQ_03</p>
-          <h3>VC Pitch Video</h3>
-          <p>One 1–3 minute video that pitches your product like you're raising a
-             round — and doubles as your official Congressional App Challenge demo
-             video. One take, two jobs.</p>
+          <h3>The Founder Pitch</h3>
+          <p>Pitch your product live like you're raising a round: the problem, the
+             community it serves, the product, the ask. No video required for our
+             week — winners film the official CAC demo video afterward.</p>
         </div>
       </div>
 
       <div class="info-note reveal">
         <p><span class="accent-dark mono">→</span> This competition feeds directly into the
         <strong>2026 Congressional App Challenge</strong> — the official app competition
-        of the U.S. House of Representatives. Top teams' apps will be submitted before the
+        of the U.S. House of Representatives. Winning teams' apps will be submitted before the
         national deadline: <strong>Monday, October 26, 2026, 12:00 PM EDT</strong>.</p>
+        <p><span class="accent-dark mono">→</span> Need inspiration? See what last year's
+        <a href="#" data-link="pastWinners" target="_blank" rel="noopener">New York winners built ↗</a>
+        — real apps, built by students, that won their districts.</p>
       </div>
     </div>
   </section>
@@ -188,14 +202,14 @@
           <div class="role-body">
             <h3>Pitch Lead</h3>
             <p class="role-tag mono">// the closer</p>
-            <p>Owns the story. Scripts and fronts the VC pitch video, runs pitch
-               practice, and sells the vision to judges on expo day.</p>
+            <p>Owns the story. Writes and fronts the live pitch, runs pitch
+               practice, and sells the vision to the judges in the Pit on Friday.</p>
           </div>
         </div>
       </div>
 
       <div class="section-actions">
-        <a href="#" class="btn btn-ghost-light" data-link="roleSheet" target="_blank" rel="noopener">Role Assignment Sheet</a>
+        <a href="#" class="btn btn-ghost-light" data-link="roleSheet" target="_blank" rel="noopener">Team / Role Spreadsheet ↗</a>
       </div>
     </div>
   </section>
@@ -217,11 +231,13 @@
             <span class="day-theme mono">discover</span>
           </div>
           <ul class="day-list">
-            <li><span class="t">9:30</span> Launch + team selection (by grade band)</li>
-            <li><span class="t">10:40</span> Workshop 1 — Community Centered Design</li>
-            <li><span class="t">11:30</span> Workshop 2 — Brainstorming</li>
+            <li><span class="t">9:30</span> Launch in the Pit + team formation (by grade band)</li>
+            <li><span class="t">10:40</span> Workshop 1 — Identify the Problem</li>
+            <li><span class="t">11:30</span> Workshop 2 — Brainstorm the Solution</li>
+            <li><span class="t">1:30</span> Advisory — role selection</li>
             <li><span class="t">1:45</span> Workshop 3 — Why (and Why Not) Build With AI</li>
-            <li><span class="t">3:15</span> Team Time — write up your community solution</li>
+            <li><span class="t">3:15</span> Team Time — write up your solution, sketch wireframes</li>
+            <li><span class="t">4:15</span> Dismissal</li>
           </ul>
         </div>
         <div class="day-card reveal">
@@ -231,10 +247,11 @@
           </div>
           <ul class="day-list">
             <li><span class="t">9:30</span> Team Time — prep for the expo</li>
-            <li><span class="t">10:00</span> Engineering &amp; Community Org Expo</li>
-            <li><span class="t">1:45</span> Workshop 4 — Building With AI 1</li>
-            <li><span class="t">2:50</span> Workshop 5 — Building With AI 2</li>
+            <li><span class="t">10:00</span> Engineering &amp; Community Org Expo + paper wireframes</li>
+            <li><span class="t">1:45</span> Workshop 4 — Building With AI 1 (wireframe / build tracks)</li>
+            <li><span class="t">2:50</span> Workshop 5 — Building With AI 2 (group coding)</li>
             <li><span class="t">3:55</span> Team Time — status update + screenshot</li>
+            <li><span class="t">4:15</span> Dismissal</li>
           </ul>
         </div>
         <div class="day-card reveal">
@@ -243,9 +260,9 @@
             <span class="day-theme mono">tell it</span>
           </div>
           <ul class="day-list">
-            <li><span class="t">9:40</span> Team Time — finish the app, prep the pitch</li>
+            <li><span class="t">9:40</span> Team Time — finish the app</li>
             <li><span class="t">10:43</span> Workshop 6 — Pitches</li>
-            <li><span class="t">11:46</span> Team Time</li>
+            <li><span class="t">11:46</span> Team Time — build the pitch</li>
             <li><span class="t">12:46</span> Dismissal</li>
           </ul>
         </div>
@@ -256,8 +273,8 @@
           </div>
           <ul class="day-list">
             <li><span class="t">9:40</span> Team Time</li>
-            <li><span class="t">10:43</span> Mixed Grade Pitch Practice</li>
-            <li><span class="t">11:46</span> Team Time</li>
+            <li><span class="t">10:43</span> Workshop 7 — Practice Pitches (mixed grade)</li>
+            <li><span class="t">11:35</span> Advisory Finals — one team per advisory advances</li>
             <li><span class="t">12:46</span> Dismissal</li>
           </ul>
         </div>
@@ -267,17 +284,19 @@
             <span class="day-theme mono">ship it</span>
           </div>
           <ul class="day-list">
-            <li><span class="t">9:30</span> Final Team Time</li>
-            <li><span class="t">10:35</span> 11/12 Judging Expo</li>
-            <li><span class="t">11:40</span> 9/10 Judging Expo</li>
-            <li><span class="t">1:45</span> 11/12 Winners Announced</li>
-            <li><span class="t">2:00</span> 9/10 Winners Announced</li>
+            <li><span class="t">9:45</span> 11/12 Finals in the Pit</li>
+            <li><span class="t">11:20</span> 9/10 Finals in the Pit</li>
+            <li><span class="t">12:50</span> Winners announced — on the loudspeaker</li>
+            <li><span class="t">1:00</span> Dismissal — grab a bagged lunch on the way out</li>
           </ul>
         </div>
       </div>
 
       <div class="section-actions">
         <a href="#" class="btn btn-solid" data-link="masterSchedule" target="_blank" rel="noopener">Full Master Schedule ↗</a>
+        <a href="#" class="btn btn-ghost" data-link="advisorDeck" target="_blank" rel="noopener">Running Advisory Slides ↗</a>
+        <a href="#" class="btn btn-ghost" data-link="expoPOA" target="_blank" rel="noopener">Expo Plan of Action ↗</a>
+        <a href="#" class="btn btn-ghost" data-link="launchDeck" target="_blank" rel="noopener">Launch Slides</a>
       </div>
     </div>
   </section>
@@ -288,67 +307,93 @@
       <p class="eyebrow">// 04 — workshops</p>
       <h2 class="section-title">Learn it, then use it.</h2>
       <p class="section-lead">
-        Six workshops, sequenced to hit right before each phase of the build.
-        Materials drop here as the week approaches.
+        Seven workshops, sequenced to hit right before each phase of the build.
+        Materials drop here as each deck lands — anything marked <span class="mono accent">// soon</span> is on its way.
       </p>
 
       <div class="workshop-list">
-        <a href="#" class="workshop-row reveal" data-link="workshop1" target="_blank" rel="noopener">
+        <div class="workshop-row reveal">
           <span class="ws-num mono">W1</span>
           <div class="ws-info">
-            <h3>Community Centered Design</h3>
-            <p>Monday · Finding problems worth solving — and the people they matter to.</p>
+            <h3>Identify the Problem</h3>
+            <p>Monday · Community-centered design: understand the challenge, then find a problem worth solving — and the people it matters to.</p>
+            <div class="ws-links">
+              <a href="#" class="ws-link" data-link="workshop1" target="_blank" rel="noopener">slides</a>
+              <a href="#" class="ws-link" data-link="workshop1Worksheet" target="_blank" rel="noopener">worksheet</a>
+            </div>
           </div>
           <span class="ws-day mono">MON</span>
-        </a>
-        <a href="#" class="workshop-row reveal" data-link="workshop2" target="_blank" rel="noopener">
+        </div>
+        <div class="workshop-row reveal">
           <span class="ws-num mono">W2</span>
           <div class="ws-info">
-            <h3>Brainstorming</h3>
-            <p>Monday · From fifty bad ideas to one great one, fast.</p>
+            <h3>Brainstorm the Solution</h3>
+            <p>Monday · From fifty bad ideas to one great one, fast — and a topic your whole team wants to build.</p>
+            <div class="ws-links">
+              <a href="#" class="ws-link" data-link="workshop2" target="_blank" rel="noopener">slides</a>
+              <a href="#" class="ws-link" data-link="workshop2Worksheet" target="_blank" rel="noopener">worksheet</a>
+            </div>
           </div>
           <span class="ws-day mono">MON</span>
-        </a>
-        <a href="#" class="workshop-row reveal" data-link="workshop3" target="_blank" rel="noopener">
+        </div>
+        <div class="workshop-row reveal">
           <span class="ws-num mono">W3</span>
           <div class="ws-info">
             <h3>Why (and Why Not) Build With AI</h3>
             <p>Monday · When AI is the right tool, when it isn't — and how to use it with judgment.</p>
+            <div class="ws-links">
+              <a href="#" class="ws-link" data-link="workshop3" target="_blank" rel="noopener">slides</a>
+              <a href="#" class="ws-link" data-link="workshop3Worksheet" target="_blank" rel="noopener">worksheet</a>
+            </div>
           </div>
           <span class="ws-day mono">MON</span>
-        </a>
-        <a href="#" class="workshop-row reveal" data-link="workshop4" target="_blank" rel="noopener">
+        </div>
+        <div class="workshop-row reveal">
           <span class="ws-num mono">W4</span>
           <div class="ws-info">
             <h3>Building With AI — Part 1</h3>
-            <p>Tuesday · From idea to wireframe to first working screens, AI at the wheel.</p>
+            <p>Tuesday · Two tracks, two teammates each: AI-to-wireframe and AI-to-build. Split up, learn both, bring it back.</p>
+            <div class="ws-links">
+              <a href="#" class="ws-link" data-link="workshop4Wireframe" target="_blank" rel="noopener">wireframe track slides</a>
+              <a href="#" class="ws-link" data-link="workshop4Build" target="_blank" rel="noopener">build track slides</a>
+            </div>
           </div>
           <span class="ws-day mono">TUE</span>
-        </a>
-        <a href="#" class="workshop-row reveal" data-link="workshop5" target="_blank" rel="noopener">
+        </div>
+        <div class="workshop-row reveal">
           <span class="ws-num mono">W5</span>
           <div class="ws-info">
             <h3>Building With AI — Part 2</h3>
-            <p>Tuesday · The build sprint, in teams — iterate, debug, get the MVP standing.</p>
+            <p>Tuesday · Group coding, full team together — iterate, debug, get the MVP standing.</p>
+            <div class="ws-links">
+              <a href="#" class="ws-link" data-link="workshop5" target="_blank" rel="noopener">slides</a>
+            </div>
           </div>
           <span class="ws-day mono">TUE</span>
-        </a>
-        <a href="#" class="workshop-row reveal" data-link="workshop6" target="_blank" rel="noopener">
+        </div>
+        <div class="workshop-row reveal">
           <span class="ws-num mono">W6</span>
           <div class="ws-info">
             <h3>Pitches</h3>
             <p>Wednesday · Title, purpose, inspiration, the hard problem you cracked, what you learned, what's next — the story judges want.</p>
+            <div class="ws-links">
+              <a href="#" class="ws-link" data-link="workshop6" target="_blank" rel="noopener">slides</a>
+            </div>
           </div>
           <span class="ws-day mono">WED</span>
-        </a>
-        <a href="#" class="workshop-row reveal" data-link="pitchPractice" target="_blank" rel="noopener">
-          <span class="ws-num mono">PP</span>
+        </div>
+        <div class="workshop-row reveal">
+          <span class="ws-num mono">W7</span>
           <div class="ws-info">
-            <h3>Mixed Grade Pitch Practice</h3>
-            <p>Thursday · Pitch across grade bands, get feedback, tighten the story.</p>
+            <h3>Practice Pitches</h3>
+            <p>Thursday · Pitch across grade bands, get scored, tighten the story before advisory finals.</p>
+            <div class="ws-links">
+              <a href="#" class="ws-link" data-link="workshop7" target="_blank" rel="noopener">slides</a>
+              <a href="#" class="ws-link" data-link="pitchRubric" target="_blank" rel="noopener">pitch rubric</a>
+            </div>
           </div>
           <span class="ws-day mono">THU</span>
-        </a>
+        </div>
       </div>
     </div>
   </section>
@@ -381,11 +426,11 @@
           </ul>
         </div>
         <div class="rule-card reveal">
-          <h3 class="mono">the video</h3>
+          <h3 class="mono">the pitch</h3>
           <ul>
-            <li><strong>1–3 minutes</strong>, public on YouTube or Vimeo</li>
-            <li>Names, app name, purpose, audience, tools</li>
-            <li>Show the app <strong>actually running</strong></li>
+            <li>Pitched <strong>live</strong> to judges — no video required for our week</li>
+            <li>Title, purpose, inspiration, technical challenge, lessons, what's next</li>
+            <li>Winners film the CAC's <strong>1–3 min demo video</strong> afterward</li>
           </ul>
         </div>
       </div>
@@ -397,7 +442,7 @@
     </div>
   </section>
 
-  <!-- ============ SUBMISSION ============ -->
+  <!-- ============ DELIVERABLES ============ -->
   <section class="section section-black" id="submit">
     <div class="section-inner">
       <p class="eyebrow">// 06 — deliverables</p>
@@ -415,11 +460,12 @@
         <div class="deliv-row reveal">
           <span class="deliv-num mono">02</span>
           <div>
-            <h3>The Pitch Video</h3>
-            <p>One video, two jobs: a VC-style pitch that also satisfies every official
-               demo-video requirement — team names, app name, one-sentence purpose,
-               target audience, tools and languages used, and the app in action.
-               1–3 minutes, uploaded public to YouTube or Vimeo.</p>
+            <h3>The Live Pitch</h3>
+            <p>A founder-style pitch, delivered live: the problem, the community it
+               serves, the product, and the ask — plus the six things the CAC wants to
+               hear: title, purpose, inspiration, the technical difficulty you faced,
+               what you learned, and what a 2.0 looks like. Built in Workshop 6,
+               rehearsed Thursday, judged in the Pit on Friday.</p>
           </div>
         </div>
         <div class="deliv-row reveal">
@@ -428,7 +474,17 @@
             <h3>The Written Answers</h3>
             <p>The CAC submission questions: what your app does, what inspired it, the
                technical challenge you overcame, what you learned, and what a 2.0
-               would look like.</p>
+               would look like. They're the backbone of your pitch — write them first.</p>
+          </div>
+        </div>
+        <div class="deliv-row deliv-row-optional reveal">
+          <span class="deliv-num mono">04</span>
+          <div>
+            <h3>The Demo Video <span class="deliv-tag mono">// winners only</span></h3>
+            <p>Not required to compete. If your team wins and advances to the
+               Congressional App Challenge, you'll film the official 1–3 minute demo
+               video after competition week — names, app name, purpose, audience, tools,
+               and the app actually running — public on YouTube or Vimeo, before Oct 26.</p>
           </div>
         </div>
       </div>
@@ -436,7 +492,7 @@
       <div class="deadline-banner reveal">
         <p class="mono deadline-label">// national deadline</p>
         <p class="deadline-date">OCT 26, 2026 — 12:00 PM EDT</p>
-        <p class="deadline-note">Congressional App Challenge submissions close. Top CSH teams submit before the bell.</p>
+        <p class="deadline-note">Congressional App Challenge submissions close. Winning CSH teams submit before the bell.</p>
       </div>
     </div>
   </section>
@@ -447,8 +503,10 @@
       <p class="eyebrow">// 07 — judging &amp; prizes</p>
       <h2 class="section-title">Demo day.</h2>
       <p class="section-lead">
-        Friday is the judging expo — 11/12 in the morning, 9/10 before lunch, winners
-        announced by early afternoon. Judges score three things:
+        Thursday's advisory finals send one team per advisory to the Pit. On Friday,
+        finalists pitch live to real engineers, founders, and community leaders —
+        11/12 at 9:45, 9/10 at 11:20 — and winners are announced over the loudspeaker
+        at 12:50. Judges score three things:
       </p>
 
       <div class="card-grid three">
@@ -469,16 +527,43 @@
         </div>
       </div>
 
+      <h3 class="prize-heading" id="prizes">What's on the line</h3>
+
+      <div class="prize-grid">
+        <div class="prize-card reveal">
+          <div class="terminal-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="terminal-name">finalists.txt</span></div>
+          <div class="prize-body">
+            <p class="prize-who mono">// every team that reaches the Pit</p>
+            <ul class="prize-list">
+              <li><span class="mono accent-dark">&gt;</span> <strong>5 dress-down passes</strong> — each</li>
+              <li><span class="mono accent-dark">&gt;</span> <strong>Custom CSH swag</strong></li>
+              <li><span class="mono accent-dark">&gt;</span> Meet — and impress — <strong>real engineers, founders, and community leaders</strong> in the finals</li>
+            </ul>
+          </div>
+        </div>
+        <div class="prize-card prize-card-win reveal">
+          <div class="terminal-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="terminal-name">winners.txt</span></div>
+          <div class="prize-body">
+            <p class="prize-who mono">// the winning teams</p>
+            <ul class="prize-list">
+              <li><span class="mono accent">&gt;</span> <strong>$300</strong> per team</li>
+              <li><span class="mono accent">&gt;</span> Entry into the <strong>2026 Congressional App Challenge</strong></li>
+              <li><span class="mono accent">&gt;</span> Possibly, the chance to <strong>develop your app for real</strong> — if your team chooses to pursue it</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
       <div class="prize-block reveal">
-        <h3 class="prize-title">What winners get</h3>
+        <h3 class="prize-title">And if you win the district…</h3>
         <ul class="prize-list">
-          <li><span class="mono accent-dark">&gt;</span> School winners crowned Friday — by grade band, in front of everyone</li>
-          <li><span class="mono accent-dark">&gt;</span> Top apps submitted to the <strong>2026 Congressional App Challenge</strong></li>
           <li><span class="mono accent-dark">&gt;</span> CAC district winners are featured on <strong>House.gov</strong> and the official CAC site</li>
           <li><span class="mono accent-dark">&gt;</span> District winners qualify for a <strong>copyright fee waiver</strong> under the ARTS Act</li>
+          <li><span class="mono accent-dark">&gt;</span> See the bar: last year's <a href="#" data-link="pastWinners" target="_blank" rel="noopener">New York winners ↗</a></li>
         </ul>
         <div class="section-actions">
           <a href="#" class="btn btn-solid" data-link="rubric" target="_blank" rel="noopener">Judging Rubric</a>
+          <a href="#" class="btn btn-ghost" data-link="pastWinners" target="_blank" rel="noopener">2025 CAC Winners ↗</a>
         </div>
       </div>
     </div>

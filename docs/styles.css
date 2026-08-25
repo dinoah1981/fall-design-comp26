@@ -931,3 +931,136 @@ body {
   .stat { flex: 1 1 110px; padding: 20px 12px; }
   .stat-num { font-size: 1.3rem; }
 }
+
+/* ============ WORKSHOP MATERIAL LINKS ============ */
+/* Rows are divs now; each holds one or more material chips. */
+.workshop-row { cursor: default; }
+
+.ws-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.ws-link {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: lowercase;
+  text-decoration: none;
+  color: var(--color-gray-200);
+  border: 1px solid var(--color-gray-500);
+  padding: 6px 12px;
+  transition: all var(--transition-fast);
+}
+
+.ws-link:not(.link-pending)::after { content: ' ↗'; color: var(--green); }
+
+.ws-link:not(.link-pending):hover {
+  color: var(--color-black);
+  background: var(--green);
+  border-color: var(--green);
+}
+
+.ws-link:not(.link-pending):hover::after { color: var(--color-black); }
+
+/* ============ INFO NOTE LINKS ============ */
+.info-note p + p { margin-top: 12px; }
+
+.info-note a {
+  color: var(--color-black);
+  font-weight: 600;
+  text-decoration: underline;
+  text-decoration-color: var(--green-dark);
+  text-underline-offset: 3px;
+  transition: color var(--transition-fast);
+}
+
+.info-note a:hover { color: var(--green-dark); }
+
+/* ============ DELIVERABLE TAG ============ */
+.deliv-tag {
+  display: inline-block;
+  margin-left: 12px;
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: lowercase;
+  color: var(--green);
+  vertical-align: middle;
+}
+
+.deliv-row-optional .deliv-num { color: var(--color-gray-400); }
+
+/* ============ PRIZES ============ */
+.prize-heading {
+  margin-top: 72px;
+  margin-bottom: 24px;
+  font-size: clamp(1.5rem, 3.5vw, 2.2rem);
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: -0.01em;
+}
+
+.prize-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 24px;
+}
+
+.prize-card {
+  border: 2px solid var(--color-black);
+  background: var(--color-white);
+  transition: transform var(--transition-medium), box-shadow var(--transition-medium);
+}
+
+.prize-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 6px 6px 0 var(--green-dark);
+}
+
+.prize-card .terminal-bar {
+  background: var(--color-black);
+  border-bottom: none;
+}
+
+.prize-card .terminal-bar .dot { background: var(--color-gray-400); }
+.prize-card .terminal-name { color: var(--color-gray-300); }
+
+.prize-body { padding: 24px 26px 28px; }
+
+.prize-who {
+  font-size: 0.78rem;
+  color: var(--green-dark);
+  margin-bottom: 14px;
+}
+
+.prize-card-win {
+  background: var(--color-black);
+  color: var(--color-white);
+}
+
+.prize-card-win:hover { box-shadow: 6px 6px 0 var(--green); }
+
+.prize-card-win .terminal-bar { border-bottom: 1px solid var(--color-gray-600); }
+.prize-card-win .prize-who { color: var(--green); }
+.prize-card-win .prize-list li { color: var(--color-gray-300); border-bottom-color: var(--color-gray-600); }
+.prize-card-win .prize-list strong { color: var(--color-white); }
+
+.prize-block .prize-list a {
+  color: var(--color-black);
+  font-weight: 600;
+  text-decoration: underline;
+  text-decoration-color: var(--green-dark);
+  text-underline-offset: 3px;
+}
+
+.prize-block .prize-list a:hover { color: var(--green-dark); }
+
+@media (max-width: 768px) {
+  .prize-grid { grid-template-columns: 1fr; }
+  .ws-links { gap: 8px; }
+}
