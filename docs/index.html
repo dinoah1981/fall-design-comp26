@@ -22,11 +22,15 @@
     const LINKS = {
       // Core competition materials
       masterSchedule: 'https://docs.google.com/spreadsheets/d/1jkBUFN_jJ8ayi0iisOerzBu-zBKzkYuO8aq5lYYa8pk/edit?gid=1800147146#gid=1800147146',
-      rubric: '#',                // Judging rubric (finals) — TBD
+      rubric: 'https://docs.google.com/document/d/1HrbbEFdU01yoq0UZRgpJ6TdN_9OXab0t8UvE8oiezSI/edit',          // Friday finals judging rubric
+      judgingPOA: '#',            // Friday — POA for Judging — TBD
       roleSheet: 'https://docs.google.com/spreadsheets/d/17dOHgqd6Ae-xRvu7f_5I29JhQbZka1CSd97b6MPB3j4/edit?gid=0#gid=0',
       advisorDeck: 'https://docs.google.com/presentation/d/1e_fa6IbmZyQAqMZDjbpXouD-wFqBoNiQIbP0MNGZXEE/edit',   // Running advisory slides
       launchDeck: '#',            // Monday launch slides — TBD
       expoPOA: 'https://docs.google.com/document/d/1cgvWIEIYx-n269IMjNWwtwWp6K8Vmbm05I_0Qp2IUMI/edit',          // Tue expo plan of action
+      expoWhosWho: 'https://docs.google.com/document/d/1AYHZG2a0GJ0geFq_8oxQiknNkUVWBPJv_OVwez1uVX0/edit',      // Tue — Who's Who at the Engineering Expo worksheet
+      monWorksheet: 'https://docs.google.com/document/d/1tpL2js9C33SQWX9PEcHd3DfvZs1Bb2M_-3SDSC7JP5o/edit',     // Mon — advisory discussion / Team Time 1 digital worksheet
+      tueWorksheet: 'https://docs.google.com/document/d/1dZIFSH92mMkCuXfRsGDOArN04GrA0vBYxmI4obgZtzk/edit',     // Tue — Team Time status update digital worksheet
 
       // Rules & inspiration
       rulesPage: 'rules.html',
@@ -38,11 +42,14 @@
       workshop1Worksheet: 'https://docs.google.com/document/d/1rNBZ7NwM1WXNshbWaFs99qAUqTOxD3kehH0QxuAwQ6w/edit',
       workshop2: 'https://docs.google.com/presentation/d/15Njfq53g2XYSXlS9gkbCOgztOU5Adxyz53ZXsSM-Fpk/edit',    // Mon — Brainstorm the Solution
       workshop2Worksheet: 'https://docs.google.com/document/d/1Sjin0mxyciei651MEgKGIHfrvc7HhT-lwmm0SSg8JNM/edit',
-      workshop3: '#',             // Mon — Why (and Why Not) Build With AI
-      workshop3Worksheet: '#',
-      workshop4Wireframe: '#',    // Tue — Building With AI 1: AI-to-wireframe track
-      workshop4Build: '#',        // Tue — Building With AI 1: AI-to-build track
-      workshop5: '#',             // Tue — Building With AI 2 (group coding)
+      workshop3: 'https://docs.google.com/presentation/d/183dknZnociYapIGz91K9Z63M4JKaX46frqEWuJGv-5c/edit',    // Mon — Why (and Why Not) Build With AI
+      workshop3Worksheet: 'https://docs.google.com/document/d/133up17x96qKbz2P6APILmcBn__hN4ivA_Knfdy8UhRs/edit',
+      workshop4Wireframe: 'https://docs.google.com/presentation/d/1cWwl2bexWnvX2FxE0WNt3UdMJ89_d74IUWeYmYCW--I/edit',      // Tue — W4 AI-to-wireframe track
+      workshop4WireframeSheet: 'https://docs.google.com/document/d/1TCgOw07-ctSCkKx7C76dADWGjioedbiWaiHxsith9TE/edit',
+      workshop4Build: 'https://docs.google.com/presentation/d/1AXwDPi-R5R3jdWq5obwm66OVzYFE-62n_gi5OoiSBs8/edit',          // Tue — W4 AI-to-build track
+      workshop4BuildSheet: 'https://docs.google.com/document/d/1o9s76lG19iyR9koo3gA97WYUd9BDFfQWRr2dMIrpR2o/edit',
+      workshop5: 'https://docs.google.com/presentation/d/1a9IhptvCgYtPJjIlLpAV31qUBqwazdrENi6uUIoD_98/edit',    // Tue — Building With AI 2 (group coding)
+      workshop5OnePager: 'https://docs.google.com/document/d/1tEpk4lbjFTSt-pp7BE4Wmx8nSIDJNpsdW8wV_C1dLjs/edit',
       workshop6: '#',             // Wed — Pitches
       workshop7: '#',             // Thu — Practice Pitches (mixed grade)
       pitchRubric: '#',           // Thu — rubric for judging practice pitches
@@ -234,9 +241,9 @@
             <li><span class="t">9:30</span> Launch in the Pit + team formation (by grade band)</li>
             <li><span class="t">10:40</span> Workshop 1 — Identify the Problem</li>
             <li><span class="t">11:30</span> Workshop 2 — Brainstorm the Solution</li>
-            <li><span class="t">1:30</span> Advisory — role selection</li>
-            <li><span class="t">1:45</span> Workshop 3 — Why (and Why Not) Build With AI</li>
-            <li><span class="t">3:15</span> Team Time — write up your solution, sketch wireframes</li>
+            <li><span class="t">1:35</span> Advisory — role selection</li>
+            <li><span class="t">1:55</span> Workshop 3 — Why (and Why Not) Build With AI</li>
+            <li><span class="t">3:15</span> Team Time 1 — write up your solution, draft wireframes <a href="#" class="day-link" data-link="monWorksheet" target="_blank" rel="noopener">worksheet ↗</a></li>
             <li><span class="t">4:15</span> Dismissal</li>
           </ul>
         </div>
@@ -246,11 +253,11 @@
             <span class="day-theme mono">build</span>
           </div>
           <ul class="day-list">
-            <li><span class="t">9:30</span> Team Time — prep for the expo</li>
+            <li><span class="t">9:30</span> Team Time 2 — prep for the expo <a href="#" class="day-link" data-link="expoWhosWho" target="_blank" rel="noopener">who's who ↗</a></li>
             <li><span class="t">10:00</span> Engineering &amp; Community Org Expo + paper wireframes</li>
             <li><span class="t">1:45</span> Workshop 4 — Building With AI 1 (wireframe / build tracks)</li>
             <li><span class="t">2:50</span> Workshop 5 — Building With AI 2 (group coding)</li>
-            <li><span class="t">3:55</span> Team Time — status update + screenshot</li>
+            <li><span class="t">3:55</span> Team Time — status update + screenshot <a href="#" class="day-link" data-link="tueWorksheet" target="_blank" rel="noopener">worksheet ↗</a></li>
             <li><span class="t">4:15</span> Dismissal</li>
           </ul>
         </div>
@@ -273,7 +280,7 @@
           </div>
           <ul class="day-list">
             <li><span class="t">9:40</span> Team Time</li>
-            <li><span class="t">10:43</span> Workshop 7 — Practice Pitches (mixed grade)</li>
+            <li><span class="t">10:45</span> Workshop 7 — Practice Pitches (mixed grade)</li>
             <li><span class="t">11:35</span> Advisory Finals — one team per advisory advances</li>
             <li><span class="t">12:46</span> Dismissal</li>
           </ul>
@@ -284,8 +291,8 @@
             <span class="day-theme mono">ship it</span>
           </div>
           <ul class="day-list">
-            <li><span class="t">9:45</span> 11/12 Finals in the Pit</li>
-            <li><span class="t">11:20</span> 9/10 Finals in the Pit</li>
+            <li><span class="t">9:45</span> 11/12 Finals in the Pit <a href="#" class="day-link" data-link="rubric" target="_blank" rel="noopener">judging rubric ↗</a></li>
+            <li><span class="t">11:20</span> 9/10 Finals in the Pit <a href="#" class="day-link" data-link="rubric" target="_blank" rel="noopener">judging rubric ↗</a></li>
             <li><span class="t">12:50</span> Winners announced — on the loudspeaker</li>
             <li><span class="t">1:00</span> Dismissal — grab a bagged lunch on the way out</li>
           </ul>
@@ -354,8 +361,10 @@
             <h3>Building With AI — Part 1</h3>
             <p>Tuesday · Two tracks, two teammates each: AI-to-wireframe and AI-to-build. Split up, learn both, bring it back.</p>
             <div class="ws-links">
-              <a href="#" class="ws-link" data-link="workshop4Wireframe" target="_blank" rel="noopener">wireframe track slides</a>
-              <a href="#" class="ws-link" data-link="workshop4Build" target="_blank" rel="noopener">build track slides</a>
+              <a href="#" class="ws-link" data-link="workshop4Wireframe" target="_blank" rel="noopener">wireframe slides</a>
+              <a href="#" class="ws-link" data-link="workshop4WireframeSheet" target="_blank" rel="noopener">wireframe sheet</a>
+              <a href="#" class="ws-link" data-link="workshop4Build" target="_blank" rel="noopener">build slides</a>
+              <a href="#" class="ws-link" data-link="workshop4BuildSheet" target="_blank" rel="noopener">build sheet</a>
             </div>
           </div>
           <span class="ws-day mono">TUE</span>
@@ -367,6 +376,7 @@
             <p>Tuesday · Group coding, full team together — iterate, debug, get the MVP standing.</p>
             <div class="ws-links">
               <a href="#" class="ws-link" data-link="workshop5" target="_blank" rel="noopener">slides</a>
+              <a href="#" class="ws-link" data-link="workshop5OnePager" target="_blank" rel="noopener">one pager</a>
             </div>
           </div>
           <span class="ws-day mono">TUE</span>
@@ -506,7 +516,7 @@
         Thursday's advisory finals send one team per advisory to the Pit. On Friday,
         finalists pitch live to real engineers, founders, and community leaders —
         11/12 at 9:45, 9/10 at 11:20 — and winners are announced over the loudspeaker
-        at 12:50. Judges score three things:
+        at 12:50. Judges score three things — the full rubric is linked below:
       </p>
 
       <div class="card-grid three">
