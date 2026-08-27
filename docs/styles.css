@@ -1083,3 +1083,44 @@ body {
 .day-card-final .day-list .day-link { color: var(--green); }
 .day-card-final .day-list .day-link:hover { color: var(--color-white); }
 .day-list .day-link.link-pending { border-bottom: none; }
+
+/* ============ SCHEDULE -> WORKSHOP JUMP LINKS ============ */
+/* Day-card workshop lines jump to the matching row in the workshops list. */
+.workshop-row {
+  scroll-margin-top: 88px; /* clear the fixed nav */
+}
+
+.workshop-row:target {
+  background: var(--green-glow);
+  border-left: 3px solid var(--green);
+  padding-left: 24px;
+}
+
+.day-list .ws-jump {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-style: dotted;
+  text-decoration-color: var(--color-gray-300);
+  text-underline-offset: 3px;
+  transition: color var(--transition-fast), text-decoration-color var(--transition-fast);
+}
+
+.day-list .ws-jump:hover {
+  color: var(--green-dark);
+  text-decoration-style: solid;
+  text-decoration-color: var(--green-dark);
+}
+
+.day-card-final .day-list .ws-jump:hover {
+  color: var(--green);
+  text-decoration-color: var(--green);
+}
+
+.deliv-row .deliv-jump {
+  color: var(--color-white);
+  text-decoration: underline;
+  text-decoration-color: var(--green);
+  text-underline-offset: 3px;
+}
+
+.deliv-row .deliv-jump:hover { color: var(--green); }
