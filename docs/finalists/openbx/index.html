@@ -1994,7 +1994,7 @@
 
         window.onload = function() {
             initLeafletMap();
-            renderResources();
+            filterLocations(); // initial render: markers, list, and detail panel (renderResources was never defined)
             renderDetailPanel(resources[0].id);
             document.getElementById('totalCount').innerText = resources.length;
         };
