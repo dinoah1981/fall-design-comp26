@@ -1,0 +1,1344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aria - Notion-Style Smart Student Calendar</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- React & ReactDOM CDNs -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <!-- Babel Standalone for JSX compilation -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #030712;
+        }
+        .font-mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 5px;
+            height: 5px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #090d16;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1e293b;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #38bdf8;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen selection:bg-cyan-500 selection:text-black">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useMemo, useRef } = React;
+
+        const apiKey = "";
+
+        // Icon component wrapper for Lucide
+        const Icon = ({ name, className = "w-4 h-4", ...props }) => {
+            const iconRef = useRef(null);
+            useEffect(() => {
+                if (window.lucide && iconRef.current) {
+                    window.lucide.createIcons();
+                }
+            }, [name]);
+            return <i ref={iconRef} data-lucide={name} className={className} {...props}></i>;
+        };
+
+        const ALL_DAYS_LIST = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+        const DAY_KEYS_SUN_START = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        const HOURS = Array.from({ length: 14 }, (_, i) => i + 8); // 8 AM to 9 PM
+
+        const PRIORITY_TIME_MAP = {
+          'High': 60,    // 1 Hour
+          'Medium': 30,  // 30 Minutes
+          'Light': 15    // 15 Minutes
+        };
+
+        const isSameDay = (d1, d2) => {
+          return d1.getFullYear() === d2.getFullYear() &&
+                 d1.getMonth() === d2.getMonth() &&
+                 d1.getDate() === d2.getDate();
+        };
+
+        const getStartOfWeek = (date) => {
+          const d = new Date(date);
+          const day = d.getDay();
+          const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+          return new Date(d.setDate(diff));
+        };
+
+        const formatDecimalTime = (decimalHours) => {
+          const hrs = Math.floor(decimalHours);
+          const mins = Math.round((decimalHours - hrs) * 60);
+          const period = hrs >= 12 ? 'PM' : 'AM';
+          const displayHrs = hrs % 12 === 0 ? 12 : hrs % 12;
+          const displayMins = mins < 10 ? `0${mins}` : mins;
+          return `${displayHrs}:${displayMins} ${period}`;
+        };
+
+        const parseDecimalTime = (tStr) => {
+          if (!tStr) return 12;
+          const [h, m] = tStr.split(':').map(Number);
+          return h + (m || 0) / 60;
+        };
+
+        async function fetchGeminiWithBackoff(url, payload, retries = 5) {
+          let delay = 1000;
+          for (let i = 0; i < retries; i++) {
+            try {
+              const res = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+              });
+              if (res.ok) {
+                return await res.json();
+              }
+            } catch (err) {}
+            await new Promise(r => setTimeout(r, delay));
+            delay *= 2;
+          }
+          throw new Error('Gemini API call unsuccessful.');
+        }
+
+        // SMART LOCAL AI ENGINE & FACT CHECKER
+        function parseSmartRequest(query, baseNow, subjectConfidence, peakEnergyWindow, scheduledBlocks) {
+          const lower = query.toLowerCase();
+          let daysOffset = 0;
+          let explicitHour = null;
+
+          if (lower.includes('yesterday')) {
+            daysOffset = -1;
+          } else if (lower.includes('tomorrow')) {
+            daysOffset = 1;
+          } else if (lower.includes('a couple of days') || lower.includes('couple days') || lower.includes('in 2 days') || lower.includes('2 days')) {
+            daysOffset = 2;
+          } else if (lower.includes('a few days') || lower.includes('in 3 days') || lower.includes('3 days')) {
+            daysOffset = 3;
+          } else if (lower.includes('in 4 days') || lower.includes('four days') || lower.includes('4 days')) {
+            daysOffset = 4;
+          } else {
+            const daysMap = { sunday: 0, monday: 1, tuesday: 2, wednesday: 3, thursday: 4, friday: 5, saturday: 6 };
+            for (const [dName, dIdx] of Object.entries(daysMap)) {
+              if (lower.includes(dName)) {
+                const curIdx = baseNow.getDay();
+                let diff = dIdx - curIdx;
+                if (diff <= 0) diff += 7;
+                daysOffset = diff;
+                break;
+              }
+            }
+          }
+
+          const targetDate = new Date(baseNow);
+          targetDate.setDate(baseNow.getDate() + daysOffset);
+          const dayKey = DAY_KEYS_SUN_START[targetDate.getDay()];
+
+          const timeMatch = lower.match(/(\d{1,2})(?::(\d{2}))?\s*(am|pm)?/i);
+          if (timeMatch) {
+            let hrs = parseInt(timeMatch[1]);
+            const mins = timeMatch[2] ? parseInt(timeMatch[2]) : 0;
+            const period = timeMatch[3] ? timeMatch[3].toLowerCase() : null;
+            if (period === 'pm' && hrs < 12) hrs += 12;
+            if (period === 'am' && hrs === 12) hrs = 0;
+            if (!period && hrs < 8) hrs += 12;
+            explicitHour = hrs + mins / 60;
+          }
+
+          const minMatch = lower.match(/in\s+(\d+)\s*(min|minute|m\b)/i);
+          if (minMatch) {
+            const offsetMins = parseInt(minMatch[1]);
+            const offsetDate = new Date(baseNow.getTime() + offsetMins * 60000);
+            explicitHour = offsetDate.getHours() + offsetDate.getMinutes() / 60;
+          }
+
+          const course = lower.includes('chem') ? 'AP Chemistry' : lower.includes('calc') ? 'Calculus II' : lower.includes('hist') ? 'World History' : 'Personal Project';
+          const confidence = subjectConfidence[course] || 'Moderate';
+
+          const isExam = lower.includes('test') || lower.includes('exam') || lower.includes('quiz') || lower.includes('study');
+          const isPersonalProject = lower.includes('personal project') || lower.includes('side project') || lower.includes('coding project') || lower.includes('hobby');
+          const isWork = lower.includes('work') || lower.includes('job') || lower.includes('shift');
+          const isPersonal = lower.includes('dinner') || lower.includes('dad') || lower.includes('lunch') || lower.includes('gym') || lower.includes('movie');
+
+          let priorityLabel = null; // Classes and personal events don't get task priority tags
+          if (isExam || lower.includes('high priority')) priorityLabel = 'High';
+          else if (isPersonalProject || lower.includes('low priority') || lower.includes('light')) priorityLabel = 'Light';
+          else if (isExam || lower.includes('homework') || lower.includes('assignment')) priorityLabel = 'Medium';
+
+          let cleanTitle = query
+            .replace(/can you add|add|schedule|i have|i've got|please|to my calendar|on my schedule/gi, '')
+            .replace(/in a couple of days|in a few days|in \d+ days|four days|4 days|day after tomorrow|tomorrow|yesterday|today|tonight/gi, '')
+            .replace(/at \d{1,2}(:\d{2})?\s*(am|pm)?/gi, '')
+            .replace(/for \d{1,2}(:\d{2})?\s*(am|pm)?/gi, '')
+            .replace(/in \d+ minutes|in \d+ mins|in \d+ hours/gi, '')
+            .replace(/on (monday|tuesday|wednesday|thursday|friday|saturday|sunday)/gi, '')
+            .replace(/\b(this|next|a|the|test|exam)\b/gi, '')
+            .trim();
+
+          if (!cleanTitle || cleanTitle.length < 2) {
+            cleanTitle = isExam ? `${course} Review` : isPersonalProject ? 'Personal Side Project' : isPersonal ? 'Personal Event' : 'Event';
+          } else {
+            cleanTitle = cleanTitle.charAt(0).toUpperCase() + cleanTitle.slice(1);
+          }
+
+          let durationHours = 0.5;
+          let conversationalReply = "";
+
+          if (isExam) {
+            durationHours = confidence === 'Needs Focus' ? 1.0 : 0.5;
+            priorityLabel = confidence === 'Needs Focus' ? 'High' : 'Medium';
+            conversationalReply = `I've added **${cleanTitle}** as a study prep block on **${dayKey}**. Based on your '${confidence}' rating in ${course}, I marked this with a ${priorityLabel === 'High' ? '🔴 Red (High Priority)' : '🟠 Orange (Medium Priority)'} dot!`;
+          } else if (isPersonalProject) {
+            durationHours = 0.5;
+            priorityLabel = 'Light';
+            conversationalReply = `I've scheduled **${cleanTitle}** as a personal project on **${dayKey}** at **${formatDecimalTime(explicitHour || 17.0)}**. It's marked with a 🟢 Green dot so it's clearly distinct from your class study prep!`;
+          } else if (isPersonal) {
+            durationHours = 1.0;
+            priorityLabel = null; // Personal events don't have priority levels
+            conversationalReply = `Scheduled **${cleanTitle}** on **${dayKey}** at **${formatDecimalTime(explicitHour || 19.0)}**. Your personal plans are saved on your calendar!`;
+          } else if (isWork) {
+            durationHours = 4.0;
+            priorityLabel = null;
+            conversationalReply = `Scheduled **${cleanTitle}** on **${dayKey}** for 4 hours. Your study sessions will route around this shift!`;
+          } else {
+            durationHours = 0.5;
+            priorityLabel = 'Medium';
+            conversationalReply = `Added **${cleanTitle}** to your schedule for **${dayKey}** at **${formatDecimalTime(explicitHour || 14.0)}**!`;
+          }
+
+          if (explicitHour === null) {
+            explicitHour = peakEnergyWindow === 'Morning' ? 9.0 : peakEnergyWindow === 'Evening' ? 17.0 : 14.0;
+          }
+
+          return {
+            cleanTitle,
+            dayKey,
+            startDecimal: explicitHour,
+            durationHours,
+            priorityLabel,
+            course,
+            category: isExam ? 'study' : isPersonalProject ? 'project' : isWork ? 'commitment' : 'commitment',
+            color: isWork ? 'bg-blue-950/80 border-blue-500/80 text-blue-200 font-semibold' :
+                   isPersonal ? 'bg-cyan-950/80 border-cyan-500/80 text-cyan-200 font-semibold' :
+                   isExam ? (priorityLabel === 'High' ? 'bg-rose-950/70 border-rose-500/80 text-rose-200' : 'bg-amber-950/70 border-amber-500/80 text-amber-200') :
+                   'bg-slate-900 border-slate-700 text-slate-200',
+            conversationalReply
+          };
+        }
+
+        const STUDENT_OPPORTUNITIES = [
+          { id: 'r1', title: 'Youth Leadership Fellowship', category: 'Internship', deadline: 'Oct 15', link: 'https://www.nyc.gov', description: 'Paid student mentorship and civic leadership program.' },
+          { id: 'r2', title: 'National STEM Merit Scholarship', category: 'Grant', deadline: 'Nov 01', link: 'https://www.scholarships.org', description: 'Merit-based academic funding for high school and college students.' },
+          { id: 'r3', title: 'Free Peer Tutoring Network', category: 'Tutoring', deadline: 'Ongoing', link: 'https://www.khanacademy.org', description: 'Free step-by-step calculus and chemistry problem walkthroughs.' },
+          { id: 'r4', title: 'Student Wellness Resource Line', category: 'Support', deadline: '24/7 Free', link: 'https://www.mentalhealth.gov', description: 'Confidential, free student counseling and stress management resources.' }
+        ];
+
+        const INITIAL_TASKS = [
+          { id: 't1', title: 'AP Chemistry Lab Review', deadline: '2026-09-06', priorityLabel: 'High', estimated_minutes: 60, course: 'AP Chemistry', link: 'https://classroom.google.com', notes: 'Focus on reaction rates and stoichiometry formulas.' },
+          { id: 't2', title: 'Calculus Problem Set 3', deadline: '2026-09-07', priorityLabel: 'Medium', estimated_minutes: 30, course: 'Calculus II', link: 'https://canvas.instructure.com', notes: 'Complete integration by parts problems 1-12.' },
+          { id: 't3', title: 'Build Notion Portfolio Site', deadline: '2026-09-09', priorityLabel: 'Light', estimated_minutes: 30, course: 'Personal Project', link: 'https://notion.so', notes: 'Design modular hero banner and projects database.' }
+        ];
+
+        const INITIAL_SCHEDULE = [
+          { id: 'c1', title: 'Calculus II Lecture', category: 'class', day: 'Mon', start: 9.0, end: 10.25, course: 'Calculus II', color: 'bg-indigo-950/70 border-indigo-500/80 text-indigo-200', notes: 'Hall 302 - Fixed Academic Schedule' },
+          { id: 'c2', title: 'Calculus II Lecture', category: 'class', day: 'Wed', start: 9.0, end: 10.25, course: 'Calculus II', color: 'bg-indigo-950/70 border-indigo-500/80 text-indigo-200', notes: 'Hall 302' },
+          { id: 'c3', title: 'Calculus II Lecture', category: 'class', day: 'Fri', start: 9.0, end: 10.25, course: 'Calculus II', color: 'bg-indigo-950/70 border-indigo-500/80 text-indigo-200', notes: 'Hall 302' },
+          { id: 'c4', title: 'AP Chemistry Lab', category: 'class', day: 'Tue', start: 11.0, end: 12.5, course: 'AP Chemistry', color: 'bg-emerald-950/70 border-emerald-500/80 text-emerald-200', notes: 'Lab Safety Goggles required' },
+          { id: 'c5', title: 'AP Chemistry Lab', category: 'class', day: 'Thu', start: 11.0, end: 12.5, course: 'AP Chemistry', color: 'bg-emerald-950/70 border-emerald-500/80 text-emerald-200', notes: 'Lab Safety Goggles required' },
+          { id: 'cm1', title: 'Soccer Practice', category: 'commitment', day: 'Mon', start: 16.0, end: 17.5, course: 'Athletics', color: 'bg-purple-950/70 border-purple-500/80 text-purple-200 font-semibold', notes: 'Main turf field' },
+          { id: 'cm2', title: 'Soccer Practice', category: 'commitment', day: 'Wed', start: 16.0, end: 17.5, course: 'Athletics', color: 'bg-purple-950/70 border-purple-500/80 text-purple-200 font-semibold', notes: 'Main turf field' },
+          { id: 'cm3', title: 'Part-Time Job Shift', category: 'commitment', day: 'Sun', start: 10.0, end: 15.0, course: 'Work', color: 'bg-blue-950/80 border-blue-500/80 text-blue-200 font-semibold', notes: 'Weekend shift' },
+          { id: 'p1', title: 'AP Chem Exam Prep', category: 'study', day: 'Thu', start: 14.0, end: 15.0, priorityLabel: 'High', course: 'AP Chemistry', color: 'bg-rose-950/70 border-rose-500/80 text-rose-200', notes: 'High priority exam review session generated by Aria' },
+          { id: 'p2', title: 'Notion Side Project', category: 'project', day: 'Sat', start: 15.0, end: 16.0, priorityLabel: 'Light', course: 'Personal Project', color: 'bg-emerald-950/70 border-emerald-500/80 text-emerald-200', notes: 'Personal side project design block - Low Priority' }
+        ];
+
+        function App() {
+          const [activeTab, setActiveTab] = useState('calendar'); // 'calendar' | 'quiz' | 'tasks' | 'resources' | 'lms' | 'sms'
+          const [currentDate, setCurrentDate] = useState(new Date());
+          const [now, setNow] = useState(new Date());
+          const [isAriaPanelOpen, setIsAriaPanelOpen] = useState(true);
+          const [isToolboxOpen, setIsToolboxOpen] = useState(false);
+          const [recentlyAddedBlockIds, setRecentlyAddedBlockIds] = useState([]);
+          const [selectedBlockModal, setSelectedBlockModal] = useState(null);
+
+          // Diagnostic State
+          const [studentPersona, setStudentPersona] = useState('Deep Focus Monk');
+          const [peakEnergyWindow, setPeakEnergyWindow] = useState('Afternoon');
+          const [subjectConfidence, setSubjectConfidence] = useState({
+            'AP Chemistry': 'Needs Focus',   // High priority
+            'Calculus II': 'Moderate',      // Medium priority
+            'World History': 'Mastered'     // Light review
+          });
+
+          // Schedule State
+          const [tasks, setTasks] = useState(INITIAL_TASKS);
+          const [scheduledBlocks, setScheduledBlocks] = useState(INITIAL_SCHEDULE);
+          const [searchQuery, setSearchQuery] = useState('');
+
+          // Aria Chat Assistant
+          const [ariaState, setAriaState] = useState('idle');
+          const [messages, setMessages] = useState([
+            {
+              id: 'm1',
+              sender: 'aria',
+              text: "Hi! I am Aria, your AI scheduling partner. Fixed classes and personal shifts are kept distinct from workload tasks—assignments and test prep display a 🔴 Red, 🟠 Orange, or 🟢 Green priority dot on your calendar. What shall we plan today?",
+              timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            }
+          ]);
+          const [chatInput, setChatInput] = useState('');
+          const chatEndRef = useRef(null);
+
+          // Simulated SMS
+          const [userPhoneNumber, setUserPhoneNumber] = useState('+1 (555) 389-9201');
+          const [smsInput, setSmsInput] = useState('');
+          const [smsMessages, setSmsMessages] = useState([
+            { id: 'sms-1', text: "Aria Alert: AP Chem Exam Prep (🔴 High Priority) scheduled for Thursday at 2:00 PM.", time: '10:15 AM' }
+          ]);
+
+          // Study Toolbox
+          const [timerSeconds, setTimerSeconds] = useState(25 * 60);
+          const [isTimerRunning, setIsTimerRunning] = useState(false);
+
+          // Quick Add Form
+          const [isAddTaskOpen, setIsAddTaskOpen] = useState(false);
+          const [newTask, setNewTask] = useState({
+            title: '',
+            day: 'Thu',
+            startTime: '16:00',
+            durationMins: 30,
+            priorityLabel: 'High',
+            course: 'AP Chemistry',
+            category: 'study',
+            notes: ''
+          });
+
+          // Clock Ticker
+          useEffect(() => {
+            const timer = setInterval(() => setNow(new Date()), 10000);
+            return () => clearInterval(timer);
+          }, []);
+
+          useEffect(() => {
+            chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+          }, [messages]);
+
+          const weekDates = useMemo(() => {
+            const start = getStartOfWeek(currentDate);
+            return ALL_DAYS_LIST.map((dayName, i) => {
+              const d = new Date(start);
+              d.setDate(start.getDate() + i);
+              return {
+                date: d,
+                dayName,
+                dayNumber: d.getDate(),
+                isToday: isSameDay(d, now),
+                formattedISO: d.toISOString().split('T')[0]
+              };
+            });
+          }, [currentDate, now]);
+
+          const isCurrentWeek = useMemo(() => weekDates.some(d => d.isToday), [weekDates]);
+          const currentDayColumnIndex = useMemo(() => weekDates.findIndex(d => d.isToday), [weekDates]);
+          const currentDecimalHour = useMemo(() => now.getHours() + now.getMinutes() / 60, [now]);
+
+          // --- AI PROCESSOR ---
+          const processAriaAIRequest = async (userQuery) => {
+            setAriaState('working');
+            
+            setMessages(prev => [
+              ...prev,
+              { id: `user-${Date.now()}`, sender: 'user', text: userQuery, timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }
+            ]);
+
+            const currentTimestampStr = now.toString();
+            const currentDayOfWeekStr = ALL_DAYS_LIST[now.getDay() === 0 ? 6 : now.getDay() - 1];
+
+            const systemPrompt = `You are Aria, an intelligent student calendar mentor.
+Analyze user natural language requests (e.g. "I have a test in four days, how can I best manage my time?", "Work on my side project Saturday low priority", "Dinner with dad in 20 minutes").
+
+IMPORTANT LOGIC GUARANTEES:
+1. Fixed classes and personal commitments (dinner, work) are distinct schedule items. Do NOT assign "High Priority" task badges to fixed classes.
+2. Only workload assignments, exam preps, and side projects receive priority ratings (High, Medium, Light).
+3. Provide a direct, conversational advice reply explaining your reasoning.
+4. Cleanly extract event title.
+5. Calculate day of week ('Mon','Tue','Wed','Thu','Fri','Sat','Sun') and start decimal hour.
+6. Return valid JSON.`;
+
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+            const payload = {
+              contents: [{ parts: [{ text: userQuery }] }],
+              systemInstruction: { parts: [{ text: systemPrompt }] },
+              generationConfig: {
+                responseMimeType: "application/json",
+                responseSchema: {
+                  type: "OBJECT",
+                  properties: {
+                    conversationalReply: { type: "STRING" },
+                    cleanTitle: { type: "STRING" },
+                    dayOfWeek: { type: "STRING", enum: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"] },
+                    startTimeDecimal: { type: "NUMBER" },
+                    durationHours: { type: "NUMBER" },
+                    priorityLabel: { type: "STRING", enum: ["High", "Medium", "Light"] },
+                    category: { type: "STRING" }
+                  },
+                  required: ["conversationalReply", "cleanTitle", "dayOfWeek", "startTimeDecimal"]
+                }
+              }
+            };
+
+            try {
+              let parsedResult = null;
+
+              try {
+                const result = await fetchGeminiWithBackoff(url, payload, 2);
+                const jsonText = result.candidates?.[0]?.content?.parts?.[0]?.text;
+                if (jsonText) parsedResult = JSON.parse(jsonText);
+              } catch (apiErr) {}
+
+              if (!parsedResult || !parsedResult.cleanTitle) {
+                const fallback = parseSmartRequest(userQuery, now, subjectConfidence, peakEnergyWindow, scheduledBlocks);
+                parsedResult = {
+                  conversationalReply: fallback.conversationalReply,
+                  cleanTitle: fallback.cleanTitle,
+                  dayOfWeek: fallback.dayKey,
+                  startTimeDecimal: fallback.startDecimal,
+                  durationHours: fallback.durationHours,
+                  priorityLabel: fallback.priorityLabel,
+                  category: fallback.category
+                };
+              }
+
+              const newId = `ai-${Date.now()}`;
+              const startDec = parsedResult.startTimeDecimal;
+              const duration = parsedResult.durationHours || 0.5;
+              const pLabel = parsedResult.priorityLabel || null;
+
+              let color = 'bg-cyan-950/80 border-cyan-500/80 text-cyan-200 font-semibold';
+              if (parsedResult.category === 'study') {
+                color = pLabel === 'High' ? 'bg-rose-950/70 border-rose-500/80 text-rose-200' : 'bg-amber-950/70 border-amber-500/80 text-amber-200';
+              } else if (parsedResult.category === 'project') {
+                color = 'bg-emerald-950/70 border-emerald-500/80 text-emerald-200';
+              } else if (userQuery.toLowerCase().includes('work') || userQuery.toLowerCase().includes('job')) {
+                color = 'bg-blue-950/80 border-blue-500/80 text-blue-200 font-semibold';
+              }
+
+              const newBlock = {
+                id: newId,
+                title: parsedResult.cleanTitle,
+                category: parsedResult.category || (userQuery.toLowerCase().includes('test') ? 'study' : 'commitment'),
+                day: parsedResult.dayOfWeek,
+                start: startDec,
+                end: startDec + duration,
+                priorityLabel: pLabel,
+                color,
+                course: parsedResult.cleanTitle.includes('Chem') ? 'AP Chemistry' : parsedResult.cleanTitle.includes('Calc') ? 'Calculus II' : 'General',
+                notes: `Generated by Aria AI`
+              };
+
+              setScheduledBlocks(prev => [...prev, newBlock]);
+              
+              if (newBlock.category === 'study' && pLabel) {
+                setTasks(prev => [...prev, {
+                  id: `task-${Date.now()}`,
+                  title: newBlock.title,
+                  deadline: '2026-09-08',
+                  priorityLabel: pLabel,
+                  estimated_minutes: duration * 60,
+                  course: newBlock.course,
+                  link: 'https://classroom.google.com',
+                  notes: newBlock.notes
+                }]);
+              }
+
+              setRecentlyAddedBlockIds([newId]);
+              setTimeout(() => setRecentlyAddedBlockIds([]), 3500);
+
+              addAriaMessage(parsedResult.conversationalReply);
+
+            } catch (err) {
+              const fallback = parseSmartRequest(userQuery, now, subjectConfidence, peakEnergyWindow, scheduledBlocks);
+              addAriaMessage(fallback.conversationalReply);
+            } finally {
+              setAriaState('idle');
+            }
+          };
+
+          const addAriaMessage = (text) => {
+            setMessages(prev => [
+              ...prev,
+              {
+                id: `msg-${Date.now()}`,
+                sender: 'aria',
+                text,
+                timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+              }
+            ]);
+          };
+
+          const handleSendMessage = (e) => {
+            e.preventDefault();
+            if (!chatInput.trim() || ariaState === 'working') return;
+            const copy = chatInput;
+            setChatInput('');
+            processAriaAIRequest(copy);
+          };
+
+          const handleManualAddTask = (e) => {
+            e.preventDefault();
+            if (!newTask.title) return;
+            const startDec = parseDecimalTime(newTask.startTime);
+            const duration = (newTask.durationMins || 30) / 60;
+            const endDec = startDec + duration;
+            const newId = `manual-${Date.now()}`;
+
+            let color = 'bg-cyan-950/80 border-cyan-500/80 text-cyan-200 font-semibold';
+            if (newTask.category === 'study') {
+              color = newTask.priorityLabel === 'High' ? 'bg-rose-950/70 border-rose-500/80 text-rose-200' : 'bg-amber-950/70 border-amber-500/80 text-amber-200';
+            } else if (newTask.category === 'project') {
+              color = 'bg-emerald-950/70 border-emerald-500/80 text-emerald-200';
+            }
+
+            const newBlock = {
+              id: newId,
+              title: newTask.title,
+              category: newTask.category,
+              day: newTask.day,
+              start: startDec,
+              end: endDec,
+              priorityLabel: newTask.category === 'commitment' ? null : newTask.priorityLabel,
+              course: newTask.course || 'Personal',
+              color,
+              notes: newTask.notes || 'Quick Added Event'
+            };
+
+            setScheduledBlocks(prev => [...prev, newBlock]);
+            
+            if (newTask.category === 'study') {
+              setTasks(prev => [...prev, {
+                id: `t-${Date.now()}`,
+                title: newTask.title,
+                deadline: '2026-09-08',
+                priorityLabel: newTask.priorityLabel,
+                estimated_minutes: newTask.durationMins,
+                course: newTask.course,
+                link: 'https://classroom.google.com',
+                notes: newTask.notes
+              }]);
+            }
+
+            setRecentlyAddedBlockIds([newId]);
+            setTimeout(() => setRecentlyAddedBlockIds([]), 3500);
+            setIsAddTaskOpen(false);
+            addAriaMessage(`Added **${newTask.title}** on ${newTask.day} from ${formatDecimalTime(startDec)} to ${formatDecimalTime(endDec)}!`);
+          };
+
+          return (
+            <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans">
+              
+              {/* HEADER */}
+              <header className="border-b border-slate-800/80 bg-slate-900/80 backdrop-blur sticky top-0 z-30 px-4 lg:px-6 py-2.5 flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-cyan-400 text-slate-950 rounded-xl flex items-center justify-center font-black text-sm tracking-tighter shadow-md">
+                    A
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <h1 className="text-base font-bold tracking-tight text-white">Aria Workspace</h1>
+                    <span className="text-[10px] bg-slate-800 text-cyan-300 font-mono px-2 py-0.5 rounded-full border border-slate-700 hidden sm:inline">
+                      Notion-Style Calendar
+                    </span>
+                  </div>
+                </div>
+
+                {/* Global Search Bar */}
+                <div className="flex-1 max-w-sm hidden md:flex items-center gap-2 bg-slate-950/80 px-3 py-1.5 rounded-xl border border-slate-800 text-xs">
+                  <Icon name="search" className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                  <input
+                    type="text"
+                    placeholder="Search events, priority tasks, or classes..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="bg-transparent w-full text-slate-200 focus:outline-none placeholder-slate-500"
+                  />
+                  {searchQuery && (
+                    <button onClick={() => setSearchQuery('')} className="text-slate-500 hover:text-white">
+                      <Icon name="x" className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+
+                {/* Action Controls */}
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setIsAddTaskOpen(true)}
+                    className="px-3 py-1.5 bg-cyan-400 hover:bg-cyan-300 text-slate-950 font-bold rounded-xl text-xs flex items-center gap-1.5 shadow-sm transition"
+                  >
+                    <Icon name="plus" className="w-3.5 h-3.5" />
+                    <span>Quick Add</span>
+                  </button>
+
+                  <button
+                    onClick={() => setIsToolboxOpen(!isToolboxOpen)}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition ${
+                      isToolboxOpen ? 'bg-slate-800 text-white border-slate-700' : 'bg-slate-900 hover:bg-slate-800 text-slate-300 border-slate-800'
+                    }`}
+                  >
+                    <Icon name="book-open" className="w-3.5 h-3.5 text-cyan-400" />
+                    <span className="hidden sm:inline">Focus Toolbox</span>
+                  </button>
+
+                  <button
+                    onClick={() => setIsAriaPanelOpen(!isAriaPanelOpen)}
+                    className={`p-2 border rounded-xl transition flex items-center gap-1.5 ${
+                      isAriaPanelOpen ? 'bg-cyan-950 border-cyan-500/50 text-cyan-300' : 'bg-slate-900 hover:bg-slate-800 border-slate-800 text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    <Icon name={isAriaPanelOpen ? "panel-right-close" : "sparkles"} className="w-4 h-4 text-cyan-400" />
+                    <span className="text-xs font-bold hidden sm:inline">Aria AI</span>
+                  </button>
+                </div>
+              </header>
+
+              {/* MAIN BODY LAYOUT */}
+              <div className="flex-1 flex overflow-hidden">
+                
+                {/* SIDEBAR */}
+                <aside className="w-16 lg:w-52 border-r border-slate-800/80 bg-slate-900/30 flex flex-col justify-between p-3 shrink-0">
+                  <nav className="space-y-1">
+                    <div className="px-3 py-1 text-[10px] font-mono text-slate-500 uppercase tracking-wider hidden lg:block">Views</div>
+
+                    <button
+                      onClick={() => setActiveTab('calendar')}
+                      className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold transition ${
+                        activeTab === 'calendar' ? 'bg-slate-800 text-white shadow-sm border border-slate-700/60' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
+                      }`}
+                    >
+                      <Icon name="calendar" className="w-4 h-4 text-cyan-400 shrink-0" />
+                      <span className="hidden lg:inline">Schedule Grid</span>
+                    </button>
+
+                    <button
+                      onClick={() => setActiveTab('tasks')}
+                      className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold transition ${
+                        activeTab === 'tasks' ? 'bg-slate-800 text-white shadow-sm border border-slate-700/60' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
+                      }`}
+                    >
+                      <Icon name="check-square" className="w-4 h-4 text-rose-400 shrink-0" />
+                      <span className="hidden lg:inline">Workload & Priorities</span>
+                    </button>
+
+                    <button
+                      onClick={() => setActiveTab('quiz')}
+                      className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold transition ${
+                        activeTab === 'quiz' ? 'bg-slate-800 text-white shadow-md' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
+                      }`}
+                    >
+                      <Icon name="sliders" className="w-4 h-4 text-emerald-400 shrink-0" />
+                      <span className="hidden lg:inline">Learning Profile</span>
+                    </button>
+
+                    <button
+                      onClick={() => setActiveTab('resources')}
+                      className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold transition ${
+                        activeTab === 'resources' ? 'bg-slate-800 text-white shadow-md' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
+                      }`}
+                    >
+                      <Icon name="compass" className="w-4 h-4 text-indigo-400 shrink-0" />
+                      <span className="hidden lg:inline">Wellness & Hub</span>
+                    </button>
+
+                    <button
+                      onClick={() => setActiveTab('lms')}
+                      className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold transition ${
+                        activeTab === 'lms' ? 'bg-slate-800 text-white shadow-md' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
+                      }`}
+                    >
+                      <Icon name="layers" className="w-4 h-4 text-purple-400 shrink-0" />
+                      <span className="hidden lg:inline">LMS Sync & Premium</span>
+                    </button>
+
+                    <button
+                      onClick={() => setActiveTab('sms')}
+                      className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold transition ${
+                        activeTab === 'sms' ? 'bg-slate-800 text-white shadow-md' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
+                      }`}
+                    >
+                      <Icon name="smartphone" className="w-4 h-4 text-amber-400 shrink-0" />
+                      <span className="hidden lg:inline">SMS Reminders</span>
+                    </button>
+                  </nav>
+
+                  <div className="hidden lg:block bg-slate-900/80 p-3 rounded-2xl border border-slate-800 text-[11px] space-y-1">
+                    <div className="flex items-center justify-between font-bold text-slate-200">
+                      <span>{studentPersona}</span>
+                      <Icon name="user-check" className="w-3.5 h-3.5 text-cyan-400" />
+                    </div>
+                    <span className="text-[10px] text-cyan-400 font-mono block">Dot Priority Indicators</span>
+                  </div>
+                </aside>
+
+                {/* WORKSPACE AREA */}
+                <main className="flex-1 overflow-y-auto p-4 lg:p-5 bg-slate-950 flex gap-5">
+                  
+                  <div className="flex-1 flex flex-col gap-5 overflow-y-auto">
+                    
+                    {/* VIEW 1: WEEKLY CALENDAR GRID WITH PRIORITY DOTS */}
+                    {activeTab === 'calendar' && (
+                      <div className="flex-1 flex flex-col bg-slate-900/40 rounded-3xl border border-slate-800/80 overflow-hidden shadow-xl min-h-[500px]">
+                        
+                        {/* Header Bar */}
+                        <div className="p-3.5 border-b border-slate-800/80 flex items-center justify-between gap-2 bg-slate-900/80">
+                          <div className="flex items-center gap-2">
+                            <button onClick={() => setCurrentDate(new Date())} className="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-bold">Today</button>
+                            <h2 className="font-bold text-slate-100 text-sm ml-2">
+                              {currentDate.toLocaleDateString([], { month: 'long', year: 'numeric' })}
+                            </h2>
+                          </div>
+
+                          {/* Visual Priority Dot Legend */}
+                          <div className="hidden md:flex items-center gap-4 text-[10px] font-mono text-slate-400 bg-slate-950/80 px-3.5 py-1.5 rounded-xl border border-slate-800">
+                            <span className="text-slate-500 font-bold uppercase tracking-wider">Priority Dots:</span>
+                            <span className="flex items-center gap-1.5">
+                              <span className="w-2.5 h-2.5 rounded-full bg-rose-500 shadow-[0_0_6px_rgba(244,63,94,0.9)]" /> 
+                              <span className="text-rose-300 font-bold">High Priority</span>
+                            </span>
+                            <span className="flex items-center gap-1.5">
+                              <span className="w-2.5 h-2.5 rounded-full bg-amber-400 shadow-[0_0_6px_rgba(251,191,36,0.9)]" /> 
+                              <span className="text-amber-300 font-bold">Medium Priority</span>
+                            </span>
+                            <span className="flex items-center gap-1.5">
+                              <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.9)]" /> 
+                              <span className="text-emerald-300 font-bold">Light Priority</span>
+                            </span>
+                            <span className="flex items-center gap-1.5 border-l border-slate-800 pl-2">
+                              <span className="w-2 h-2 rounded-sm bg-indigo-500" /> 
+                              <span className="text-indigo-300">Fixed Class</span>
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* TIMETABLE GRID (7 COLUMNS) */}
+                        <div className="flex-1 flex flex-col overflow-hidden">
+                          
+                          <div className="grid grid-cols-7 border-b border-slate-800/80 bg-slate-950/60 text-xs font-semibold">
+                            {weekDates.map(item => (
+                              <div key={item.formattedISO} className={`p-2 text-center border-r border-slate-800/60 ${item.isToday ? 'bg-cyan-950/20 text-cyan-300' : 'text-slate-400'}`}>
+                                <span className={`text-[10px] uppercase font-mono block ${item.dayName === 'Sat' || item.dayName === 'Sun' ? 'text-cyan-400 font-bold' : ''}`}>
+                                  {item.dayName}
+                                </span>
+                                <span className={`inline-block mt-0.5 w-5 h-5 rounded-full text-center text-xs font-bold leading-5 ${item.isToday ? 'bg-cyan-400 text-slate-950' : 'text-slate-200'}`}>
+                                  {item.dayNumber}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+
+                          <div className="flex-1 overflow-y-auto relative">
+                            
+                            {/* LIVE TIME INDICATOR LINE */}
+                            {isCurrentWeek && currentDecimalHour >= 8 && currentDecimalHour <= 21 && (
+                              <div
+                                className="absolute left-0 right-0 z-20 pointer-events-none flex items-center"
+                                style={{ top: `${(currentDecimalHour - 8) * 56}px` }}
+                              >
+                                <div className="w-full border-b-2 border-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.7)]" />
+                                {currentDayColumnIndex !== -1 && (
+                                  <div
+                                    className="absolute transform -translate-y-1/2 bg-rose-500 text-white font-mono font-bold text-[9px] px-2 py-0.5 rounded-full shadow-lg border border-rose-300 flex items-center gap-1.5 z-30 pointer-events-auto"
+                                    style={{ left: `calc(${currentDayColumnIndex} * (100% / 7) + 4px)` }}
+                                  >
+                                    <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
+                                    <span>{formatDecimalTime(currentDecimalHour)}</span>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+
+                            {HOURS.map(hour => (
+                              <div key={hour} className="flex h-[56px] border-b border-slate-800/40 text-xs">
+                                <div className="flex-1 grid grid-cols-7 relative">
+                                  {weekDates.map(item => {
+                                    const dayBlocks = scheduledBlocks.filter(b => b.day === item.dayName && Math.floor(b.start) === hour);
+                                    return (
+                                      <div key={item.formattedISO} className="border-r border-slate-800/30 p-1 relative">
+                                        {dayBlocks.map(block => {
+                                          const isRecentlyAdded = recentlyAddedBlockIds.includes(block.id);
+                                          const pKey = block.priorityLabel;
+
+                                          return (
+                                            <div
+                                              key={block.id}
+                                              onClick={() => setSelectedBlockModal(block)}
+                                              className={`p-1.5 rounded-xl text-[10px] leading-tight transition-all duration-300 hover:scale-[1.02] cursor-pointer shadow-md mb-1 border ${block.color} ${
+                                                isRecentlyAdded ? 'ring-4 ring-cyan-400 ring-offset-2 ring-offset-slate-950 animate-pulse scale-105 z-10' : ''
+                                              }`}
+                                            >
+                                              <div className="flex items-center gap-1.5">
+                                                {/* CLEAN PRIORITY INDICATOR DOTS */}
+                                                {pKey === 'High' && (
+                                                  <span className="w-2 h-2 rounded-full bg-rose-500 shadow-[0_0_6px_rgba(244,63,94,0.9)] shrink-0" title="High Priority Task" />
+                                                )}
+                                                {pKey === 'Medium' && (
+                                                  <span className="w-2 h-2 rounded-full bg-amber-400 shadow-[0_0_6px_rgba(251,191,36,0.9)] shrink-0" title="Medium Priority Task" />
+                                                )}
+                                                {pKey === 'Light' && (
+                                                  <span className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.9)] shrink-0" title="Light Priority Task" />
+                                                )}
+
+                                                <p className="font-bold truncate">{block.title}</p>
+                                              </div>
+                                              
+                                              <p className="text-[9px] opacity-80 font-mono mt-0.5">
+                                                {formatDecimalTime(block.start)}–{formatDecimalTime(block.end)}
+                                              </p>
+                                            </div>
+                                          );
+                                        })}
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* VIEW 2: QUESTIONNAIRE */}
+                    {activeTab === 'quiz' && (
+                      <div className="max-w-2xl mx-auto w-full bg-slate-900/50 p-6 rounded-3xl border border-slate-800 space-y-6 shadow-xl text-xs">
+                        <div>
+                          <h2 className="text-base font-bold text-white flex items-center gap-2">
+                            <Icon name="sliders" className="w-5 h-5 text-emerald-400" /> Learning Profile & Subject Proficiency
+                          </h2>
+                          <p className="text-slate-400 mt-1">
+                            Aria uses these proficiency scores to personalize test prep. Subjects rated "Needs Focus" get High Priority (🔴 Red Dot) prep sessions injected in your peak focus window!
+                          </p>
+                        </div>
+
+                        <div className="space-y-3 pt-2 border-t border-slate-800">
+                          <label className="font-bold text-slate-200 block">Subject Confidence Ratings</label>
+                          {Object.keys(subjectConfidence).map(subj => (
+                            <div key={subj} className="flex items-center justify-between p-3 bg-slate-950 rounded-xl border border-slate-800">
+                              <span className="font-bold text-slate-200">{subj}</span>
+                              <select
+                                value={subjectConfidence[subj]}
+                                onChange={(e) => setSubjectConfidence({ ...subjectConfidence, [subj]: e.target.value })}
+                                className="bg-slate-900 border border-slate-700 text-slate-200 rounded-lg px-2.5 py-1 focus:outline-none font-semibold text-cyan-300"
+                              >
+                                <option value="Needs Focus">Needs Focus (High Priority 🔴 Prep)</option>
+                                <option value="Moderate">Moderate (Medium Priority 🟠 Prep)</option>
+                                <option value="Mastered">Mastered (Light Review 🟢)</option>
+                              </select>
+                            </div>
+                          ))}
+                        </div>
+
+                        <div className="space-y-3 pt-2 border-t border-slate-800">
+                          <label className="font-bold text-slate-200 block">Peak Focus Window</label>
+                          <div className="grid grid-cols-3 gap-2">
+                            {['Morning', 'Afternoon', 'Evening'].map(win => (
+                              <button
+                                key={win}
+                                onClick={() => setPeakEnergyWindow(win)}
+                                className={`py-2.5 px-3 rounded-xl border text-center font-semibold ${
+                                  peakEnergyWindow === win ? 'bg-cyan-400 text-slate-950 border-cyan-400' : 'bg-slate-950 text-slate-400 border-slate-800'
+                                }`}
+                              >
+                                {win}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        <button
+                          onClick={() => {
+                            addAriaMessage("Saved Learning Profile! All test prep recommendations will route according to your confidence ratings and peak focus hours.");
+                            setActiveTab('calendar');
+                          }}
+                          className="w-full py-3 bg-cyan-400 text-slate-950 font-bold rounded-xl"
+                        >
+                          Save Profile & Sync Calendar
+                        </button>
+                      </div>
+                    )}
+
+                    {/* VIEW 3: WORKLOAD & PRIORITIES */}
+                    {activeTab === 'tasks' && (
+                      <div className="max-w-3xl mx-auto w-full space-y-4 text-xs">
+                        <div className="flex items-center justify-between bg-slate-900/50 p-4 rounded-3xl border border-slate-800">
+                          <div>
+                            <h2 className="font-bold text-slate-100 text-sm">Active Assignments & Priority Mappings</h2>
+                            <p className="text-slate-400 text-[11px]">🔴 High = 60m, 🟠 Medium = 30m, 🟢 Light = 15m duration blocks</p>
+                          </div>
+                          <button onClick={() => setIsAddTaskOpen(true)} className="px-3.5 py-2 bg-cyan-400 text-slate-950 font-bold rounded-xl flex items-center gap-1.5">
+                            <Icon name="plus" className="w-3.5 h-3.5" /> Quick Add Task
+                          </button>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                          {[
+                            { key: 'High', dot: 'bg-rose-500', label: 'High Priority (60m)' },
+                            { key: 'Medium', dot: 'bg-amber-400', label: 'Medium Priority (30m)' },
+                            { key: 'Light', dot: 'bg-emerald-400', label: 'Light Priority (15m)' }
+                          ].map(pCol => {
+                            const pTasks = tasks.filter(t => t.priorityLabel === pCol.key);
+
+                            return (
+                              <div key={pCol.key} className="p-3 bg-slate-900/40 rounded-2xl border border-slate-800 space-y-2">
+                                <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                                  <span className="flex items-center gap-1.5 font-bold text-slate-200">
+                                    <span className={`w-2.5 h-2.5 rounded-full ${pCol.dot}`} />
+                                    <span>{pCol.label}</span>
+                                  </span>
+                                  <span className="text-[10px] font-mono text-slate-500">{pTasks.length}</span>
+                                </div>
+
+                                <div className="space-y-2 max-h-80 overflow-y-auto">
+                                  {pTasks.map(task => (
+                                    <div key={task.id} className="p-3 bg-slate-950 rounded-xl border border-slate-800 space-y-1.5">
+                                      <div className="flex justify-between items-start gap-1">
+                                        <span className="font-bold text-slate-200 leading-snug">{task.title}</span>
+                                        <button onClick={() => setTasks(tasks.filter(t => t.id !== task.id))} className="text-slate-500 hover:text-rose-400 shrink-0">
+                                          <Icon name="x" className="w-3.5 h-3.5" />
+                                        </button>
+                                      </div>
+                                      <p className="text-[10px] text-slate-400">{task.notes || 'No extra notes'}</p>
+                                      <div className="flex items-center justify-between text-[9px] font-mono text-slate-500 pt-1 border-t border-slate-900">
+                                        <span>Course: {task.course}</span>
+                                        <span>Est: {task.estimated_minutes}m</span>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* VIEW 4: WELLNESS & OPPORTUNITIES */}
+                    {activeTab === 'resources' && (
+                      <div className="max-w-3xl mx-auto w-full space-y-5 text-xs">
+                        <div>
+                          <h2 className="text-base font-bold text-white flex items-center gap-2">
+                            <Icon name="compass" className="w-5 h-5 text-indigo-400" /> Wellness Resets & Student Opportunities
+                          </h2>
+                          <p className="text-slate-400 mt-1">
+                            Building well-rounded, healthy students through holistic support and growth resources.
+                          </p>
+                        </div>
+
+                        <div className="bg-slate-900/50 p-5 rounded-3xl border border-slate-800 space-y-3">
+                          <h3 className="font-bold text-xs text-rose-300 uppercase tracking-wider flex items-center gap-1.5">
+                            <Icon name="heart" className="w-4 h-4" /> Wellness & Anti-Burnout Resets
+                          </h3>
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            <div className="p-3 bg-slate-950 rounded-2xl border border-slate-800 space-y-1">
+                              <div className="flex items-center gap-1.5 font-bold text-slate-200">
+                                <Icon name="eye" className="w-3.5 h-3.5 text-cyan-400" />
+                                <span>20-20-20 Eye Rest</span>
+                              </div>
+                              <p className="text-[11px] text-slate-400">Look at an object 20 feet away for 20 seconds to prevent screen fatigue.</p>
+                            </div>
+
+                            <div className="p-3 bg-slate-950 rounded-2xl border border-slate-800 space-y-1">
+                              <div className="flex items-center gap-1.5 font-bold text-slate-200">
+                                <Icon name="droplet" className="w-3.5 h-3.5 text-blue-400" />
+                                <span>Hydration Break</span>
+                              </div>
+                              <p className="text-[11px] text-slate-400">Drink a glass of water before starting your next intensive focus block.</p>
+                            </div>
+
+                            <div className="p-3 bg-slate-950 rounded-2xl border border-slate-800 space-y-1">
+                              <div className="flex items-center gap-1.5 font-bold text-slate-200">
+                                <Icon name="rotate-ccw" className="w-3.5 h-3.5 text-emerald-400" />
+                                <span>Posture Reset</span>
+                              </div>
+                              <p className="text-[11px] text-slate-400">Roll shoulders back and stretch arms overhead for 30 seconds.</p>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="bg-slate-900/50 p-5 rounded-3xl border border-slate-800 space-y-3">
+                          <h3 className="font-bold text-xs text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
+                            <Icon name="award" className="w-4 h-4" /> Academic Grants & Growth Opportunities
+                          </h3>
+                          <div className="space-y-2.5">
+                            {STUDENT_OPPORTUNITIES.map(opp => (
+                              <div key={opp.id} className="p-3.5 bg-slate-950 rounded-2xl border border-slate-800 flex items-center justify-between gap-3">
+                                <div className="space-y-1">
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-bold text-slate-200">{opp.title}</span>
+                                    <span className="px-2 py-0.5 bg-slate-800 text-slate-400 rounded-md text-[10px] font-mono">{opp.category}</span>
+                                  </div>
+                                  <p className="text-[11px] text-slate-400">{opp.description}</p>
+                                  <span className="text-[10px] font-mono text-slate-500 block">Deadline: {opp.deadline}</span>
+                                </div>
+
+                                <a
+                                  href={opp.link}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-cyan-300 rounded-xl text-xs font-semibold border border-slate-700 flex items-center gap-1.5 shrink-0"
+                                >
+                                  <span>Apply / View</span>
+                                  <Icon name="external-link" className="w-3 h-3" />
+                                </a>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                      </div>
+                    )}
+
+                    {/* VIEW 5: PREMIUM LMS SYNC */}
+                    {activeTab === 'lms' && (
+                      <div className="max-w-2xl mx-auto w-full space-y-4 text-xs">
+                        <div className="bg-slate-900/50 p-5 rounded-3xl border border-slate-800 space-y-3">
+                          <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                            <div>
+                              <h2 className="font-bold text-white text-sm flex items-center gap-2">
+                                <Icon name="layers" className="w-4 h-4 text-purple-400" /> Premium LMS Syllabus & Curriculum Scanner
+                              </h2>
+                              <p className="text-slate-400">Potential Premium Tier Integration for Google Classroom & Canvas</p>
+                            </div>
+                            <span className="text-[10px] font-mono bg-purple-950 text-purple-300 border border-purple-500/30 px-2 py-0.5 rounded-full font-bold">
+                              Premium Feature
+                            </span>
+                          </div>
+
+                          <div className="p-3.5 bg-slate-950 rounded-2xl border border-slate-800 space-y-2">
+                            <h3 className="font-bold text-slate-200">How Curriculum Scanning Works:</h3>
+                            <ul className="space-y-1.5 text-slate-400 leading-relaxed text-[11px] list-disc list-inside">
+                              <li><strong>Syllabus Scanning:</strong> Aria automatically scans course syllabi to extract exam dates, assignment weighting, and teacher grading criteria.</li>
+                              <li><strong>Rubric Analysis:</strong> Scans rubric documents attached in Google Classroom to understand what teachers are specifically looking for.</li>
+                              <li><strong>Automated Milestone Generation:</strong> Breaks large term projects into 30-minute daily milestone sessions on your schedule grid automatically.</li>
+                            </ul>
+                          </div>
+
+                          <div className="space-y-2 pt-2">
+                            <h3 className="font-bold text-slate-300">Active Integrations:</h3>
+                            <div className="flex items-center justify-between p-3 bg-slate-950 rounded-2xl border border-slate-800">
+                              <div>
+                                <span className="font-bold text-slate-200 block">Google Classroom API</span>
+                                <span className="text-[10px] text-slate-500">Auto-imports homework & scans posted PDFs</span>
+                              </div>
+                              <span className="text-cyan-400 font-bold">Connected</span>
+                            </div>
+                            <div className="flex items-center justify-between p-3 bg-slate-950 rounded-2xl border border-slate-800">
+                              <div>
+                                <span className="font-bold text-slate-200 block">Canvas LMS Sync</span>
+                                <span className="text-[10px] text-slate-500">Syncs exam modules & syllabus pages</span>
+                              </div>
+                              <span className="text-cyan-400 font-bold">Connected</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* VIEW 6: SMS SIMULATOR */}
+                    {activeTab === 'sms' && (
+                      <div className="max-w-2xl mx-auto w-full bg-slate-900/60 rounded-3xl border border-slate-800 p-5 space-y-4 shadow-xl text-xs">
+                        <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                          <div>
+                            <h2 className="font-bold text-white text-sm flex items-center gap-2">
+                              <Icon name="smartphone" className="w-4 h-4 text-rose-400" /> Interactive SMS Reminders
+                            </h2>
+                            <p className="text-slate-400">Receive text updates directly on your phone and reply to Aria via text!</p>
+                          </div>
+                          <span className="text-[10px] font-mono bg-emerald-950 text-emerald-300 border border-emerald-500/30 px-2 py-0.5 rounded-full">
+                            SMS Sync Active
+                          </span>
+                        </div>
+
+                        <div className="bg-slate-950 p-3 rounded-2xl border border-slate-800 flex items-center justify-between">
+                          <span className="text-slate-400 font-mono">Linked Number: <strong className="text-cyan-300">{userPhoneNumber}</strong></span>
+                          <button onClick={() => setUserPhoneNumber(prompt("Enter phone number:", userPhoneNumber) || userPhoneNumber)} className="text-cyan-400 hover:underline">Change</button>
+                        </div>
+
+                        <div className="h-56 overflow-y-auto bg-slate-950 p-3 rounded-2xl border border-slate-800 space-y-2">
+                          {smsMessages.map(msg => (
+                            <div key={msg.id} className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 space-y-1">
+                              <p className="text-slate-200">{msg.text}</p>
+                              <span className="text-[9px] text-slate-500 font-mono block">{msg.time}</span>
+                            </div>
+                          ))}
+                        </div>
+
+                        <form onSubmit={(e) => {
+                          e.preventDefault();
+                          if (!smsInput) return;
+                          setSmsMessages(prev => [...prev, { id: `sms-${Date.now()}`, text: `User: ${smsInput}`, time: 'Just now' }]);
+                          const inputCopy = smsInput;
+                          setSmsInput('');
+                          setTimeout(() => {
+                            processAriaAIRequest(inputCopy);
+                            setSmsMessages(prev => [...prev, { id: `sms-rep-${Date.now()}`, text: `Aria Alert: Updated your calendar schedule based on your text: "${inputCopy}"!`, time: 'Just now' }]);
+                          }, 600);
+                        }} className="flex gap-2">
+                          <input
+                            type="text"
+                            placeholder="Text Aria e.g. 'I have a test in four days, how can I best manage my time?'..."
+                            value={smsInput}
+                            onChange={(e) => setSmsInput(e.target.value)}
+                            className="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-100 focus:outline-none focus:border-cyan-400"
+                          />
+                          <button type="submit" className="px-4 py-2 bg-rose-500 hover:bg-rose-400 text-slate-950 font-bold rounded-xl">
+                            Send Text
+                          </button>
+                        </form>
+                      </div>
+                    )}
+
+                  </div>
+
+                  {/* ARIA ASSISTANT SIDEBAR - PERSISTENT ACROSS ALL TABS */}
+                  {isAriaPanelOpen && (
+                    <div className="w-full lg:w-80 bg-slate-900/60 rounded-3xl border border-slate-800 flex flex-col h-[520px] lg:h-auto overflow-hidden shadow-xl shrink-0">
+                      <div className="p-3.5 border-b border-slate-800 bg-slate-900/90 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <div className="w-7 h-7 rounded-lg bg-cyan-950 border border-cyan-500/40 flex items-center justify-center text-cyan-400 font-bold">
+                            <Icon name="sparkles" className="w-3.5 h-3.5" />
+                          </div>
+                          <div>
+                            <h3 className="font-bold text-xs text-white">Aria Assistant</h3>
+                            <span className="text-[9px] text-slate-400 font-mono block">
+                              {ariaState === 'working' ? 'Calculating recommendations...' : 'Live Mentor Core'}
+                            </span>
+                          </div>
+                        </div>
+
+                        <button onClick={() => setIsAriaPanelOpen(false)} className="p-2 bg-slate-800 hover:bg-slate-700 rounded-xl text-slate-400 hover:text-white transition">
+                          <Icon name="x" className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+
+                      <div className="flex-1 p-3 overflow-y-auto space-y-2.5 text-xs">
+                        {messages.map(m => (
+                          <div key={m.id} className={`flex flex-col ${m.sender === 'user' ? 'items-end' : 'items-start'}`}>
+                            <div className={`max-w-[88%] p-3 rounded-2xl text-xs leading-relaxed ${
+                              m.sender === 'user' ? 'bg-cyan-500 text-slate-950 font-semibold rounded-br-none' : 'bg-slate-800 text-slate-100 rounded-bl-none border border-slate-700/60 whitespace-pre-line'
+                            }`}>
+                              {m.text}
+                            </div>
+                            <span className="text-[9px] font-mono text-slate-500 mt-1 px-1">{m.timestamp}</span>
+                          </div>
+                        ))}
+                        <div ref={chatEndRef} />
+                      </div>
+
+                      <div className="p-2 border-t border-slate-800 bg-slate-950/60 flex gap-1.5 overflow-x-auto text-[10px]">
+                        <button onClick={() => processAriaAIRequest("I found out that I have a test in four days. How could I best manage my time?")} className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-amber-300 rounded-lg border border-slate-700 whitespace-nowrap font-semibold">
+                          "Test in 4 days, how to best manage time?"
+                        </button>
+                        <button onClick={() => processAriaAIRequest("Dinner with dad in 20 minutes")} className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-cyan-300 rounded-lg border border-slate-700 whitespace-nowrap">
+                          "Dinner in 20 mins"
+                        </button>
+                      </div>
+
+                      <form onSubmit={handleSendMessage} className="p-2.5 border-t border-slate-800 bg-slate-900/90 flex gap-2">
+                        <input
+                          type="text"
+                          placeholder={ariaState === 'working' ? 'Aria is thinking...' : 'Talk naturally to Aria...'}
+                          value={chatInput}
+                          onChange={(e) => setChatInput(e.target.value)}
+                          className="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-cyan-400 placeholder-slate-500"
+                        />
+                        <button type="submit" className="px-3.5 py-2 bg-cyan-400 hover:bg-cyan-300 text-slate-950 rounded-xl text-xs font-bold transition">
+                          <Icon name="send" className="w-3.5 h-3.5" />
+                        </button>
+                      </form>
+                    </div>
+                  )}
+
+                  {/* STUDY TOOLBOX DRAWER */}
+                  {isToolboxOpen && (
+                    <aside className="w-80 bg-slate-900/95 border border-slate-800 rounded-3xl p-4 flex flex-col gap-4 overflow-y-auto shadow-2xl shrink-0">
+                      <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                        <h3 className="font-bold text-xs text-white flex items-center gap-2">
+                          <Icon name="book-open" className="w-4 h-4 text-cyan-400" /> Focus Toolbox
+                        </h3>
+                        <button onClick={() => setIsToolboxOpen(false)} className="text-slate-500 hover:text-white">
+                          <Icon name="x" className="w-4 h-4" />
+                        </button>
+                      </div>
+
+                      <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800 text-center space-y-2">
+                        <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider block">Pomodoro Focus Timer</span>
+                        <div className="font-mono text-3xl font-black text-white">
+                          {Math.floor(timerSeconds / 60).toString().padStart(2, '0')}:
+                          {(timerSeconds % 60).toString().padStart(2, '0')}
+                        </div>
+                        <button onClick={() => setIsTimerRunning(!isTimerRunning)} className="px-4 py-1.5 bg-cyan-400 text-slate-950 font-bold rounded-xl text-xs">
+                          {isTimerRunning ? 'Pause' : 'Start Sprint'}
+                        </button>
+                      </div>
+                    </aside>
+                  )}
+
+                </main>
+              </div>
+
+              {/* NOTION-STYLE ITEM INSPECTOR MODAL */}
+              {selectedBlockModal && (
+                <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+                  <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-5 shadow-2xl space-y-4 text-xs">
+                    <div className="flex items-center justify-between border-b border-slate-800 pb-2.5">
+                      <div className="flex items-center gap-2">
+                        {selectedBlockModal.priorityLabel === 'High' && <span className="w-2.5 h-2.5 rounded-full bg-rose-500 shadow-[0_0_6px_rgba(244,63,94,0.9)]" />}
+                        {selectedBlockModal.priorityLabel === 'Medium' && <span className="w-2.5 h-2.5 rounded-full bg-amber-400 shadow-[0_0_6px_rgba(251,191,36,0.9)]" />}
+                        {selectedBlockModal.priorityLabel === 'Light' && <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.9)]" />}
+                        
+                        <span className="font-bold text-slate-200">
+                          {selectedBlockModal.priorityLabel ? `${selectedBlockModal.priorityLabel} Priority Task` : 'Schedule Event'}
+                        </span>
+                      </div>
+                      <button onClick={() => setSelectedBlockModal(null)} className="text-slate-500 hover:text-white">
+                        <Icon name="x" className="w-4 h-4" />
+                      </button>
+                    </div>
+
+                    <div className="space-y-2">
+                      <h3 className="text-base font-bold text-white leading-snug">{selectedBlockModal.title}</h3>
+                      <div className="flex items-center gap-4 text-slate-400 text-[11px] font-mono">
+                        <span>Day: <strong className="text-slate-200">{selectedBlockModal.day}</strong></span>
+                        <span>Time: <strong className="text-slate-200">{formatDecimalTime(selectedBlockModal.start)} - {formatDecimalTime(selectedBlockModal.end)}</strong></span>
+                      </div>
+                    </div>
+
+                    <div className="p-3 bg-slate-950 rounded-2xl border border-slate-800 space-y-1">
+                      <span className="text-[10px] font-mono text-slate-500 uppercase tracking-wider block">Notes & Details:</span>
+                      <p className="text-slate-300 text-[11px] leading-relaxed">{selectedBlockModal.notes || 'No extra notes specified for this event.'}</p>
+                    </div>
+
+                    <div className="flex justify-between items-center pt-2">
+                      <button
+                        onClick={() => {
+                          setScheduledBlocks(scheduledBlocks.filter(b => b.id !== selectedBlockModal.id));
+                          setSelectedBlockModal(null);
+                        }}
+                        className="px-3 py-1.5 bg-rose-950/80 hover:bg-rose-900 border border-rose-500/40 text-rose-300 rounded-xl font-semibold transition"
+                      >
+                        Remove Block
+                      </button>
+
+                      <button
+                        onClick={() => setSelectedBlockModal(null)}
+                        className="px-4 py-1.5 bg-cyan-400 hover:bg-cyan-300 text-slate-950 font-bold rounded-xl"
+                      >
+                        Close
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* MODAL: ADD TASK */}
+              {isAddTaskOpen && (
+                <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+                  <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-sm w-full p-5 shadow-2xl space-y-3.5 text-xs">
+                    <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                      <h3 className="text-sm font-bold text-white">Quick Add Event or Assignment</h3>
+                      <button onClick={() => setIsAddTaskOpen(false)} className="text-slate-500 hover:text-white">
+                        <Icon name="x" className="w-4 h-4" />
+                      </button>
+                    </div>
+
+                    <form onSubmit={handleManualAddTask} className="space-y-3">
+                      <div>
+                        <label className="block text-slate-400 mb-1 font-semibold">Title</label>
+                        <input
+                          type="text"
+                          required
+                          placeholder="e.g. Dinner, Chem Review"
+                          value={newTask.title}
+                          onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
+                          className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-slate-200 focus:outline-none"
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="block text-slate-400 mb-1 font-semibold">Category</label>
+                          <select
+                            value={newTask.category}
+                            onChange={(e) => setNewTask({ ...newTask, category: e.target.value })}
+                            className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-slate-200 focus:outline-none"
+                          >
+                            <option value="study">Study Prep (Task)</option>
+                            <option value="commitment">Personal Event / Shift</option>
+                            <option value="project">Side Project</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-slate-400 mb-1 font-semibold">Day</label>
+                          <select
+                            value={newTask.day}
+                            onChange={(e) => setNewTask({ ...newTask, day: e.target.value })}
+                            className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-slate-200 focus:outline-none"
+                          >
+                            {ALL_DAYS_LIST.map(d => <option key={d} value={d}>{d}</option>)}
+                          </select>
+                        </div>
+                      </div>
+
+                      {newTask.category !== 'commitment' && (
+                        <div>
+                          <label className="block text-slate-400 mb-1 font-semibold">Priority Level</label>
+                          <select
+                            value={newTask.priorityLabel}
+                            onChange={(e) => setNewTask({ ...newTask, priorityLabel: e.target.value })}
+                            className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-slate-200 focus:outline-none"
+                          >
+                            <option value="High">🔴 High Priority (60m)</option>
+                            <option value="Medium">🟠 Medium Priority (30m)</option>
+                            <option value="Light">🟢 Light Priority (15m)</option>
+                          </select>
+                        </div>
+                      )}
+
+                      <div>
+                        <label className="block text-slate-400 mb-1 font-semibold">Start Time</label>
+                        <input
+                          type="time"
+                          value={newTask.startTime}
+                          onChange={(e) => setNewTask({ ...newTask, startTime: e.target.value })}
+                          className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-slate-200 focus:outline-none"
+                        />
+                      </div>
+
+                      <div className="flex justify-end gap-2 pt-2">
+                        <button type="button" onClick={() => setIsAddTaskOpen(false)} className="px-3.5 py-2 bg-slate-800 text-slate-300 rounded-xl font-semibold">Cancel</button>
+                        <button type="submit" className="px-4 py-2 bg-cyan-400 text-slate-950 font-bold rounded-xl">Save to Calendar</button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              )}
+
+            </div>
+          );
+        }
+
+        ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    </script>
+</body>
+</html>

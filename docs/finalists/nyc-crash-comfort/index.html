@@ -1,0 +1,1732 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NYC Crash Comfort - South Bronx Community Housing Aid</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts: Inter & Montserrat -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Montserrat:wght@700;800;900&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'bx-dark': '#071a10',       /* Rich Dark Green Background */
+                        'bx-card': '#0e2b1b',      /* Dark Green Card Container */
+                        'bx-button': '#061f13',    /* Darker Green Button Fill */
+                        'bx-button-hover': '#113d26',
+                        'bx-light': '#52b788',     /* Lighter Green Border & Outline */
+                        'bx-light-glow': '#74c69d',/* Glowing Light Green */
+                        'bx-accent': '#2ec4b6',    /* Vibrant Accent Green */
+                        'bx-text': '#f0fdf4'       /* Clean Light Green Text */
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Montserrat', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #071a10; /* Dark Green Background */
+            color: #f0fdf4;
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+        }
+
+        /* Prompts & Inputs: Outlines are a lighter green than the background */
+        .prompt-outline {
+            border: 2px solid #52b788 !important;
+            background-color: #0b2115;
+            color: #ffffff;
+            transition: all 0.2s ease-in-out;
+        }
+
+        .prompt-outline:focus, .prompt-outline:focus-within {
+            border-color: #74c69d !important;
+            box-shadow: 0 0 14px rgba(116, 198, 157, 0.45);
+            outline: none;
+        }
+
+        /* Card container outlines in lighter green */
+        .card-outline {
+            border: 2px solid #52b788;
+            background-color: #0e2b1b;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
+        }
+
+        /* App Title styling in stylish, green bold attire */
+        .title-green {
+            font-family: 'Montserrat', sans-serif;
+            background: linear-gradient(135deg, #a7f3d0 0%, #34d399 50%, #6ee7b7 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0px 3px 12px rgba(52, 211, 153, 0.4);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #071a10;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #2d6a4f;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #52b788;
+        }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen bg-bx-dark text-bx-text">
+
+    <!-- Header Navigation -->
+    <header class="bg-[#092114] border-b-2 border-bx-light sticky top-0 z-50 shadow-xl">
+        <div class="max-w-6xl mx-auto px-4 py-4 flex flex-col md:flex-row items-center justify-between gap-4">
+            
+            <!-- App Name at the top in Stylish, Green Bold Attire -->
+            <div class="flex items-center gap-3 cursor-pointer" onclick="switchTab('find')">
+                <div class="w-12 h-12 rounded-xl bg-bx-button border-2 border-bx-light flex items-center justify-center shadow-lg">
+                    <i class="fa-solid fa-house-chimney-heart text-2xl text-emerald-300"></i>
+                </div>
+                <div>
+                    <h1 class="text-2xl sm:text-3xl font-black tracking-tight title-green uppercase">
+                        NYC Crash Comfort
+                    </h1>
+                    <p class="text-xs text-emerald-200 font-medium tracking-wide flex items-center gap-1" id="subTitleHeader">
+                        <i class="fa-solid fa-location-dot text-emerald-300"></i> South Bronx Affordable Housing Aid
+                    </p>
+                </div>
+            </div>
+
+            <!-- Language Selector Dropdown -->
+            <div class="flex items-center gap-3">
+                <div class="relative flex items-center">
+                    <i class="fa-solid fa-language text-emerald-300 absolute left-3 text-lg pointer-events-none"></i>
+                    <select id="langSelect" onchange="changeLanguage(this.value)" class="prompt-outline rounded-xl pl-10 pr-8 py-2 text-sm font-bold cursor-pointer">
+                        <option value="en">English (EN)</option>
+                        <option value="es">Español (ES)</option>
+                        <option value="fr">Français (FR)</option>
+                        <option value="gar">Garífuna (GAR)</option>
+                        <option value="bn">বাংলা (Bengali)</option>
+                        <option value="ar">العربية (Arabic)</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow max-w-6xl w-full mx-auto px-4 py-6">
+
+        <!-- South Bronx Community Aid Banner -->
+        <div class="mb-6 p-4.5 rounded-2xl bg-bx-card border-2 border-bx-light flex flex-col md:flex-row items-center justify-between gap-4 shadow-lg">
+            <div class="flex items-start gap-3.5">
+                <div class="p-2.5 bg-emerald-950/90 rounded-xl border border-emerald-400/50 text-emerald-300 shrink-0 mt-0.5">
+                    <i class="fa-solid fa-hand-holding-heart text-2xl"></i>
+                </div>
+                <div>
+                    <h2 class="text-base font-extrabold text-emerald-100" id="bannerTitle">Community Housing Solidarity</h2>
+                    <p class="text-xs sm:text-sm text-emerald-200/90 leading-relaxed" id="bannerDesc">
+                        Connecting South Bronx residents facing high rent with willing neighbors offering a safe place to crash temporarily while building up savings.
+                    </p>
+                </div>
+            </div>
+            <span class="inline-flex items-center px-3.5 py-1.5 rounded-full text-xs font-bold bg-emerald-950 border border-emerald-400 text-emerald-200 whitespace-nowrap shadow-sm">
+                <i class="fa-solid fa-shield-halved mr-1.5 text-emerald-300"></i> <span id="badgeBanner">100% Free Mutual Aid Network</span>
+            </span>
+        </div>
+
+        <!-- SIDE-BY-SIDE OPTIONS: "Find a Volunteer" & "Be a Volunteer" in Dark Green Color -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+            <button id="btnTabFind" onclick="switchTab('find')" 
+                class="flex items-center justify-center gap-3 py-4 px-6 rounded-2xl bg-bx-button hover:bg-bx-button-hover text-emerald-100 font-extrabold text-lg border-2 border-bx-light shadow-xl transition-all duration-200">
+                <i class="fa-solid fa-magnifying-glass-location text-2xl text-emerald-400"></i>
+                <span id="labelFindBtn">Find a Volunteer</span>
+            </button>
+
+            <button id="btnTabBe" onclick="switchTab('be')" 
+                class="flex items-center justify-center gap-3 py-4 px-6 rounded-2xl bg-bx-button hover:bg-bx-button-hover text-emerald-100 font-extrabold text-lg border-2 border-bx-light shadow-xl transition-all duration-200">
+                <i class="fa-solid fa-hand-holding-hand text-2xl text-emerald-400"></i>
+                <span id="labelBeBtn">Be a Volunteer</span>
+            </button>
+        </div>
+
+        <!-- ========================================================================= -->
+        <!-- SECTION 1: FIND A VOLUNTEER (SEARCH & LISTINGS & FILTERS) -->
+        <!-- ========================================================================= -->
+        <section id="sectionFind" class="space-y-6">
+            
+            <!-- Search Bar, Filters Button & Quick Neighborhood Chips -->
+            <div class="p-5 rounded-2xl bg-bx-card border-2 border-bx-light shadow-xl space-y-4">
+                <div class="flex flex-col sm:flex-row gap-3 items-center">
+                    
+                    <!-- Search Location Input -->
+                    <div class="relative flex-grow w-full">
+                        <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-emerald-300 text-lg"></i>
+                        <input type="text" id="searchInput" oninput="filterListings()"
+                            placeholder="Search location or zip code (e.g., Mott Haven, Melrose, 10451, Hunts Point)..." 
+                            class="w-full prompt-outline rounded-xl pl-12 pr-4 py-3.5 text-sm sm:text-base font-medium">
+                    </div>
+
+                    <!-- Actions: Filters Button & Reset -->
+                    <div class="flex w-full sm:w-auto gap-2">
+                        <button id="btnToggleFilters" onclick="toggleFiltersPanel()" 
+                            class="w-1/2 sm:w-auto px-4 py-3 rounded-xl bg-bx-button hover:bg-bx-button-hover text-emerald-100 font-bold border-2 border-bx-light text-sm flex items-center justify-center gap-2 transition">
+                            <i class="fa-solid fa-sliders text-emerald-300"></i>
+                            <span id="labelFiltersBtn">Filters</span>
+                            <span id="filterActiveBadge" class="hidden w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                        </button>
+
+                        <button onclick="clearSearch()" 
+                            class="w-1/2 sm:w-auto px-4 py-3 rounded-xl bg-bx-button hover:bg-bx-button-hover text-emerald-200 font-bold border-2 border-bx-light text-sm flex items-center justify-center gap-2 transition">
+                            <i class="fa-solid fa-rotate-left"></i>
+                            <span id="labelResetBtn">Reset</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Expandable Filter Panel Option -->
+                <div id="filterPanel" class="hidden p-4 rounded-xl border-2 border-bx-light bg-[#0a2316] space-y-4">
+                    <div class="flex items-center justify-between border-b border-emerald-800 pb-2">
+                        <h4 class="text-sm font-bold text-emerald-200 flex items-center gap-2" id="titleFilterPanel">
+                            <i class="fa-solid fa-filter text-emerald-300"></i> Filter Volunteer Listings
+                        </h4>
+                        <button onclick="resetFiltersOnly()" class="text-xs text-emerald-300 hover:underline font-semibold" id="labelClearFilters">
+                            Clear Filters
+                        </button>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                        
+                        <!-- Filter 1: Objects & People Allowed -->
+                        <div class="space-y-2">
+                            <label class="block font-bold text-emerald-200" id="labelFilterAllowed">
+                                Allowed Objects & People:
+                            </label>
+                            <div class="grid grid-cols-2 gap-2">
+                                <label class="flex items-center gap-2 cursor-pointer p-1.5 rounded bg-emerald-950/80 border border-emerald-600/50">
+                                    <input type="checkbox" class="filter-checkbox-allowed accent-emerald-400" value="Children / Families" onchange="filterListings()">
+                                    <span id="optFam">Families</span>
+                                </label>
+                                <label class="flex items-center gap-2 cursor-pointer p-1.5 rounded bg-emerald-950/80 border border-emerald-600/50">
+                                    <input type="checkbox" class="filter-checkbox-allowed accent-emerald-400" value="Small Pets Allowed" onchange="filterListings()">
+                                    <span id="optSmallPets">Small Pets</span>
+                                </label>
+                                <label class="flex items-center gap-2 cursor-pointer p-1.5 rounded bg-emerald-950/80 border border-emerald-600/50">
+                                    <input type="checkbox" class="filter-checkbox-allowed accent-emerald-400" value="Assistance / Service Animals" onchange="filterListings()">
+                                    <span id="optServiceAnimals">Assistance Animals</span>
+                                </label>
+                                <label class="flex items-center gap-2 cursor-pointer p-1.5 rounded bg-emerald-950/80 border border-emerald-600/50">
+                                    <input type="checkbox" class="filter-checkbox-allowed accent-emerald-400" value="Double Guests / Couples" onchange="filterListings()">
+                                    <span id="optDouble">Double Guests</span>
+                                </label>
+                                <label class="flex items-center gap-2 cursor-pointer p-1.5 rounded bg-emerald-950/80 border border-emerald-600/50">
+                                    <input type="checkbox" class="filter-checkbox-allowed accent-emerald-400" value="Luggage & Storage" onchange="filterListings()">
+                                    <span id="optLug">Luggage</span>
+                                </label>
+                                <label class="flex items-center gap-2 cursor-pointer p-1.5 rounded bg-emerald-950/80 border border-emerald-600/50">
+                                    <input type="checkbox" class="filter-checkbox-allowed accent-emerald-400" value="Single Guest Only" onchange="filterListings()">
+                                    <span id="optSingle">Single Guest</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Filter 2: Language Spoken -->
+                        <div class="space-y-2">
+                            <label class="block font-bold text-emerald-200" id="labelFilterLang">
+                                Language Spoken:
+                            </label>
+                            <select id="filterLangSelect" onchange="filterListings()" class="w-full prompt-outline rounded-xl p-2.5 text-xs font-semibold">
+                                <option value="ALL" id="optLangAll">All Languages</option>
+                                <option value="English">English</option>
+                                <option value="Español">Español (Spanish)</option>
+                                <option value="Français">Français (French)</option>
+                                <option value="Garífuna">Garífuna</option>
+                                <option value="বাংলা (Bengali)">বাংলা (Bengali)</option>
+                                <option value="العربية (Arabic)">العربية (Arabic)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Neighborhood Quick Select Chips -->
+                <div class="flex flex-wrap items-center gap-2 text-xs pt-1">
+                    <span class="text-emerald-200 font-semibold mr-1" id="labelQuickSearch">South Bronx Areas:</span>
+                    <button onclick="quickFilter('Mott Haven')" class="px-2.5 py-1 rounded-lg bg-bx-button border border-emerald-400/60 text-emerald-200 hover:bg-emerald-900 transition font-medium">Mott Haven</button>
+                    <button onclick="quickFilter('Melrose')" class="px-2.5 py-1 rounded-lg bg-bx-button border border-emerald-400/60 text-emerald-200 hover:bg-emerald-900 transition font-medium">Melrose</button>
+                    <button onclick="quickFilter('Hunts Point')" class="px-2.5 py-1 rounded-lg bg-bx-button border border-emerald-400/60 text-emerald-200 hover:bg-emerald-900 transition font-medium">Hunts Point</button>
+                    <button onclick="quickFilter('Highbridge')" class="px-2.5 py-1 rounded-lg bg-bx-button border border-emerald-400/60 text-emerald-200 hover:bg-emerald-900 transition font-medium">Highbridge</button>
+                    <button onclick="quickFilter('Tremont')" class="px-2.5 py-1 rounded-lg bg-bx-button border border-emerald-400/60 text-emerald-200 hover:bg-emerald-900 transition font-medium">Tremont</button>
+                    <button onclick="quickFilter('Concourse')" class="px-2.5 py-1 rounded-lg bg-bx-button border border-emerald-400/60 text-emerald-200 hover:bg-emerald-900 transition font-medium">Concourse</button>
+                </div>
+            </div>
+
+            <!-- Header listing count -->
+            <div class="flex justify-between items-center px-1">
+                <h3 class="text-xl font-extrabold text-emerald-100 flex items-center gap-2" id="titleAvailableVolunteers">
+                    <i class="fa-solid fa-user-group text-emerald-300"></i> Available Volunteers
+                </h3>
+                <span id="listingCount" class="text-xs font-bold px-3 py-1 rounded-full bg-bx-button border border-emerald-400 text-emerald-200">
+                    4 Volunteers Found
+                </span>
+            </div>
+
+            <!-- Volunteer Cards Grid -->
+            <div id="volunteerGrid" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Dynamic Host Cards populated via JS -->
+            </div>
+
+            <!-- Empty State for Search / Filters -->
+            <div id="noResults" class="hidden p-10 rounded-2xl bg-bx-card border-2 border-bx-light text-center space-y-3 shadow-xl">
+                <i class="fa-solid fa-house-circle-xmark text-5xl text-emerald-300"></i>
+                <h4 class="text-lg font-bold text-emerald-100" id="noResultsTitle">No Volunteers Found Matching Your Criteria</h4>
+                <p class="text-sm text-emerald-200 max-w-md mx-auto" id="noResultsDesc">
+                    Try searching for another neighborhood or clearing your active filters.
+                </p>
+                <button onclick="clearSearch()" class="px-5 py-2.5 rounded-xl bg-bx-button border-2 border-bx-light text-emerald-100 font-bold text-sm" id="btnShowAllVolunteers">
+                    Show All Volunteers
+                </button>
+            </div>
+        </section>
+
+        <!-- ========================================================================= -->
+        <!-- SECTION 2: BE A VOLUNTEER (HOST REGISTRATION FORM) -->
+        <!-- ========================================================================= -->
+        <section id="sectionBe" class="hidden space-y-6">
+            <div class="p-6 sm:p-8 rounded-2xl bg-bx-card border-2 border-bx-light shadow-2xl space-y-6">
+                
+                <div class="border-b-2 border-emerald-800 pb-4">
+                    <h2 class="text-2xl font-black text-emerald-100 flex items-center gap-3" id="titleBeVolunteerPage">
+                        <i class="fa-solid fa-hand-holding-heart text-emerald-300"></i> Become a Volunteer Host
+                    </h2>
+                    <p class="text-sm text-emerald-200 mt-1" id="descBeVolunteerPage">
+                        Offer a safe couch, extra room, or temporary space to help a neighbor in the South Bronx stay on their feet.
+                    </p>
+                </div>
+
+                <!-- Registration Form -->
+                <form id="volunteerForm" onsubmit="handleVolunteerSubmit(event)" class="space-y-6">
+                    
+                    <!-- 1. Full Name (Required) -->
+                    <div class="space-y-2">
+                        <label class="block text-sm font-bold text-emerald-100" for="hostName">
+                            <span id="lblHostName">1. Your Name</span> <span class="text-red-300">*</span>
+                        </label>
+                        <input type="text" id="hostName" required
+                            placeholder="e.g., Maria Rodriguez or Jean-Baptiste K." 
+                            class="w-full prompt-outline rounded-xl px-4 py-3 text-sm font-medium">
+                    </div>
+
+                    <!-- 2. Location where others can come to stay temporarily (Required) -->
+                    <div class="space-y-2">
+                        <label class="block text-sm font-bold text-emerald-100" for="hostLocation">
+                            <span id="lblHostLoc">2. Location Where Others Can Stay Temporarily</span> <span class="text-red-300">*</span>
+                        </label>
+                        <input type="text" id="hostLocation" required
+                            placeholder="e.g., Mott Haven, South Bronx (Near 138th St & Willis Ave)" 
+                            class="w-full prompt-outline rounded-xl px-4 py-3 text-sm font-medium">
+                        <p class="text-xs text-emerald-300" id="hintLoc">Provide cross streets or neighborhood for personal privacy.</p>
+                    </div>
+
+                    <!-- 3. Available Time Limit -->
+                    <div class="space-y-2">
+                        <label class="block text-sm font-bold text-emerald-100" for="hostDuration">
+                            <span id="lblHostDuration">3. Available Time to Stay</span> <span class="text-red-300">*</span>
+                        </label>
+                        <select id="hostDuration" required class="w-full prompt-outline rounded-xl px-4 py-3 text-sm cursor-pointer font-medium">
+                            <option value="3 to 7 Days" id="optDur1">3 to 7 Days</option>
+                            <option value="Up to 2 Weeks" id="optDur2">Up to 2 Weeks</option>
+                            <option value="Up to 1 Month" id="optDur3" selected>Up to 1 Month</option>
+                            <option value="2 to 3 Months" id="optDur4">2 to 3 Months</option>
+                        </select>
+                    </div>
+
+                    <!-- 4. Objects & People Allowed to Bring/Take -->
+                    <div class="space-y-2">
+                        <label class="block text-sm font-bold text-emerald-100">
+                            <span id="lblHostAllowed">4. Objects & People Allowed to Bring/Take</span> <span class="text-red-300" id="lblHostAllowedReq">* (At least 1 required)</span>
+                        </label>
+                        <div class="p-4 rounded-xl border-2 border-bx-light bg-[#0b2115] grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <label class="flex items-center gap-3 cursor-pointer p-2 rounded-lg hover:bg-emerald-950/80">
+                                <input type="checkbox" name="allowedItems" value="Children / Families" class="w-4.5 h-4.5 accent-emerald-400 rounded">
+                                <span class="text-sm text-emerald-100"><i class="fa-solid fa-child text-emerald-300 mr-2"></i><span id="chkFam">Children / Families</span></span>
+                            </label>
+
+                            <label class="flex items-center gap-3 cursor-pointer p-2 rounded-lg hover:bg-emerald-950/80">
+                                <input type="checkbox" name="allowedItems" value="Small Pets Allowed" class="w-4.5 h-4.5 accent-emerald-400 rounded">
+                                <span class="text-sm text-emerald-100"><i class="fa-solid fa-cat text-emerald-300 mr-2"></i><span id="chkSmallPets">Small Pets Allowed</span></span>
+                            </label>
+
+                            <label class="flex items-center gap-3 cursor-pointer p-2 rounded-lg hover:bg-emerald-950/80">
+                                <input type="checkbox" name="allowedItems" value="Assistance / Service Animals" class="w-4.5 h-4.5 accent-emerald-400 rounded">
+                                <span class="text-sm text-emerald-100"><i class="fa-solid fa-dog text-emerald-300 mr-2"></i><span id="chkServiceAnimals">Assistance / Service Animals</span></span>
+                            </label>
+
+                            <label class="flex items-center gap-3 cursor-pointer p-2 rounded-lg hover:bg-emerald-950/80">
+                                <input type="checkbox" name="allowedItems" value="Double Guests / Couples" class="w-4.5 h-4.5 accent-emerald-400 rounded">
+                                <span class="text-sm text-emerald-100"><i class="fa-solid fa-user-group text-emerald-300 mr-2"></i><span id="chkDoubleGuests">Double Guests / Couples</span></span>
+                            </label>
+
+                            <label class="flex items-center gap-3 cursor-pointer p-2 rounded-lg hover:bg-emerald-950/80">
+                                <input type="checkbox" name="allowedItems" value="Luggage & Storage" class="w-4.5 h-4.5 accent-emerald-400 rounded">
+                                <span class="text-sm text-emerald-100"><i class="fa-solid fa-suitcase-rolling text-emerald-300 mr-2"></i><span id="chkLuggage">Luggage & Storage</span></span>
+                            </label>
+
+                            <label class="flex items-center gap-3 cursor-pointer p-2 rounded-lg hover:bg-emerald-950/80">
+                                <input type="checkbox" name="allowedItems" value="Single Guest Only" class="w-4.5 h-4.5 accent-emerald-400 rounded">
+                                <span class="text-sm text-emerald-100"><i class="fa-solid fa-user text-emerald-300 mr-2"></i><span id="chkSingle">Single Guest Only</span></span>
+                            </label>
+                        </div>
+                        <p id="allowedError" class="hidden text-xs text-red-300 font-bold">Please select at least 1 object or category allowed.</p>
+                    </div>
+
+                    <!-- 5. Languages Spoken Prompt -->
+                    <div class="space-y-2">
+                        <label class="block text-sm font-bold text-emerald-100">
+                            <span id="lblHostLanguages">5. Language(s) Spoken in Your Household</span> <span class="text-red-300" id="lblHostLangReq">* (At least 1 required)</span>
+                        </label>
+                        <div class="p-4 rounded-xl border-2 border-bx-light bg-[#0b2115] grid grid-cols-2 sm:grid-cols-3 gap-3">
+                            <label class="flex items-center gap-2 cursor-pointer p-2 rounded-lg hover:bg-emerald-950/80">
+                                <input type="checkbox" name="hostLanguages" value="English" checked class="w-4 h-4 accent-emerald-400">
+                                <span class="text-xs sm:text-sm text-emerald-100">English</span>
+                            </label>
+
+                            <label class="flex items-center gap-2 cursor-pointer p-2 rounded-lg hover:bg-emerald-950/80">
+                                <input type="checkbox" name="hostLanguages" value="Español" class="w-4 h-4 accent-emerald-400">
+                                <span class="text-xs sm:text-sm text-emerald-100">Español</span>
+                            </label>
+
+                            <label class="flex items-center gap-2 cursor-pointer p-2 rounded-lg hover:bg-emerald-950/80">
+                                <input type="checkbox" name="hostLanguages" value="Français" class="w-4 h-4 accent-emerald-400">
+                                <span class="text-xs sm:text-sm text-emerald-100">Français</span>
+                            </label>
+
+                            <label class="flex items-center gap-2 cursor-pointer p-2 rounded-lg hover:bg-emerald-950/80">
+                                <input type="checkbox" name="hostLanguages" value="Garífuna" class="w-4 h-4 accent-emerald-400">
+                                <span class="text-xs sm:text-sm text-emerald-100">Garífuna</span>
+                            </label>
+
+                            <label class="flex items-center gap-2 cursor-pointer p-2 rounded-lg hover:bg-emerald-950/80">
+                                <input type="checkbox" name="hostLanguages" value="বাংলা (Bengali)" class="w-4 h-4 accent-emerald-400">
+                                <span class="text-xs sm:text-sm text-emerald-100">বাংলা (Bengali)</span>
+                            </label>
+
+                            <label class="flex items-center gap-2 cursor-pointer p-2 rounded-lg hover:bg-emerald-950/80">
+                                <input type="checkbox" name="hostLanguages" value="العربية (Arabic)" class="w-4 h-4 accent-emerald-400">
+                                <span class="text-xs sm:text-sm text-emerald-100">العربية (Arabic)</span>
+                            </label>
+                        </div>
+                        <p id="langError" class="hidden text-xs text-red-300 font-bold">Please select at least 1 language spoken in your household.</p>
+                    </div>
+
+                    <!-- 6. Contact Information (Phone or Email required) -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div class="space-y-2">
+                            <label class="block text-sm font-bold text-emerald-100" for="hostPhone">
+                                <span id="lblHostPhone">6a. Phone Number</span>
+                            </label>
+                            <input type="tel" id="hostPhone"
+                                placeholder="e.g., (347) 555-0192" 
+                                class="w-full prompt-outline rounded-xl px-4 py-3 text-sm font-medium">
+                        </div>
+
+                        <div class="space-y-2">
+                            <label class="block text-sm font-bold text-emerald-100" for="hostEmail">
+                                <span id="lblHostEmail">6b. Email Address</span>
+                            </label>
+                            <input type="email" id="hostEmail"
+                                placeholder="e.g., yourname@email.com" 
+                                class="w-full prompt-outline rounded-xl px-4 py-3 text-sm font-medium">
+                        </div>
+                    </div>
+                    <p class="text-xs text-emerald-300 font-medium" id="hintContact">* At least phone or email is required so guests can connect with you.</p>
+
+                    <!-- 7. Photo of the Location (Required) -->
+                    <div class="space-y-2">
+                        <label class="block text-sm font-bold text-emerald-100">
+                            <span id="lblHostPhoto">7. Photo of the Location</span> <span class="text-red-300">*</span>
+                        </label>
+                        
+                        <div class="p-4 rounded-xl border-2 border-bx-light bg-[#0b2115] space-y-3">
+                            <div class="flex flex-col sm:flex-row items-center gap-4">
+                                <label class="w-full sm:w-auto px-5 py-3 rounded-xl bg-bx-button hover:bg-bx-button-hover border-2 border-bx-light text-emerald-100 text-sm font-bold cursor-pointer flex items-center justify-center gap-2">
+                                    <i class="fa-solid fa-camera text-emerald-300"></i>
+                                    <span id="btnUploadPhoto">Upload Photo File</span>
+                                    <input type="file" id="photoUpload" accept="image/*" onchange="previewUploadedImage(event)" class="hidden">
+                                </label>
+                                <span class="text-xs text-emerald-200" id="txtOrPreset">or pick a sample room photo:</span>
+                            </div>
+
+                            <!-- Preset Sample Photos -->
+                            <div class="grid grid-cols-3 gap-2 pt-1">
+                                <div onclick="selectPresetPhoto(this, 'https://images.unsplash.com/photo-1555854877-bab0e564b8d5?auto=format&fit=crop&w=600&q=80')" 
+                                    class="photo-preset border-2 border-bx-light rounded-lg overflow-hidden cursor-pointer hover:opacity-90 relative h-20">
+                                    <img src="https://images.unsplash.com/photo-1555854877-bab0e564b8d5?auto=format&fit=crop&w=600&q=80" alt="Couch" class="w-full h-full object-cover">
+                                    <span class="absolute bottom-1 left-1 bg-black/85 text-[10px] px-1.5 py-0.5 rounded text-white font-medium" id="presetCouch">Living Couch</span>
+                                </div>
+
+                                <div onclick="selectPresetPhoto(this, 'https://images.unsplash.com/photo-1595526114035-0d45ed16cfbf?auto=format&fit=crop&w=600&q=80')" 
+                                    class="photo-preset border-2 border-bx-light rounded-lg overflow-hidden cursor-pointer hover:opacity-90 relative h-20">
+                                    <img src="https://images.unsplash.com/photo-1595526114035-0d45ed16cfbf?auto=format&fit=crop&w=600&q=80" alt="Bedroom" class="w-full h-full object-cover">
+                                    <span class="absolute bottom-1 left-1 bg-black/85 text-[10px] px-1.5 py-0.5 rounded text-white font-medium" id="presetBed">Spare Bed</span>
+                                </div>
+
+                                <div onclick="selectPresetPhoto(this, 'https://images.unsplash.com/photo-1540518614846-7eded433c457?auto=format&fit=crop&w=600&q=80')" 
+                                    class="photo-preset border-2 border-bx-light rounded-lg overflow-hidden cursor-pointer hover:opacity-90 relative h-20">
+                                    <img src="https://images.unsplash.com/photo-1540518614846-7eded433c457?auto=format&fit=crop&w=600&q=80" alt="Daybed" class="w-full h-full object-cover">
+                                    <span class="absolute bottom-1 left-1 bg-black/85 text-[10px] px-1.5 py-0.5 rounded text-white font-medium" id="presetDaybed">Daybed</span>
+                                </div>
+                            </div>
+
+                            <!-- Preview Box -->
+                            <div id="photoPreviewBox" class="relative rounded-xl border-2 border-bx-light overflow-hidden h-44 bg-black/40">
+                                <img id="previewImg" src="https://images.unsplash.com/photo-1555854877-bab0e564b8d5?auto=format&fit=crop&w=600&q=80" alt="Selected space" class="w-full h-full object-cover">
+                                <div class="absolute top-2 right-2 bg-emerald-950/90 text-emerald-200 text-xs px-2.5 py-1 rounded-md border border-emerald-400 font-bold" id="badgePhotoSelected">
+                                    Photo Selected
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 8. Other Details & Potential Area Concerns -->
+                    <div class="space-y-2">
+                        <label class="block text-sm font-bold text-emerald-100" for="hostDetails">
+                            <span id="lblHostDetails">8. Other Details & Potential Neighborhood Concerns (Optional)</span>
+                        </label>
+                        <textarea id="hostDetails" rows="4"
+                            placeholder="Specify details or neighborhood notes (e.g., quiet building, elevator access, 3rd floor walk-up, night street noise)..." 
+                            class="w-full prompt-outline rounded-xl px-4 py-3 text-sm font-medium"></textarea>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <button type="submit" 
+                        class="w-full py-4 rounded-xl bg-emerald-700 hover:bg-emerald-600 text-white font-extrabold text-lg border-2 border-emerald-300 shadow-xl transition transform active:scale-95 flex items-center justify-center gap-3">
+                        <i class="fa-solid fa-paper-plane"></i>
+                        <span id="btnSubmitListing">Publish Volunteer Stay Listing</span>
+                    </button>
+                </form>
+            </div>
+        </section>
+
+        <!-- Interactive Contact Info Modal -->
+        <div id="contactModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+            <div class="bg-bx-card border-2 border-bx-light rounded-2xl max-w-md w-full p-6 space-y-4 relative shadow-2xl">
+                <button onclick="closeModal()" class="absolute top-4 right-4 text-emerald-300 hover:text-white text-xl">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+                
+                <div class="flex items-center gap-3">
+                    <div class="w-12 h-12 rounded-full border-2 border-emerald-400 overflow-hidden bg-emerald-950">
+                        <img id="modalHostImg" src="" alt="Host" class="w-full h-full object-cover">
+                    </div>
+                    <div>
+                        <h3 id="modalHostName" class="text-xl font-bold text-emerald-100">Host Name</h3>
+                        <p id="modalHostLocation" class="text-xs text-emerald-200"><i class="fa-solid fa-location-dot"></i> Location</p>
+                    </div>
+                </div>
+
+                <div class="p-4 rounded-xl border-2 border-bx-light bg-[#0b2115] space-y-3">
+                    <p class="text-xs text-emerald-300 font-bold uppercase tracking-wider" id="lblModalContactTitle">Contact Information</p>
+                    <div id="modalPhoneBox" class="flex items-center justify-between text-sm p-2.5 rounded-lg bg-emerald-950/90 border border-emerald-500/50">
+                        <span class="text-emerald-100 font-mono font-bold" id="modalPhone"></span>
+                        <button onclick="copyToClipboard('modalPhone')" class="text-xs px-3 py-1 bg-emerald-700 text-white rounded font-bold hover:bg-emerald-600" id="btnCopyPhone">Copy</button>
+                    </div>
+                    <div id="modalEmailBox" class="flex items-center justify-between text-sm p-2.5 rounded-lg bg-emerald-950/90 border border-emerald-500/50">
+                        <span class="text-emerald-100 font-mono font-bold truncate max-w-[200px]" id="modalEmail"></span>
+                        <button onclick="copyToClipboard('modalEmail')" class="text-xs px-3 py-1 bg-emerald-700 text-white rounded font-bold hover:bg-emerald-600" id="btnCopyEmail">Copy</button>
+                    </div>
+                </div>
+
+                <div class="text-xs text-emerald-200 space-y-1">
+                    <p><strong id="lblSafetyTip">Safety Tip:</strong> <span id="lblSafetyTipText">Always call or meet over phone/video before finalizing temporary stay arrangements.</span></p>
+                </div>
+
+                <button onclick="closeModal()" class="w-full py-3 rounded-xl bg-bx-button border-2 border-bx-light text-emerald-100 font-bold text-sm hover:bg-bx-button-hover" id="btnCloseModal">
+                    Close Window
+                </button>
+            </div>
+        </div>
+
+    </main>
+
+    <footer class="mt-auto border-t-2 border-bx-light bg-[#092114] py-6 text-center text-xs text-emerald-300/90">
+        <div class="max-w-6xl mx-auto px-4 space-y-2">
+            <p class="font-bold text-emerald-200" id="footerTitle">NYC Crash Comfort • South Bronx Housing Mutual Aid</p>
+            <p id="footerSub">Supporting residents in Mott Haven, Melrose, Hunts Point, Highbridge, Tremont, Concourse, and nearby areas.</p>
+            <p class="text-[10px] text-emerald-400" id="footerBadge">wireframe prototype • non-monetary community support</p>
+        </div>
+    </footer>
+
+    <script>
+        // Universal Multi-language Translation Engine
+        let activeLang = 'en';
+
+        const tagTranslations = {
+            'Children / Families': {
+                en: 'Children / Families',
+                es: 'Familias / Niños',
+                fr: 'Enfants / Familles',
+                gar: 'Iriña / Familia',
+                bn: 'শিশু / পরিবার',
+                ar: 'الأطفال / العائلات'
+            },
+            'Small Pets Allowed': {
+                en: 'Small Pets Allowed',
+                es: 'Mascotas Pequeñas Permitidas',
+                fr: 'Petits Animaux Acceptés',
+                gar: 'Animates Pequeños',
+                bn: 'ছোট পোষা প্রাণী অনুমোদিত',
+                ar: 'يسمح بالحيوانات الأليفة الصغيرة'
+            },
+            'Assistance / Service Animals': {
+                en: 'Assistance / Service Animals',
+                es: 'Animales de Asistencia / Servicio',
+                fr: "Animaux d'Assistance / Service",
+                gar: 'Animates de Asistencia',
+                bn: 'সহায়তা / সেবা প্রাণী',
+                ar: 'حيوانات المساعدة / الخدمة'
+            },
+            'Double Guests / Couples': {
+                en: 'Double Guests / Couples',
+                es: 'Parejas / 2 Huéspedes',
+                fr: 'Couples / 2 Invités',
+                gar: 'Iruü Uwoü / Parejas',
+                bn: 'দম্পতি / ২ জন অতিথি',
+                ar: 'الضيوف المزدوجون / الأزواج'
+            },
+            'Luggage & Storage': {
+                en: 'Luggage & Storage',
+                es: 'Equipaje y Almacenamiento',
+                fr: 'Bagages & Stockage',
+                gar: 'Maletas y Almacenamiento',
+                bn: 'মালামাল ও স্টোরেজ',
+                ar: 'الأمتعة والتخزين'
+            },
+            'Single Guest Only': {
+                en: 'Single Guest Only',
+                es: 'Solo Huésped Individual',
+                fr: 'Seule Personne',
+                gar: 'Aban Uwoü Ónly',
+                bn: 'কেবলমাত্র একক অতিথি',
+                ar: 'ضيف واحد فقط'
+            }
+        };
+
+        const durationTranslations = {
+            '3 to 7 Days': {
+                en: '3 to 7 Days',
+                es: '3 a 7 Días',
+                fr: '3 à 7 Jours',
+                gar: '3 lun 7 Weiyu',
+                bn: '৩ থেকে ৭ দিন',
+                ar: 'من ٣ إلى ٧ أيام'
+            },
+            'Up to 2 Weeks': {
+                en: 'Up to 2 Weeks',
+                es: 'Hasta 2 Semanas',
+                fr: 'Jusqu\'à 2 Semaines',
+                gar: '2 Semanas',
+                bn: 'সর্বোচ্চ ২ সপ্তাহ',
+                ar: 'حتى أسبوعين'
+            },
+            'Up to 1 Month': {
+                en: 'Up to 1 Month',
+                es: 'Hasta 1 Mes',
+                fr: 'Jusqu\'à 1 Mois',
+                gar: '1 Kati',
+                bn: 'সর্বোচ্চ ১ মাস',
+                ar: 'حتى شهر واحد'
+            },
+            '1 Month': {
+                en: '1 Month',
+                es: '1 Mes',
+                fr: '1 Mois',
+                gar: '1 Kati',
+                bn: '১ মাস',
+                ar: 'شهر واحد'
+            },
+            '2 to 3 Weeks': {
+                en: '2 to 3 Weeks',
+                es: '2 a 3 Semanas',
+                fr: '2 à 3 Semaines',
+                gar: '2 lun 3 Semanas',
+                bn: '২ থেকে ৩ সপ্তাহ',
+                ar: 'من أسبوعين إلى ٣ أسابيع'
+            },
+            '2 to 3 Months': {
+                en: '2 to 3 Months',
+                es: '2 a 3 Meses',
+                fr: '2 à 3 Mois',
+                gar: '2 lun 3 Kati',
+                bn: '২ থেকে ৩ মাস',
+                ar: 'من شهرين إلى ٣ أشهر'
+            }
+        };
+
+        const translations = {
+            en: {
+                subTitleHeader: "South Bronx Affordable Housing Aid",
+                bannerTitle: "Community Housing Solidarity",
+                bannerDesc: "Connecting South Bronx residents facing high rent with willing neighbors offering a safe place to crash temporarily while building up savings.",
+                badgeBanner: "100% Free Mutual Aid Network",
+                findBtn: "Find a Volunteer",
+                beBtn: "Be a Volunteer",
+                searchPlaceholder: "Search location or zip code (e.g., Mott Haven, Melrose, 10451, Hunts Point)...",
+                filtersBtn: "Filters",
+                resetBtn: "Reset",
+                titleFilterPanel: "Filter Volunteer Listings",
+                clearFilters: "Clear Filters",
+                filterAllowedLabel: "Allowed Objects & People:",
+                filterLangLabel: "Language Spoken:",
+                optLangAll: "All Languages",
+                optFam: "Families",
+                optSmallPets: "Small Pets",
+                optServiceAnimals: "Assistance Animals",
+                optDouble: "Double Guests",
+                optLug: "Luggage",
+                optSingle: "Single Guest",
+                quickSearch: "South Bronx Areas:",
+                titleAvailable: "Available Volunteers",
+                lblVolunteersFound: "Volunteers Found",
+                lblVolunteerFoundSingular: "Volunteer Found",
+                noResultsTitle: "No Volunteers Found Matching Your Criteria",
+                noResultsDesc: "Try searching for another neighborhood or clearing your active filters.",
+                btnShowAllVolunteers: "Show All Volunteers",
+                beTitle: "Become a Volunteer Host",
+                beDesc: "Offer a safe couch, extra room, or temporary space to help a neighbor in the South Bronx stay on their feet.",
+                lblHostName: "1. Your Name",
+                lblHostLoc: "2. Location Where Others Can Stay Temporarily",
+                hintLoc: "Provide cross streets or neighborhood for personal privacy.",
+                lblHostDuration: "3. Available Time to Stay",
+                lblHostAllowed: "4. Objects & People Allowed to Bring/Take",
+                lblHostAllowedReq: "* (At least 1 required)",
+                lblHostLanguages: "5. Language(s) Spoken in Your Household",
+                lblHostLangReq: "* (At least 1 required)",
+                lblHostPhone: "6a. Phone Number",
+                lblHostEmail: "6b. Email Address",
+                hintContact: "* At least phone or email is required so guests can connect with you.",
+                lblHostPhoto: "7. Photo of the Location",
+                btnUploadPhoto: "Upload Photo File",
+                txtOrPreset: "or pick a sample room photo:",
+                presetCouch: "Living Couch",
+                presetBed: "Spare Bed",
+                presetDaybed: "Daybed",
+                badgePhotoSelected: "Photo Selected",
+                lblHostDetails: "8. Other Details & Potential Neighborhood Concerns (Optional)",
+                btnSubmit: "Publish Volunteer Stay Listing",
+                lblLanguages: "Languages Spoken:",
+                lblAllowed: "Allowed Objects & People:",
+                lblDetails: "Stay Details & Area Notes:",
+                btnContact: "Get Contact Info (Phone / Email)",
+                lblModalContactTitle: "Contact Information",
+                btnCopyPhone: "Copy",
+                btnCopyEmail: "Copy",
+                lblSafetyTip: "Safety Tip:",
+                lblSafetyTipText: "Always call or meet over phone/video before finalizing temporary stay arrangements.",
+                btnCloseModal: "Close Window",
+                footerTitle: "NYC Crash Comfort • South Bronx Housing Mutual Aid",
+                footerSub: "Supporting residents in Mott Haven, Melrose, Hunts Point, Highbridge, Tremont, Concourse, and nearby areas.",
+                footerBadge: "wireframe prototype • non-monetary community support",
+                chkFam: "Children / Families",
+                chkSmallPets: "Small Pets Allowed",
+                chkServiceAnimals: "Assistance / Service Animals",
+                chkDoubleGuests: "Double Guests / Couples",
+                chkLuggage: "Luggage & Storage",
+                chkSingle: "Single Guest Only",
+                optDur1: "3 to 7 Days",
+                optDur2: "Up to 2 Weeks",
+                optDur3: "Up to 1 Month",
+                optDur4: "2 to 3 Months",
+                placeholderHostName: "e.g., Maria Rodriguez or Jean-Baptiste K.",
+                placeholderHostLoc: "e.g., Mott Haven, South Bronx (Near 138th St & Willis Ave)",
+                placeholderHostPhone: "e.g., (347) 555-0192",
+                placeholderHostEmail: "e.g., yourname@email.com",
+                placeholderDetails: "Specify details or neighborhood notes (e.g., quiet building, elevator access, 3rd floor walk-up, night street noise)...",
+                errAllowed: "Please select at least 1 object or category allowed.",
+                errLang: "Please select at least 1 language spoken in your household.",
+                errContactRequired: "Please enter at least a phone number or email address so guests can reach out.",
+                alertSuccess: "Thank you! Your volunteer stay listing has been successfully published!"
+            },
+            es: {
+                subTitleHeader: "Ayuda de Vivienda Asequible en el South Bronx",
+                bannerTitle: "Solidaridad de Vivienda Comunitaria",
+                bannerDesc: "Conectando a los residentes del South Bronx con dificultades de alquiler con vecinos dispuestos a ofrecer un lugar seguro para quedarse temporalmente mientras ahorran dinero.",
+                badgeBanner: "Red de Ayuda Mutua 100% Gratuita",
+                findBtn: "Buscar Voluntario",
+                beBtn: "Ser Voluntario",
+                searchPlaceholder: "Buscar ubicación o código postal (ej. Mott Haven, Melrose, 10451, Hunts Point)...",
+                filtersBtn: "Filtros",
+                resetBtn: "Reiniciar",
+                titleFilterPanel: "Filtrar Lista de Voluntarios",
+                clearFilters: "Limpiar Filtros",
+                filterAllowedLabel: "Objetos y Personas Permitidas:",
+                filterLangLabel: "Idioma Hablado:",
+                optLangAll: "Todos los Idiomas",
+                optFam: "Familias",
+                optSmallPets: "Mascotas Pequeñas",
+                optServiceAnimals: "Animales de Asistencia",
+                optDouble: "Parejas / 2 Huéspedes",
+                optLug: "Equipaje",
+                optSingle: "Huésped Individual",
+                quickSearch: "Áreas del South Bronx:",
+                titleAvailable: "Voluntarios Disponibles",
+                lblVolunteersFound: "Voluntarios Encontrados",
+                lblVolunteerFoundSingular: "Voluntario Encontrado",
+                noResultsTitle: "No se encontraron voluntarios que coincidan con su búsqueda",
+                noResultsDesc: "Intente buscar otro vecindario o limpie los filtros activos.",
+                btnShowAllVolunteers: "Mostrar Todos los Voluntarios",
+                beTitle: "Conviértase en Anfitrión Voluntario",
+                beDesc: "Ofrezca un sofá seguro, habitación extra o espacio temporal para ayudar a un vecino del South Bronx.",
+                lblHostName: "1. Su Nombre",
+                lblHostLoc: "2. Ubicación Donde Otros Pueden Quedarse Temporalmente",
+                hintLoc: "Proporcione calles cruzadas o vecindario para privacidad personal.",
+                lblHostDuration: "3. Tiempo Disponible para Quedarse",
+                lblHostAllowed: "4. Objetos y Personas Permitidas Traer",
+                lblHostAllowedReq: "* (Al menos 1 requerido)",
+                lblHostLanguages: "5. Idioma(s) Hablados en Su Hogar",
+                lblHostLangReq: "* (Al menos 1 requerido)",
+                lblHostPhone: "6a. Número de Teléfono",
+                lblHostEmail: "6b. Correo Electrónico",
+                hintContact: "* Se requiere al menos teléfono o correo electrónico para contacto.",
+                lblHostPhoto: "7. Foto del Lugar",
+                btnUploadPhoto: "Subir Foto",
+                txtOrPreset: "o elija una foto de muestra:",
+                presetCouch: "Sofá en la Sala",
+                presetBed: "Cama Extra",
+                presetDaybed: "Cama de Día",
+                badgePhotoSelected: "Foto Seleccionada",
+                lblHostDetails: "8. Otros Detalles y Notas del Vecindario (Opcional)",
+                btnSubmit: "Publicar Oferta de Voluntario",
+                lblLanguages: "Idiomas Hablados:",
+                lblAllowed: "Objetos y Personas Permitidos:",
+                lblDetails: "Detalles de Estancia y Notas de la Zona:",
+                btnContact: "Obtener Contacto (Teléfono / Correo)",
+                lblModalContactTitle: "Información de Contacto",
+                btnCopyPhone: "Copiar",
+                btnCopyEmail: "Copiar",
+                lblSafetyTip: "Consejo de Seguridad:",
+                lblSafetyTipText: "Siempre llame o reúnase por teléfono/video antes de finalizar el alojamiento.",
+                btnCloseModal: "Cerrar Ventana",
+                footerTitle: "NYC Crash Comfort • Ayuda Comunitaria de Vivienda del South Bronx",
+                footerSub: "Apoyando a los residentes en Mott Haven, Melrose, Hunts Point, Highbridge, Tremont, Concourse y zonas cercanas.",
+                footerBadge: "prototipo wireframe • apoyo comunitario no monetario",
+                chkFam: "Familias / Niños",
+                chkSmallPets: "Mascotas Pequeñas Permitidas",
+                chkServiceAnimals: "Animales de Asistencia / Servicio",
+                chkDoubleGuests: "Parejas / 2 Huéspedes",
+                chkLuggage: "Equipaje y Almacenamiento",
+                chkSingle: "Solo Huésped Individual",
+                optDur1: "3 a 7 Días",
+                optDur2: "Hasta 2 Semanas",
+                optDur3: "Hasta 1 Mes",
+                optDur4: "2 a 3 Meses",
+                placeholderHostName: "ej., María Rodríguez o Jean-Baptiste K.",
+                placeholderHostLoc: "ej., Mott Haven, South Bronx (Cerca de Calle 138 y Ave Willis)",
+                placeholderHostPhone: "ej., (347) 555-0192",
+                placeholderHostEmail: "ej., sunombre@email.com",
+                placeholderDetails: "Especifique detalles o notas sobre el vecindario (ej. edificio tranquilo, ascensor, caminata de 3 pisos, ruido nocturno)...",
+                errAllowed: "Por favor seleccione al menos 1 objeto o categoría permitida.",
+                errLang: "Por favor seleccione al menos 1 idioma hablado en su hogar.",
+                errContactRequired: "Por favor ingrese al menos un número de teléfono o correo electrónico para contacto.",
+                alertSuccess: "¡Gracias! ¡Su oferta de hospedaje voluntario ha sido publicada con éxito!"
+            },
+            fr: {
+                subTitleHeader: "Aide au Logement Abordable du South Bronx",
+                bannerTitle: "Solidarité Logement Communautaire",
+                bannerDesc: "Mettre en relation les habitants du South Bronx en difficulté de loyer avec des voisins prêts à offrir un endroit sûr pour dépanner temporairement.",
+                badgeBanner: "Réseau d'Entraide 100% Gratuit",
+                findBtn: "Trouver un Bénévolat",
+                beBtn: "Être Bénévolat",
+                searchPlaceholder: "Rechercher un quartier ou code postal (ex. Mott Haven, Melrose, 10451)...",
+                filtersBtn: "Filtres",
+                resetBtn: "Réinitialiser",
+                titleFilterPanel: "Filtrer les Annonces de Bénévoles",
+                clearFilters: "Effacer les Filtres",
+                filterAllowedLabel: "Objets & Personnes Autorisés:",
+                filterLangLabel: "Langues Parlées:",
+                optLangAll: "Toutes les Langues",
+                optFam: "Familles",
+                optSmallPets: "Petits Animaux",
+                optServiceAnimals: "Animaux d'Assistance",
+                optDouble: "Couples / 2 Personnes",
+                optLug: "Bagages",
+                optSingle: "Personne Seule",
+                quickSearch: "Quartiers du South Bronx:",
+                titleAvailable: "Bénévoles Disponibles",
+                lblVolunteersFound: "Bénévoles Trouvés",
+                lblVolunteerFoundSingular: "Bénévole Trouvé",
+                noResultsTitle: "Aucun bénévole ne correspond à votre recherche",
+                noResultsDesc: "Essayez de rechercher un autre quartier ou effacez vos filtres.",
+                btnShowAllVolunteers: "Afficher Tous les Bénévoles",
+                beTitle: "Devenir un Hôte Bénévolat",
+                beDesc: "Offrez un canapé sécurisé ou une chambre temporaire pour aider un voisin du South Bronx.",
+                lblHostName: "1. Votre Nom",
+                lblHostLoc: "2. Emplacement Où les Autres Peuvent Rester Temporairement",
+                hintLoc: "Indiquez un quartier ou des rues croisées pour votre confidentialité.",
+                lblHostDuration: "3. Durée Disponible pour Rester",
+                lblHostAllowed: "4. Objets & Personnes Autorisés à Apporter",
+                lblHostAllowedReq: "* (Au moins 1 requis)",
+                lblHostLanguages: "5. Langue(s) Parlée(s) à la Maison",
+                lblHostLangReq: "* (Au moins 1 requis)",
+                lblHostPhone: "6a. Numéro de Téléphone",
+                lblHostEmail: "6b. Adresse E-mail",
+                hintContact: "* Au moins un téléphone ou e-mail est requis.",
+                lblHostPhoto: "7. Photo du Logement",
+                btnUploadPhoto: "Téléverser la Photo",
+                txtOrPreset: "ou choisissez une photo exemple:",
+                presetCouch: "Canapé Salon",
+                presetBed: "Lit d'Appoint",
+                presetDaybed: "Lit Banquette",
+                badgePhotoSelected: "Photo Sélectionnée",
+                lblHostDetails: "8. Autres Détails & Remarques sur le Quartier (Optionnel)",
+                btnSubmit: "Publier l'Annonce de Logement",
+                lblLanguages: "Langues Parlées:",
+                lblAllowed: "Objets & Personnes Autorisés:",
+                lblDetails: "Détails du Séjour et Remarques:",
+                btnContact: "Obtenir Contact (Tél / E-mail)",
+                lblModalContactTitle: "Coordonnées de Contact",
+                btnCopyPhone: "Copier",
+                btnCopyEmail: "Copier",
+                lblSafetyTip: "Conseil de Sécurité:",
+                lblSafetyTipText: "Toujours appeler ou échanger par vidéo avant de finaliser le séjour.",
+                btnCloseModal: "Fermer la Fenêtre",
+                footerTitle: "NYC Crash Comfort • Entraide Logement South Bronx",
+                footerSub: "Soutien aux résidents de Mott Haven, Melrose, Hunts Point, Highbridge, Tremont, Concourse et environs.",
+                footerBadge: "prototype wireframe • soutien communautaire gratuit",
+                chkFam: "Enfants / Familles",
+                chkSmallPets: "Petits Animaux Acceptés",
+                chkServiceAnimals: "Animaux d'Assistance / Service",
+                chkDoubleGuests: "Couples / 2 Invités",
+                chkLuggage: "Bagages & Stockage",
+                chkSingle: "Seule Personne",
+                optDur1: "3 à 7 Jours",
+                optDur2: "Jusqu'à 2 Semaines",
+                optDur3: "Jusqu'à 1 Mois",
+                optDur4: "2 à 3 Mois",
+                placeholderHostName: "ex., Marie Rodriguez ou Jean-Baptiste K.",
+                placeholderHostLoc: "ex., Mott Haven, South Bronx (Près de la rue 138e)",
+                placeholderHostPhone: "ex., (347) 555-0192",
+                placeholderHostEmail: "ex., votrenom@email.com",
+                placeholderDetails: "Précisez des détails ou remarques sur le quartier (ex. immeuble calme, ascenseur, bruit de la rue la nuit)...",
+                errAllowed: "Veuillez sélectionner au moins 1 objet ou catégorie autorisé.",
+                errLang: "Veuillez sélectionner au moins 1 langue parlée à la maison.",
+                errContactRequired: "Veuillez indiquer au moins un numéro de téléphone ou un e-mail.",
+                alertSuccess: "Merci! Votre annonce d'hébergement bénévole a été publiée avec succès!"
+            },
+            gar: {
+                subTitleHeader: "Ayundaguni lun mudagubani lidan South Bronx",
+                bannerTitle: "Mundaguni lun lani mudagubani",
+                bannerDesc: "Ayundaguni lunweyu lidan South Bronx lani liduba tubana ubangua houn uwoü adaha.",
+                badgeBanner: "100% Free Mutual Aid Network",
+                findBtn: "Daragu Bénévolo",
+                beBtn: "Ayaaha Bénévolo",
+                searchPlaceholder: "Daragu barrio o código (ej. Mott Haven, Melrose, 10451)...",
+                filtersBtn: "Filters",
+                resetBtn: "Amuñeguni",
+                titleFilterPanel: "Filtrar Bénévolos",
+                clearFilters: "Limpiar",
+                filterAllowedLabel: "Permitido:",
+                filterLangLabel: "Chulúñu:",
+                optLangAll: "Sun Chulúñu",
+                optFam: "Familias",
+                optSmallPets: "Animates Pequeños",
+                optServiceAnimals: "Animates de Asistencia",
+                optDouble: "Iruü Uwoü",
+                optLug: "Maletas",
+                optSingle: "Aban Uwoü",
+                quickSearch: "Barrios South Bronx:",
+                titleAvailable: "Anfitriones Garinagu",
+                lblVolunteersFound: "Anfitriones Daragüi",
+                lblVolunteerFoundSingular: "Anfitrión Daragüi",
+                noResultsTitle: "Makarani anfitriones lidan bumaraguni",
+                noResultsDesc: "Daragu amu barrio.",
+                btnShowAllVolunteers: "Sun Anfitriones",
+                beTitle: "Amihanu Bénévolo",
+                beDesc: "Adaiha aba muna lun aban uwoü lidan South Bronx.",
+                lblHostName: "1. Iri",
+                lblHostLoc: "2. Muna lidan adaha",
+                hintLoc: "Barrio o cruzamiento.",
+                lblHostDuration: "3. Dan lidan adaha",
+                lblHostAllowed: "4. Permitido adaha",
+                lblHostAllowedReq: "* (Min. 1)",
+                lblHostLanguages: "5. Chulúñu lidan muna",
+                lblHostLangReq: "* (Min. 1)",
+                lblHostPhone: "6a. Teléfono",
+                lblHostEmail: "6b. Email",
+                hintContact: "* Teléfono o Email required.",
+                lblHostPhoto: "7. Foto muna",
+                btnUploadPhoto: "Subir Foto",
+                txtOrPreset: "o seleccionar foto:",
+                presetCouch: "Sofá Muna",
+                presetBed: "Cama Extra",
+                presetDaybed: "Cama Daybed",
+                badgePhotoSelected: "Foto Selected",
+                lblHostDetails: "8. Detalle o barrio notes",
+                btnSubmit: "Afaaguni Listing",
+                lblLanguages: "Chulúñu:",
+                lblAllowed: "Permitido:",
+                lblDetails: "Detalles:",
+                btnContact: "Contact Info",
+                lblModalContactTitle: "Contact Information",
+                btnCopyPhone: "Copy",
+                btnCopyEmail: "Copy",
+                lblSafetyTip: "Consejo:",
+                lblSafetyTipText: "Call or video meeting before stay.",
+                btnCloseModal: "Close",
+                footerTitle: "NYC Crash Comfort • Garinagu Housing Aid",
+                footerSub: "Mott Haven, Melrose, Hunts Point, Highbridge, Tremont, Concourse.",
+                footerBadge: "wireframe prototype",
+                chkFam: "Iriña / Familia",
+                chkSmallPets: "Animates Pequeños",
+                chkServiceAnimals: "Animates de Asistencia",
+                chkDoubleGuests: "Iruü Uwoü / Parejas",
+                chkLuggage: "Maletas",
+                chkSingle: "Aban Uwoü",
+                optDur1: "3 lun 7 Weiyu",
+                optDur2: "2 Semanas",
+                optDur3: "1 Kati",
+                optDur4: "2 lun 3 Kati",
+                placeholderHostName: "Iri Maria o Jean",
+                placeholderHostLoc: "Barrio Mott Haven, South Bronx",
+                placeholderHostPhone: "Phone (347) 555-0192",
+                placeholderHostEmail: "Email iribani@email.com",
+                placeholderDetails: "Detalles lidan barrio...",
+                errAllowed: "Minimo 1 permitido.",
+                errLang: "Minimo 1 chulúñu.",
+                errContactRequired: "Teléfono o Email required.",
+                alertSuccess: "Listing afaagüi con éxito!"
+            },
+            bn: {
+                subTitleHeader: "সাউথ ব্রঙ্কস সাশ্রয়ী মূল্যের আবাসন সহায়তা",
+                bannerTitle: "কমিউনিটি আবাসন সংহতি",
+                bannerDesc: "উচ্চ ভাড়ার মুখোমুখি সাউথ ব্রঙ্কসের বাসিন্দাদের সাময়িক আশ্রয়ের জন্য প্রতিবেশীদের সাথে সংযুক্ত করা।",
+                badgeBanner: "১০০% বিনামূল্যে পারস্পরিক সহায়তা নেটওয়ার্ক",
+                findBtn: "স্বেচ্ছাসেবক খুঁজুন",
+                beBtn: "স্বেচ্ছাসেবক হন",
+                searchPlaceholder: "এলাকা বা জিপ কোড খুঁজুন (যেমন মট হ্যাভেন, মেলরোজ, ১০৪৫১)...",
+                filtersBtn: "ফিল্টার",
+                resetBtn: "রিসেট",
+                titleFilterPanel: "ফিল্টার করুন",
+                clearFilters: "ফিল্টার মুছুন",
+                filterAllowedLabel: "অনুমোদিত বস্তু ও ব্যক্তি:",
+                filterLangLabel: "ভাষাসমূহ:",
+                optLangAll: "সব ভাষা",
+                optFam: "পরিবার",
+                optSmallPets: "ছোট পোষা প্রাণী",
+                optServiceAnimals: "সহায়তা প্রাণী",
+                optDouble: "দম্পতি / ২ অতিথি",
+                optLug: "মালামাল",
+                optSingle: "একক অতিথি",
+                quickSearch: "সাউথ ব্রঙ্কস এলাকা:",
+                titleAvailable: "উপলব্ধ স্বেচ্ছাসেবকগণ",
+                lblVolunteersFound: "জন স্বেচ্ছাসেবক পাওয়া গেছে",
+                lblVolunteerFoundSingular: "জন স্বেচ্ছাসেবক পাওয়া গেছে",
+                noResultsTitle: "কোন স্বেচ্ছাসেবক পাওয়া যায়নি",
+                noResultsDesc: "অন্য এলাকা দিয়ে খুঁজুন বা ফিল্টার রিসেট করুন।",
+                btnShowAllVolunteers: "সব স্বেচ্ছাসেবক দেখান",
+                beTitle: "একজন স্বেচ্ছাসেবক হোস্ট হন",
+                beDesc: "সাউথ ব্রঙ্কসের প্রতিবেশীকে সাহায্য করার জন্য সাময়িক স্থান অফার করুন।",
+                lblHostName: "১. আপনার নাম",
+                lblHostLoc: "২. আশ্রয়ের স্থান",
+                hintLoc: "ব্যক্তিগত গোপনীয়তার জন্য আশেপাশের এলাকা লিখুন।",
+                lblHostDuration: "৩. থাকার মেয়াদ",
+                lblHostAllowed: "৪. যা যা আনা যাবে",
+                lblHostAllowedReq: "* (কমপক্ষে ১টি আবশ্যক)",
+                lblHostLanguages: "৫. বাড়িতে ব্যবহৃত ভাষাসমূহ",
+                lblHostLangReq: "* (কমপক্ষে ১টি আবশ্যক)",
+                lblHostPhone: "৬ক. ফোন নম্বর",
+                lblHostEmail: "৬খ. ইমেইল ঠিকানা",
+                hintContact: "* যোগাযোগের জন্য অন্তত ফোন নম্বর বা ইমেইল প্রয়োজন।",
+                lblHostPhoto: "৭. ঘরের ছবি",
+                btnUploadPhoto: "ছবি আপলোড করুন",
+                txtOrPreset: "অথবা নমুনা ছবি বেছে নিন:",
+                presetCouch: "লিভিং রুম সোফা",
+                presetBed: "অতিরিক্ত বেড",
+                presetDaybed: "ডে-বেড",
+                badgePhotoSelected: "ছবি নির্বাচিত",
+                lblHostDetails: "৮. বিস্তারিত এবং আশেপাশের পরিবেশের বিবরণ",
+                btnSubmit: "লিস্টিং প্রকাশ করুন",
+                lblLanguages: "ভাষাসমূহ:",
+                lblAllowed: "অনুমোদিত বস্তু ও ব্যক্তি:",
+                lblDetails: "বিস্তারিত ও এলাকা সংক্রান্ত নোট:",
+                btnContact: "যোগাযোগের তথ্য পান",
+                lblModalContactTitle: "যোগাযোগের তথ্য",
+                btnCopyPhone: "কপি করুন",
+                btnCopyEmail: "কপি করুন",
+                lblSafetyTip: "সুরক্ষা টিপস:",
+                lblSafetyTipText: "চূড়ান্ত করার আগে সর্বদা ফোন বা ভিডিওতে কথা বলুন।",
+                btnCloseModal: "বন্ধ করুন",
+                footerTitle: "NYC Crash Comfort • সাউথ ব্রঙ্কস আবাসন সহায়তা",
+                footerSub: "মট হ্যাভেন, মেলরোজ, হান্টস পয়েন্ট, হাইব্রিজ, ট্রেমন্ট, কনকোর্স এলাকার বাসিন্দাদের সহায়তায়।",
+                footerBadge: "ওয়্যারফ্রেম প্রোটোটাইপ • বিনামূল্যের সাহায্য",
+                chkFam: "শিশু / পরিবার",
+                chkSmallPets: "ছোট পোষা প্রাণী অনুমোদিত",
+                chkServiceAnimals: "সহায়তা / সেবা প্রাণী",
+                chkDoubleGuests: "দম্পতি / ২ জন অতিথি",
+                chkLuggage: "মালামাল ও স্টোরেজ",
+                chkSingle: "কেবলমাত্র একক অতিথি",
+                optDur1: "৩ থেকে ৭ দিন",
+                optDur2: "সর্বোচ্চ ২ সপ্তাহ",
+                optDur3: "সর্বোচ্চ ১ মাস",
+                optDur4: "২ থেকে ৩ মাস",
+                placeholderHostName: "যেমন, মারিয়া রদ্রিগেজ",
+                placeholderHostLoc: "যেমন, মট হ্যাভেন, সাউথ ব্রঙ্কস",
+                placeholderHostPhone: "যেমন, (৩৪৭) ৫৫৫-০১৯২",
+                placeholderHostEmail: "যেমন, yourname@email.com",
+                placeholderDetails: "বিস্তারিত তথ্য বা পরিবেশের বিবরণ দিন (যেমন শান্ত ভবন, লিফট ইত্যাদি)...",
+                errAllowed: "অনুগ্রহ করে কমপক্ষে ১টি অনুমোদিত বিষয় নির্বাচন করুন।",
+                errLang: "অনুগ্রহ করে কমপক্ষে ১টি ব্যবহৃত ভাষা নির্বাচন করুন।",
+                errContactRequired: "যোগাযোগের জন্য কমপক্ষে একটি ফোন বা ইমেইল লিখুন।",
+                alertSuccess: "ধন্যবাদ! আপনার স্বেচ্ছাসেবক আশ্রয়ের তথ্য সফলভাবে প্রকাশিত হয়েছে!"
+            },
+            ar: {
+                subTitleHeader: "مساعدة السكن بأسعار معقولة في ساوث برونكس",
+                bannerTitle: "التضامن السكني المجتمعي",
+                bannerDesc: "ربط سكان ساوث برونكس الذين يواجهون ارتفاع الإيجار بجيران مستعدين لاستضافتهم مؤقتاً لتوفير المال.",
+                badgeBanner: "شبكة مساعدة مجانية ١٠٠٪",
+                findBtn: "البحث عن متطوع",
+                beBtn: "كن متطوعاً",
+                searchPlaceholder: "ابحث عن الحي أو الرمز البريدي (مثل Mott Haven, Melrose, 10451)...",
+                filtersBtn: "تصفية",
+                resetBtn: "إعادة ضبط",
+                titleFilterPanel: "تصفية المتطوعين",
+                clearFilters: "مسح التصفية",
+                filterAllowedLabel: "المسموح به:",
+                filterLangLabel: "اللغات المتحدثة:",
+                optLangAll: "جميع اللغات",
+                optFam: "العائلات",
+                optSmallPets: "حيوانات أليفة صغيرة",
+                optServiceAnimals: "حيوانات المساعدة",
+                optDouble: "ضيوف مزدوجون / أزواج",
+                optLug: "الأمتعة",
+                optSingle: "ضيف واحد",
+                quickSearch: "أحياء ساوث برونكس:",
+                titleAvailable: "المتطوعون المتاحون",
+                lblVolunteersFound: "متطوعين تم العثور عليهم",
+                lblVolunteerFoundSingular: "متطوع تم العثور عليه",
+                noResultsTitle: "لم يتم العثور على متطوعين يطابقون بحثك",
+                noResultsDesc: "جرب البحث في حي آخر أو قم بإلغاء التصفية.",
+                btnShowAllVolunteers: "عرض جميع المتطوعين",
+                beTitle: "كن مضيفاً متطوعاً",
+                beDesc: "قدم مكاناً آمناً لمساعدة أحد الجيران في ساوث برونكس.",
+                lblHostName: "١. الاسم",
+                lblHostLoc: "٢. موقع الاستضافة المؤقتة",
+                hintLoc: "اذكر الحي أو التقاطعات القريبة للخصوصية.",
+                lblHostDuration: "٣. مدة الإقامة المتاحة",
+                lblHostAllowed: "٤. الأشخاص والأشياء المسموح بها",
+                lblHostAllowedReq: "* (مطلوب خيار واحد على الأقل)",
+                lblHostLanguages: "٥. اللغات المتحدثة في المنزل",
+                lblHostLangReq: "* (مطلوب خيار واحد على الأقل)",
+                lblHostPhone: "٦أ. رقم الهاتف",
+                lblHostEmail: "٦ب. البريد الإلكتروني",
+                hintContact: "* يلزم تقديم الهاتف أو البريد الإلكتروني للتواصل.",
+                lblHostPhoto: "٧. صورة المكان",
+                btnUploadPhoto: "تحميل صورة",
+                txtOrPreset: "أو اختر صورة نموذجية:",
+                presetCouch: "أريكة معيشة",
+                presetBed: "سرير إضافي",
+                presetDaybed: "سرير نهاري",
+                badgePhotoSelected: "تم اختيار الصورة",
+                lblHostDetails: "٨. تفاصيل أخرى وملاحظات الحي (اختياري)",
+                btnSubmit: "نشر الإعلان",
+                lblLanguages: "اللغات المتحدثة:",
+                lblAllowed: "المسموح به:",
+                lblDetails: "تفاصيل الإقامة والملاحظات:",
+                btnContact: "احصل على معلومات التواصل",
+                lblModalContactTitle: "معلومات التواصل",
+                btnCopyPhone: "نسخ",
+                btnCopyEmail: "نسخ",
+                lblSafetyTip: "نصيحة أمان:",
+                lblSafetyTipText: "اتصل دائماً عبر الهاتف أو الفيديو قبل إتمام ترتيبات الإقامة.",
+                btnCloseModal: "إغلاق النافذة",
+                footerTitle: "NYC Crash Comfort • مساعدة السكن في ساوث برونكس",
+                footerSub: "دعم السكان في مادت هافن، ميلروز، هنتس بوينت، هاايبريدج، تريمونت، والكونكورس.",
+                footerBadge: "نموذج الأولي • دعم مجاني",
+                chkFam: "الأطفال / العائلات",
+                chkSmallPets: "يسمح بالحيوانات الأليفة الصغيرة",
+                chkServiceAnimals: "حيوانات المساعدة / الخدمة",
+                chkDoubleGuests: "الضيوف المزدوجون / الأزواج",
+                chkLuggage: "الأمتعة والتخزين",
+                chkSingle: "ضيف واحد فقط",
+                optDur1: "من ٣ إلى ٧ أيام",
+                optDur2: "حتى أسبوعين",
+                optDur3: "حتى شهر واحد",
+                optDur4: "من شهرين إلى ٣ أشهر",
+                placeholderHostName: "مثل: ماريا رودريغيز",
+                placeholderHostLoc: "مثل: موت هافن، ساوث برونكس",
+                placeholderHostPhone: "مثل: (٣٤٧) ٥٥٥-٠١٩٢",
+                placeholderHostEmail: "مثل: yourname@email.com",
+                placeholderDetails: "اذكر التفاصيل أو ملاحظات الحي (مثل مبنى هادئ، مصعد، إلخ)...",
+                errAllowed: "يرجى اختيار خيار مسموح واحد على الأقل.",
+                errLang: "يرجى اختيار لغة واحدة على الأقل.",
+                errContactRequired: "يرجى تقديم رقم هاتف أو بريد إلكتروني على الأقل.",
+                alertSuccess: "شكراً لك! تم نشر إعلان الاستضافة التطوعية بنجاح!"
+            }
+        };
+
+        // Initial Dynamic Volunteer Host Directory with full language entries
+        let volunteers = [
+            {
+                id: '1',
+                name: 'Maria Rodriguez',
+                location: {
+                    en: 'Mott Haven, South Bronx (Near 138th St & Willis Ave)',
+                    es: 'Mott Haven, South Bronx (Cerca de Calle 138 y Ave Willis)',
+                    fr: 'Mott Haven, South Bronx (Près de la 138e Rue & Willis Ave)',
+                    gar: 'Mott Haven, South Bronx (Cerca Calle 138)',
+                    bn: 'মট হ্যাভেন, সাউথ ব্রঙ্কস (১৩৮ তম স্ট্রিট ও উইলিস অ্যাভিনিউ এর কাছে)',
+                    ar: 'موت هافن، ساوث برونكس (بالقرب من الشارع ١٣٨ شارع ويليس)'
+                },
+                duration: 'Up to 2 Weeks',
+                allowed: ['Children / Families', 'Small Pets Allowed', 'Luggage & Storage'],
+                languages: ['English', 'Español'],
+                phone: '(347) 555-0182',
+                email: 'marta.bronx.host@email.com',
+                photo: 'https://images.unsplash.com/photo-1555854877-bab0e564b8d5?auto=format&fit=crop&w=600&q=80',
+                details: {
+                    en: 'Private pull-out couch with room divider screen. Elevator building near 6 train. Quiet household after 10 PM. Note: Street parking can be tight on street cleaning days.',
+                    es: 'Sofá cama privado con pantalla divisoria. Edificio con ascensor cerca del tren 6. Casa tranquila después de las 10 PM. Nota: El estacionamiento en la calle es apretado en días de limpieza.',
+                    fr: 'Canapé convertible privé avec paravent. Immeuble avec ascenseur près du métro 6. Maison calme après 22h. Remarque: Stationnement de rue serré les jours de nettoyage.',
+                    gar: 'Sofá cama privado lidan muna. Elevador cerca tren 6. Muna tranquila.',
+                    bn: 'রুম ডিভাইডার স্ক্রীন সহ প্রাইভেট পুল-আউট সোফা। ৬ ট্রেনের কাছে লিফট সহ ভবন। রাত ১০টার পর শান্ত পরিবেশ।',
+                    ar: 'أريكة خاصة قابلة للفتح مع شاشة فاصلة. مبنى به مصعد بالقرب من القطار ٦. منزل هادئ بعد الساعة ١٠ مساءً.'
+                }
+            },
+            {
+                id: '2',
+                name: 'Jean-Baptiste K.',
+                location: {
+                    en: 'Melrose, South Bronx (Near 3rd Ave & 149th St)',
+                    es: 'Melrose, South Bronx (Cerca de 3rd Ave y Calle 149)',
+                    fr: 'Melrose, South Bronx (Près de la 3e Ave & 149e Rue)',
+                    gar: 'Melrose, South Bronx (Cerca 3rd Ave)',
+                    bn: 'মেলরোজ, সাউথ ব্রঙ্কস (৩য় অ্যাভিনিউ এবং ১৪৯ তম স্ট্রিটের কাছে)',
+                    ar: 'ميلروز، ساوث برونكس (بالقرب من الجادة الثالثة والشارع ١٤٩)'
+                },
+                duration: '1 Month',
+                allowed: ['Single Guest Only', 'Luggage & Storage', 'Assistance / Service Animals'],
+                languages: ['English', 'Français'],
+                phone: '(917) 555-0943',
+                email: 'jb.k.melrose@email.com',
+                photo: 'https://images.unsplash.com/photo-1595526114035-0d45ed16cfbf?auto=format&fit=crop&w=600&q=80',
+                details: {
+                    en: 'Furnished private spare bedroom with twin bed and closet space. Kitchen & Wi-Fi access. Speaks French and English. Area note: Commercial area with vibrant daytime activity.',
+                    es: 'Habitación privada amueblada con cama individual y armario. Acceso a cocina y Wi-Fi. Habla francés e inglés. Nota de área: Zona comercial con actividad diurna.',
+                    fr: 'Chambre privée meublée avec lit simple et placard. Accès cuisine et Wi-Fi. Parle français et anglais. Quartier commerçant et animé le jour.',
+                    gar: 'Habitación privada con cama individual. Cocina Wi-Fi. Garinagu y Français.',
+                    bn: 'টুইন বেড এবং আলমারি সহ সজ্জিত ব্যক্তিগত অতিরিক্ত শোবার ঘর। রান্নাঘর এবং ওয়াই-ফাই সুবিধা। ফরাসি এবং ইংরেজি ভাষাভাষী।',
+                    ar: 'غرفة نوم إضافية خاصة مفروشة بسرير فردي وخزانة ملابس. الوصول إلى المطبخ والواي فاي. يتحدث الفرنسية والإنجليزية.'
+                }
+            },
+            {
+                id: '3',
+                name: 'Carmen & Jose Ortiz',
+                location: {
+                    en: 'Hunts Point, South Bronx (Near Spofford Ave)',
+                    es: 'Hunts Point, South Bronx (Cerca de Spofford Ave)',
+                    fr: 'Hunts Point, South Bronx (Près de Spofford Ave)',
+                    gar: 'Hunts Point, South Bronx (Spofford Ave)',
+                    bn: 'হান্টস পয়েন্ট, সাউথ ব্রঙ্কস (স্পফোর্ড অ্যাভিনিউ এর কাছে)',
+                    ar: 'هنتس بوينت، ساوث برونكس (بالقرب من شارع سبوفورد)'
+                },
+                duration: '2 to 3 Weeks',
+                allowed: ['Children / Families', 'Double Guests / Couples', 'Small Pets Allowed'],
+                languages: ['Español', 'English'],
+                phone: '(718) 555-3311',
+                email: 'ortiz.family.bx@email.com',
+                photo: 'https://images.unsplash.com/photo-1540518614846-7eded433c457?auto=format&fit=crop&w=600&q=80',
+                details: {
+                    en: 'Foldable daybed in living room with clean sheets. Family home with kids present. Close to Barretto Point Park. Ground floor unit.',
+                    es: 'Cama de día plegable en la sala con sábanas limpias. Hogar familiar con niños presentes. Cerca del parque Barretto Point. Primer piso.',
+                    fr: 'Lit de jour pliable dans le salon avec draps propres. Maison familiale avec enfants. Près du parc Barretto Point. Rez-de-chaussée.',
+                    gar: 'Cama lidan sala. Muna familia con iriña. Cerca parque Barretto Point.',
+                    bn: 'লিভিং রুমে পরিষ্কার চাদর সহ ফোল্ডিং ডে-বেড। বাচ্চাদের সাথে পারিবারিক পরিবেশ। ব্যারেটো পয়েন্ট পার্কের কাছে। গ্রাউন্ড ফ্লোর ইউনিট।',
+                    ar: 'سرير نهاري قابل للطي في غرفة المعيشة مع أغطية نظيفة. منزل عائلي بوجود أطفال. بالقرب من حديقة باريتو بوينت.'
+                }
+            },
+            {
+                id: '4',
+                name: 'Devon Campbell',
+                location: {
+                    en: 'Highbridge, South Bronx (Near 168th St)',
+                    es: 'Highbridge, South Bronx (Cerca de Calle 168)',
+                    fr: 'Highbridge, South Bronx (Près de la 168e Rue)',
+                    gar: 'Highbridge, South Bronx (Calle 168)',
+                    bn: 'হাইব্রিজ, সাউথ ব্রঙ্কস (১৬৮ তম স্ট্রিটের কাছে)',
+                    ar: 'هاايبريدج، ساوث برونكس (بالقرب من الشارع ١٦٨)'
+                },
+                duration: 'Up to 2 Weeks',
+                allowed: ['Single Guest Only', 'Luggage & Storage'],
+                languages: ['English'],
+                phone: '(646) 555-8820',
+                email: 'devon.campbell.bx@email.com',
+                photo: 'https://images.unsplash.com/photo-1505691938895-1758d7feb511?auto=format&fit=crop&w=600&q=80',
+                details: {
+                    en: 'Comfortable sofa bed in quiet modern apartment. High-speed Wi-Fi, desk space available. Note: Steep hills walking from 4 train station.',
+                    es: 'Sincero sofá cama en apartamento moderno y tranquilo. Wi-Fi de alta velocidad y escritorio disponible. Nota: Colinas empinadas desde la estación del tren 4.',
+                    fr: 'Canapé-lit confortable dans un appartement moderne et calme. Wi-Fi haut débit et bureau disponible. Remarque: Pente raide depuis le métro 4.',
+                    gar: 'Sofá cama lidan apartamento moderno. Wi-Fi alto.',
+                    bn: 'শান্ত আধুনিক অ্যাপার্টমেন্টে আরামদায়ক সোফা বেড। উচ্চ গতির ওয়াই-ফাই এবং ডেস্ক ব্যবহারের সুবিধা। নোট: ৪ নম্বর ট্রেন স্টেশন থেকে খাড়া পাহাড়ি পথ।',
+                    ar: 'أريكة تتحول لسرير مريحة في شقة حديثة وهادئة. واي فاي عالي السرعة ومساحة مكتب متاحة. ملاحظة: تلال منحدرة للمشي من محطة القطار ٤.'
+                }
+            }
+        ];
+
+        let selectedPhotoUrl = 'https://images.unsplash.com/photo-1555854877-bab0e564b8d5?auto=format&fit=crop&w=600&q=80';
+
+        window.onload = function() {
+            renderVolunteers(volunteers);
+        };
+
+        // Tab Switcher ("Find a Volunteer" vs "Be a Volunteer")
+        function switchTab(tab) {
+            const secFind = document.getElementById('sectionFind');
+            const secBe = document.getElementById('sectionBe');
+            const btnFind = document.getElementById('btnTabFind');
+            const btnBe = document.getElementById('btnTabBe');
+
+            if (tab === 'find') {
+                secFind.classList.remove('hidden');
+                secBe.classList.add('hidden');
+                
+                btnFind.className = "flex items-center justify-center gap-3 py-4 px-6 rounded-2xl bg-[#061f13] text-emerald-100 font-extrabold text-lg border-2 border-emerald-300 shadow-xl ring-2 ring-emerald-400/80";
+                btnBe.className = "flex items-center justify-center gap-3 py-4 px-6 rounded-2xl bg-bx-button hover:bg-bx-button-hover text-emerald-100 font-extrabold text-lg border-2 border-bx-light shadow-lg opacity-85 hover:opacity-100";
+            } else {
+                secFind.classList.add('hidden');
+                secBe.classList.remove('hidden');
+
+                btnBe.className = "flex items-center justify-center gap-3 py-4 px-6 rounded-2xl bg-[#061f13] text-emerald-100 font-extrabold text-lg border-2 border-emerald-300 shadow-xl ring-2 ring-emerald-400/80";
+                btnFind.className = "flex items-center justify-center gap-3 py-4 px-6 rounded-2xl bg-bx-button hover:bg-bx-button-hover text-emerald-100 font-extrabold text-lg border-2 border-bx-light shadow-lg opacity-85 hover:opacity-100";
+            }
+
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Toggle Search Filters Option Panel
+        function toggleFiltersPanel() {
+            const panel = document.getElementById('filterPanel');
+            panel.classList.toggle('hidden');
+        }
+
+        // Render Dynamic Volunteer Host Cards
+        function renderVolunteers(list) {
+            const grid = document.getElementById('volunteerGrid');
+            const noRes = document.getElementById('noResults');
+            const countLabel = document.getElementById('listingCount');
+            const dict = translations[activeLang] || translations.en;
+
+            grid.innerHTML = '';
+
+            // Dynamic translated count badge
+            const countText = list.length === 1 ? dict.lblVolunteerFoundSingular : dict.lblVolunteersFound;
+            countLabel.textContent = `${list.length} ${countText}`;
+
+            if (list.length === 0) {
+                noRes.classList.remove('hidden');
+                return;
+            } else {
+                noRes.classList.add('hidden');
+            }
+
+            list.forEach(v => {
+                // Translate allowed item tags dynamically per current active language
+                const allowedTags = v.allowed.map(item => {
+                    const translatedText = (tagTranslations[item] && tagTranslations[item][activeLang]) 
+                        ? tagTranslations[item][activeLang] 
+                        : item;
+
+                    return `
+                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold bg-emerald-950 border border-emerald-400/60 text-emerald-200">
+                            <i class="fa-solid fa-check text-emerald-300"></i> ${translatedText}
+                        </span>
+                    `;
+                }).join('');
+
+                const langTags = v.languages.map(lang => `
+                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-900/80 border border-emerald-500/50 text-emerald-200">
+                        <i class="fa-solid fa-comments text-emerald-300"></i> ${lang}
+                    </span>
+                `).join('');
+
+                // Get language translated stay duration text
+                const translatedDuration = (durationTranslations[v.duration] && durationTranslations[v.duration][activeLang])
+                    ? durationTranslations[v.duration][activeLang]
+                    : v.duration;
+
+                // Get language translated host location
+                const locationText = (typeof v.location === 'object')
+                    ? (v.location[activeLang] || v.location.en || v.location)
+                    : v.location;
+
+                // Get language translated details
+                const detailText = (typeof v.details === 'object') 
+                    ? (v.details[activeLang] || v.details.en || v.details)
+                    : v.details;
+
+                const cardHtml = `
+                    <div class="card-outline rounded-2xl overflow-hidden flex flex-col justify-between transition transform hover:-translate-y-1">
+                        <div>
+                            <!-- Location Image Header -->
+                            <div class="relative h-48 bg-black/60 overflow-hidden">
+                                <img src="${v.photo}" alt="${v.name}" class="w-full h-full object-cover">
+                                <div class="absolute top-3 right-3 bg-black/85 backdrop-blur-md px-3 py-1 rounded-full text-xs font-bold text-emerald-200 border border-emerald-400">
+                                    <i class="fa-regular fa-clock mr-1"></i> ${translatedDuration}
+                                </div>
+                            </div>
+
+                            <!-- Listing Card Body -->
+                            <div class="p-5 space-y-4">
+                                <div>
+                                    <h4 class="text-xl font-extrabold text-emerald-100">${v.name}</h4>
+                                    <p class="text-xs sm:text-sm text-emerald-200 font-medium flex items-start gap-1.5 mt-1">
+                                        <i class="fa-solid fa-location-dot text-emerald-300 mt-0.5"></i>
+                                        <span>${locationText}</span>
+                                    </p>
+                                </div>
+
+                                <!-- Languages Spoken -->
+                                <div class="space-y-1">
+                                    <p class="text-[11px] text-emerald-300 uppercase font-bold tracking-wider">${dict.lblLanguages}</p>
+                                    <div class="flex flex-wrap gap-1.5">
+                                        ${langTags}
+                                    </div>
+                                </div>
+
+                                <!-- Objects & People Allowed -->
+                                <div class="space-y-1.5">
+                                    <p class="text-[11px] text-emerald-300 uppercase font-bold tracking-wider">${dict.lblAllowed}</p>
+                                    <div class="flex flex-wrap gap-1.5">
+                                        ${allowedTags}
+                                    </div>
+                                </div>
+
+                                <!-- Volunteer Details & Neighborhood Concerns -->
+                                <div class="p-3.5 rounded-xl bg-[#092114] border border-emerald-500/50 text-xs text-emerald-100 space-y-1">
+                                    <p class="font-bold text-emerald-300"><i class="fa-solid fa-circle-info mr-1"></i> ${dict.lblDetails}</p>
+                                    <p class="leading-relaxed text-emerald-100/90">${detailText}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Card Footer Action -->
+                        <div class="p-4 border-t border-emerald-800 bg-[#071d12]">
+                            <button onclick="openContactModal('${v.id}')" 
+                                class="w-full py-2.5 px-4 rounded-xl bg-bx-button hover:bg-bx-button-hover text-emerald-100 font-bold text-sm border-2 border-bx-light shadow flex items-center justify-center gap-2 transition">
+                                <i class="fa-solid fa-address-book text-emerald-300"></i>
+                                <span>${dict.btnContact}</span>
+                            </button>
+                        </div>
+                    </div>
+                `;
+                grid.innerHTML += cardHtml;
+            });
+        }
+
+        // Search & Multi-Filter Logic
+        function filterListings() {
+            const query = document.getElementById('searchInput').value.toLowerCase().trim();
+            const selectedLangFilter = document.getElementById('filterLangSelect').value;
+            
+            // Collect checked allowed filters
+            const checkedAllowed = Array.from(document.querySelectorAll('.filter-checkbox-allowed:checked')).map(cb => cb.value);
+
+            // Active filter badge indicator
+            const badge = document.getElementById('filterActiveBadge');
+            if (checkedAllowed.length > 0 || selectedLangFilter !== 'ALL') {
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+            }
+
+            const filtered = volunteers.filter(v => {
+                const locStr = (typeof v.location === 'object') ? Object.values(v.location).join(' ').toLowerCase() : v.location.toLowerCase();
+                const detStr = (typeof v.details === 'object') ? Object.values(v.details).join(' ').toLowerCase() : v.details.toLowerCase();
+
+                // Search query match
+                const matchQuery = !query || 
+                    locStr.includes(query) ||
+                    v.name.toLowerCase().includes(query) ||
+                    detStr.includes(query) ||
+                    v.allowed.some(a => a.toLowerCase().includes(query));
+
+                // Language filter match
+                const matchLang = (selectedLangFilter === 'ALL') || v.languages.includes(selectedLangFilter);
+
+                // Allowed items match (must include all checked filter requirements)
+                const matchAllowed = checkedAllowed.length === 0 || checkedAllowed.every(item => v.allowed.includes(item));
+
+                return matchQuery && matchLang && matchAllowed;
+            });
+
+            renderVolunteers(filtered);
+        }
+
+        function quickFilter(term) {
+            document.getElementById('searchInput').value = term;
+            filterListings();
+        }
+
+        function clearSearch() {
+            document.getElementById('searchInput').value = '';
+            resetFiltersOnly();
+            filterListings();
+        }
+
+        function resetFiltersOnly() {
+            document.querySelectorAll('.filter-checkbox-allowed').forEach(cb => cb.checked = false);
+            document.getElementById('filterLangSelect').value = 'ALL';
+            filterListings();
+        }
+
+        // Photo Upload Preview
+        function previewUploadedImage(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    selectedPhotoUrl = e.target.result;
+                    document.getElementById('previewImg').src = selectedPhotoUrl;
+                }
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function selectPresetPhoto(element, url) {
+            selectedPhotoUrl = url;
+            document.getElementById('previewImg').src = url;
+            
+            document.querySelectorAll('.photo-preset').forEach(el => {
+                el.classList.remove('ring-2', 'ring-emerald-300', 'border-white');
+            });
+            element.classList.add('ring-2', 'ring-emerald-300', 'border-white');
+        }
+
+        // Handle "Be a Volunteer" Registration Form Submission
+        function handleVolunteerSubmit(e) {
+            e.preventDefault();
+            const dict = translations[activeLang] || translations.en;
+
+            const name = document.getElementById('hostName').value.trim();
+            const location = document.getElementById('hostLocation').value.trim();
+            const duration = document.getElementById('hostDuration').value;
+            const phone = document.getElementById('hostPhone').value.trim();
+            const email = document.getElementById('hostEmail').value.trim();
+            const detailsText = document.getElementById('hostDetails').value.trim() || 'No additional details specified.';
+
+            // Check Allowed Checkboxes (At least 1 required)
+            const allowedCBs = document.querySelectorAll('input[name="allowedItems"]:checked');
+            const allowedErr = document.getElementById('allowedError');
+            if (allowedCBs.length === 0) {
+                allowedErr.textContent = dict.errAllowed;
+                allowedErr.classList.remove('hidden');
+                return;
+            } else {
+                allowedErr.classList.add('hidden');
+            }
+
+            // Check Languages Checkboxes (At least 1 required)
+            const langCBs = document.querySelectorAll('input[name="hostLanguages"]:checked');
+            const langErr = document.getElementById('langError');
+            if (langCBs.length === 0) {
+                langErr.textContent = dict.errLang;
+                langErr.classList.remove('hidden');
+                return;
+            } else {
+                langErr.classList.add('hidden');
+            }
+
+            // Check phone OR email required
+            if (!phone && !email) {
+                alert(dict.errContactRequired);
+                return;
+            }
+
+            const allowedValues = Array.from(allowedCBs).map(cb => cb.value);
+            const langValues = Array.from(langCBs).map(cb => cb.value);
+
+            // Construct detail & location translation objects for new listing across all languages
+            const newDetailsObj = {
+                en: detailsText, es: detailsText, fr: detailsText, gar: detailsText, bn: detailsText, ar: detailsText
+            };
+
+            const newLocationObj = {
+                en: location, es: location, fr: location, gar: location, bn: location, ar: location
+            };
+
+            const newListing = {
+                id: Date.now().toString(),
+                name: name,
+                location: newLocationObj,
+                duration: duration,
+                allowed: allowedValues,
+                languages: langValues,
+                phone: phone || 'Not provided',
+                email: email || 'Not provided',
+                photo: selectedPhotoUrl,
+                details: newDetailsObj
+            };
+
+            volunteers.unshift(newListing);
+
+            // Reset Form & Redirect to Listings
+            document.getElementById('volunteerForm').reset();
+            renderVolunteers(volunteers);
+            switchTab('find');
+
+            alert(dict.alertSuccess);
+        }
+
+        // Contact Modal Logic
+        function openContactModal(id) {
+            const v = volunteers.find(item => item.id === id);
+            if (!v) return;
+
+            const locationText = (typeof v.location === 'object')
+                ? (v.location[activeLang] || v.location.en || v.location)
+                : v.location;
+
+            document.getElementById('modalHostImg').src = v.photo;
+            document.getElementById('modalHostName').textContent = v.name;
+            document.getElementById('modalHostLocation').textContent = locationText;
+
+            document.getElementById('modalPhone').textContent = v.phone;
+            document.getElementById('modalEmail').textContent = v.email;
+
+            document.getElementById('contactModal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('contactModal').classList.add('hidden');
+        }
+
+        function copyToClipboard(elementId) {
+            const text = document.getElementById(elementId).textContent;
+            if (text && text !== 'Not provided') {
+                navigator.clipboard.writeText(text).then(() => {
+                    alert('Copied to clipboard: ' + text);
+                }).catch(() => {
+                    const temp = document.createElement('textarea');
+                    temp.value = text;
+                    document.body.appendChild(temp);
+                    temp.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(temp);
+                    alert('Copied to clipboard: ' + text);
+                });
+            }
+        }
+
+        // Full Universal Translation Switcher for ALL Page Words
+        function changeLanguage(langKey) {
+            activeLang = langKey;
+            const dict = translations[langKey] || translations.en;
+            
+            document.getElementById('subTitleHeader').innerHTML = `<i class="fa-solid fa-location-dot text-emerald-300"></i> ${dict.subTitleHeader}`;
+            document.getElementById('bannerTitle').textContent = dict.bannerTitle;
+            document.getElementById('bannerDesc').textContent = dict.bannerDesc;
+            document.getElementById('badgeBanner').textContent = dict.badgeBanner;
+
+            document.getElementById('labelFindBtn').textContent = dict.findBtn;
+            document.getElementById('labelBeBtn').textContent = dict.beBtn;
+
+            document.getElementById('searchInput').placeholder = dict.searchPlaceholder;
+            document.getElementById('labelFiltersBtn').textContent = dict.filtersBtn;
+            document.getElementById('labelResetBtn').textContent = dict.resetBtn;
+            
+            document.getElementById('titleFilterPanel').innerHTML = `<i class="fa-solid fa-filter text-emerald-300"></i> ${dict.titleFilterPanel}`;
+            document.getElementById('labelClearFilters').textContent = dict.clearFilters;
+            document.getElementById('labelFilterAllowed').textContent = dict.filterAllowedLabel;
+            document.getElementById('labelFilterLang').textContent = dict.filterLangLabel;
+            document.getElementById('optLangAll').textContent = dict.optLangAll;
+            document.getElementById('optFam').textContent = dict.optFam;
+            document.getElementById('optSmallPets').textContent = dict.optSmallPets;
+            document.getElementById('optServiceAnimals').textContent = dict.optServiceAnimals;
+            document.getElementById('optDouble').textContent = dict.optDouble;
+            document.getElementById('optLug').textContent = dict.optLug;
+            document.getElementById('optSingle').textContent = dict.optSingle;
+
+            document.getElementById('labelQuickSearch').textContent = dict.quickSearch;
+            document.getElementById('titleAvailableVolunteers').innerHTML = `<i class="fa-solid fa-user-group text-emerald-300"></i> ${dict.titleAvailable}`;
+            document.getElementById('btnShowAllVolunteers').textContent = dict.btnShowAllVolunteers;
+            document.getElementById('noResultsTitle').textContent = dict.noResultsTitle;
+            document.getElementById('noResultsDesc').textContent = dict.noResultsDesc;
+
+            // Translate "Be a Volunteer" Registration Form Section
+            document.getElementById('titleBeVolunteerPage').innerHTML = `<i class="fa-solid fa-hand-holding-heart text-emerald-300"></i> ${dict.beTitle}`;
+            document.getElementById('descBeVolunteerPage').textContent = dict.beDesc;
+
+            document.getElementById('lblHostName').textContent = dict.lblHostName;
+            document.getElementById('hostName').placeholder = dict.placeholderHostName;
+
+            document.getElementById('lblHostLoc').textContent = dict.lblHostLoc;
+            document.getElementById('hostLocation').placeholder = dict.placeholderHostLoc;
+            document.getElementById('hintLoc').textContent = dict.hintLoc;
+
+            document.getElementById('lblHostDuration').textContent = dict.lblHostDuration;
+            document.getElementById('lblHostAllowed').textContent = dict.lblHostAllowed;
+            document.getElementById('lblHostAllowedReq').textContent = dict.lblHostAllowedReq;
+            
+            document.getElementById('lblHostLanguages').textContent = dict.lblHostLanguages;
+            document.getElementById('lblHostLangReq').textContent = dict.lblHostLangReq;
+
+            document.getElementById('lblHostPhone').textContent = dict.lblHostPhone;
+            document.getElementById('hostPhone').placeholder = dict.placeholderHostPhone;
+
+            document.getElementById('lblHostEmail').textContent = dict.lblHostEmail;
+            document.getElementById('hostEmail').placeholder = dict.placeholderHostEmail;
+            document.getElementById('hintContact').textContent = dict.hintContact;
+
+            document.getElementById('lblHostPhoto').textContent = dict.lblHostPhoto;
+            document.getElementById('btnUploadPhoto').textContent = dict.btnUploadPhoto;
+            document.getElementById('txtOrPreset').textContent = dict.txtOrPreset;
+            document.getElementById('presetCouch').textContent = dict.presetCouch;
+            document.getElementById('presetBed').textContent = dict.presetBed;
+            document.getElementById('presetDaybed').textContent = dict.presetDaybed;
+            document.getElementById('badgePhotoSelected').textContent = dict.badgePhotoSelected;
+
+            document.getElementById('lblHostDetails').textContent = dict.lblHostDetails;
+            document.getElementById('hostDetails').placeholder = dict.placeholderDetails;
+            document.getElementById('btnSubmitListing').textContent = dict.btnSubmit;
+
+            document.getElementById('chkFam').textContent = dict.chkFam;
+            document.getElementById('chkSmallPets').textContent = dict.chkSmallPets;
+            document.getElementById('chkServiceAnimals').textContent = dict.chkServiceAnimals;
+            document.getElementById('chkDoubleGuests').textContent = dict.chkDoubleGuests;
+            document.getElementById('chkLuggage').textContent = dict.chkLuggage;
+            document.getElementById('chkSingle').textContent = dict.chkSingle;
+
+            document.getElementById('optDur1').textContent = dict.optDur1;
+            document.getElementById('optDur2').textContent = dict.optDur2;
+            document.getElementById('optDur3').textContent = dict.optDur3;
+            document.getElementById('optDur4').textContent = dict.optDur4;
+
+            // Modal & Footer Translations
+            document.getElementById('lblModalContactTitle').textContent = dict.lblModalContactTitle;
+            document.getElementById('btnCopyPhone').textContent = dict.btnCopyPhone;
+            document.getElementById('btnCopyEmail').textContent = dict.btnCopyEmail;
+            document.getElementById('lblSafetyTip').textContent = dict.lblSafetyTip;
+            document.getElementById('lblSafetyTipText').textContent = dict.lblSafetyTipText;
+            document.getElementById('btnCloseModal').textContent = dict.btnCloseModal;
+
+            document.getElementById('footerTitle').textContent = dict.footerTitle;
+            document.getElementById('footerSub').textContent = dict.footerSub;
+            document.getElementById('footerBadge').textContent = dict.footerBadge;
+
+            // Re-render volunteer cards with current language translations
+            renderVolunteers(volunteers);
+        }
+    </script>
+</body>
+</html>

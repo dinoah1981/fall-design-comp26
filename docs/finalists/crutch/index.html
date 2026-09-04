@@ -1,0 +1,1750 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Crutch: MedInMotion - Mobile App & Interactive CBO Finder</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Atkinson Hyperlegible & Quicksand Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400;1,700&family=Quicksand:wght@500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Leaflet CSS & JS for Interactive CBO Map -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Atkinson Hyperlegible', 'Quicksand', 'sans-serif'],
+            quicksand: ['Quicksand', 'sans-serif'],
+          },
+          colors: {
+            botanical: {
+              primary: '#2d5a44',   // Deep Forest Sage Green
+              dark: '#1b3b2d',      // Deepest Evergreen for headers
+              light: '#eef4f0',     // Soft Sage Tint background
+              accent: '#d4a373',    // Warm Honey Amber Accent
+              gold: '#e5a93c',      // Sunlit Honey Gold
+              goldHover: '#c88e28',
+              card: '#ffffff',      // Card white
+              border: '#c5dac9',    // Soft sage border line
+              cream: '#f7faf7',     // Botanical soft anti-glare background
+              red: '#a83232',       // Warm berry red for urgent needs
+              lightRed: '#fce8e8',  // Soft red tint
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* High Contrast Mode for Low Vision Accessibility */
+    body.high-contrast {
+      background-color: #000000 !important;
+      color: #ffff00 !important;
+    }
+    body.high-contrast * {
+      background-color: #000000 !important;
+      color: #ffff00 !important;
+      border-color: #ffff00 !important;
+    }
+    body.high-contrast button, body.high-contrast a, body.high-contrast select {
+      text-decoration: underline !important;
+      font-weight: 900 !important;
+    }
+
+    /* Font Scale Utilities */
+    .font-scale-sm { font-size: 95%; }
+    .font-scale-md { font-size: 110%; }
+    .font-scale-lg { font-size: 125%; }
+
+    /* Focus Ring Styles */
+    a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible {
+      outline: 4px solid #e5a93c !important;
+      outline-offset: 3px !important;
+    }
+
+    button, input, select, textarea {
+      min-height: 44px;
+    }
+
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+    @keyframes pulse-gentle {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.03); }
+    }
+    .animate-pulse-gentle {
+      animation: pulse-gentle 3s infinite ease-in-out;
+    }
+
+    @keyframes shimmer {
+      0% { background-position: -200% 0; }
+      100% { background-position: 200% 0; }
+    }
+    .progress-shimmer {
+      background: linear-gradient(90deg, #e5a93c 25%, #fff 50%, #e5a93c 75%);
+      background-size: 200% 100%;
+      animation: shimmer 2.5s infinite;
+    }
+
+    /* Leaflet Popup Botanical Styling */
+    .leaflet-popup-content-wrapper {
+      border-radius: 18px !important;
+      padding: 6px !important;
+      font-family: 'Atkinson Hyperlegible', sans-serif !important;
+      border: 2px solid #2d5a44 !important;
+      box-shadow: 0 10px 25px -5px rgba(45, 90, 68, 0.25) !important;
+    }
+    .leaflet-popup-content {
+      margin: 10px !important;
+      line-height: 1.4 !important;
+    }
+  </style>
+</head>
+<body id="main-body" class="bg-botanical-dark text-slate-800 font-sans font-scale-md antialiased min-h-screen flex justify-center items-center p-0 sm:p-4 relative">
+
+  <!-- MOBILE CONTAINER SHELL -->
+  <div class="w-full max-w-md bg-botanical-cream min-h-screen sm:min-h-[840px] sm:max-h-[920px] sm:rounded-[40px] shadow-2xl border-0 sm:border-8 sm:border-botanical-dark overflow-hidden flex flex-col relative">
+
+    <!-- APP SPLASH / INTRO SCREEN -->
+    <div id="app-splash-screen" class="app-screen absolute inset-0 bg-botanical-dark z-50 flex flex-col justify-between p-6 sm:p-8 text-white text-center transition-all duration-300 overflow-y-auto no-scrollbar">
+      
+      <!-- Background Botanical Glows -->
+      <div class="absolute top-10 left-10 w-48 h-48 bg-botanical-primary/30 rounded-full blur-3xl pointer-events-none"></div>
+      <div class="absolute bottom-10 right-10 w-48 h-48 bg-botanical-gold/20 rounded-full blur-3xl pointer-events-none"></div>
+
+      <!-- Top Branding Badge -->
+      <div class="pt-4 flex items-center justify-center relative z-10">
+        <span id="splash-badge" class="bg-botanical-gold text-botanical-dark font-black text-xs px-4 py-1.5 rounded-full uppercase tracking-wider shadow-md flex items-center gap-1.5">
+          <i class="fa-solid fa-heart text-botanical-dark"></i>
+          <span>Community Healthcare</span>
+        </span>
+      </div>
+
+      <!-- Center Logo & Title Area with Signature Crossed Crutches in Front of Heart Logo -->
+      <div class="space-y-4 animate-pulse-gentle my-auto py-4 relative z-10">
+        <div class="w-28 h-28 bg-botanical-primary rounded-3xl flex items-center justify-center border-4 border-botanical-gold shadow-2xl mx-auto relative group p-3">
+          <!-- SIGNATURE LOGO SVG: Crossed Crutches in Front of Heart -->
+          <svg viewBox="0 0 100 100" class="w-full h-full drop-shadow-md" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="CRUTCH Logo: Crossed Crutches in Front of Heart">
+            <!-- Heart Background -->
+            <path d="M 50 88 C 20 68 8 50 8 32 C 8 18 20 8 34 8 C 43 8 48 13 50 17 C 52 13 57 8 66 8 C 80 8 92 18 92 32 C 92 50 80 68 50 88 Z" fill="#e5a93c"/>
+            
+            <!-- Crossed Crutches Group (Front of Heart) -->
+            <g transform="translate(50, 44)" stroke="#1b3b2d" fill="#1b3b2d">
+              <g transform="rotate(-45)">
+                <path d="M -13 -30 C -6 -32 6 -32 13 -30 C 15 -30 15 -26 13 -26 C 6 -28 -6 -28 -13 -26 C -15 -26 -15 -30 -13 -30 Z" />
+                <path d="M -9 -26 L -3 2 L 3 2 L 9 -26" stroke="#1b3b2d" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+                <rect x="-7" y="-12" width="14" height="3.5" rx="1.5" />
+                <line x1="0" y1="2" x2="0" y2="30" stroke="#1b3b2d" stroke-width="3.5" stroke-linecap="round"/>
+                <rect x="-3" y="27" width="6" height="5" rx="1.5" />
+              </g>
+              <g transform="rotate(45)">
+                <path d="M -13 -30 C -6 -32 6 -32 13 -30 C 15 -30 15 -26 13 -26 C 6 -28 -6 -28 -13 -26 C -15 -26 -15 -30 -13 -30 Z" />
+                <path d="M -9 -26 L -3 2 L 3 2 L 9 -26" stroke="#1b3b2d" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+                <rect x="-7" y="-12" width="14" height="3.5" rx="1.5" />
+                <line x1="0" y1="2" x2="0" y2="30" stroke="#1b3b2d" stroke-width="3.5" stroke-linecap="round"/>
+                <rect x="-3" y="27" width="6" height="5" rx="1.5" />
+              </g>
+            </g>
+          </svg>
+        </div>
+
+        <div class="space-y-2">
+          <h1 class="text-3xl sm:text-4xl font-black tracking-tight leading-none text-white">
+            CRUTCH <span class="text-botanical-gold block text-2xl sm:text-3xl font-bold mt-1 tracking-wider">MedInMotion</span>
+          </h1>
+          <p id="splash-subtitle" class="text-xs sm:text-sm font-bold text-botanical-light/90 max-w-xs mx-auto">
+            Free Medical Equipment Access for Seniors & Families
+          </p>
+        </div>
+      </div>
+
+      <!-- Bottom Enter Prompt Buttons -->
+      <div class="pb-4 space-y-2.5 relative z-10">
+        <div class="grid grid-cols-2 gap-2.5">
+          <button onclick="showScreen('screen-login')" class="w-full bg-botanical-primary hover:bg-emerald-900 text-white font-black py-3.5 px-4 rounded-2xl text-base shadow-lg border border-botanical-border/40 flex items-center justify-center gap-2 active:scale-95 transition-all">
+            <i class="fa-solid fa-right-to-bracket" aria-hidden="true"></i>
+            <span id="splash-login-btn">Log In</span>
+          </button>
+          
+          <button onclick="showScreen('screen-signup')" class="w-full bg-botanical-gold hover:bg-botanical-goldHover text-botanical-dark font-black py-3.5 px-4 rounded-2xl text-base shadow-lg border border-yellow-300 flex items-center justify-center gap-2 active:scale-95 transition-all">
+            <i class="fa-solid fa-user-plus" aria-hidden="true"></i>
+            <span id="splash-signup-btn">Sign Up</span>
+          </button>
+        </div>
+
+        <button onclick="enterMainApp('Guest')" class="w-full bg-botanical-primary/40 hover:bg-botanical-primary/60 text-botanical-light font-bold py-3 px-4 rounded-xl text-xs shadow border border-botanical-border/30 flex items-center justify-center gap-2 active:scale-95 transition-all">
+          <span id="splash-enter-btn">Continue as Guest</span>
+          <i class="fa-solid fa-arrow-right text-xs" aria-hidden="true"></i>
+        </button>
+
+        <p id="splash-footer-note" class="text-[11px] text-botanical-light/70 font-bold mt-2">
+          Free • Accessible • South Bronx Community
+        </p>
+      </div>
+    </div>
+
+    <!-- DISTINCT FULL-SCREEN LOG IN PAGE -->
+    <div id="screen-login" class="app-screen absolute inset-0 bg-botanical-cream z-50 hidden flex-col transition-all duration-300 overflow-y-auto no-scrollbar">
+      <div class="bg-botanical-dark text-white p-4 flex items-center justify-between border-b-4 border-botanical-gold shrink-0">
+        <button onclick="showScreen('app-splash-screen')" class="bg-botanical-primary hover:bg-emerald-900 text-botanical-gold px-3 py-1.5 rounded-xl border border-botanical-gold/50 text-xs font-black flex items-center gap-2 active:scale-95">
+          <i class="fa-solid fa-arrow-left"></i>
+          <span>Back</span>
+        </button>
+        <span class="text-xs font-black text-botanical-gold uppercase tracking-widest flex items-center gap-1.5">
+          <i class="fa-solid fa-shield-halved"></i> Member Access
+        </span>
+        <button onclick="enterMainApp('Guest')" class="text-botanical-light/80 hover:text-white text-xs font-bold underline">
+          Guest
+        </button>
+      </div>
+
+      <div class="p-6 space-y-5 flex-1 flex flex-col justify-center max-w-sm mx-auto w-full">
+        <div class="text-center space-y-2">
+          <div class="w-16 h-16 bg-botanical-primary text-botanical-gold rounded-2xl flex items-center justify-center text-3xl mx-auto border-2 border-botanical-gold shadow-md p-2">
+            <svg viewBox="0 0 100 100" class="w-full h-full" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M 50 88 C 20 68 8 50 8 32 C 8 18 20 8 34 8 C 43 8 48 13 50 17 C 52 13 57 8 66 8 C 80 8 92 18 92 32 C 92 50 80 68 50 88 Z" fill="#e5a93c"/>
+              <g transform="translate(50, 44)" stroke="#1b3b2d" fill="#1b3b2d">
+                <g transform="rotate(-45)">
+                  <path d="M -13 -30 C -6 -32 6 -32 13 -30 C 15 -30 15 -26 13 -26 C 6 -28 -6 -28 -13 -26 C -15 -26 -15 -30 -13 -30 Z" />
+                  <path d="M -9 -26 L -3 2 L 3 2 L 9 -26" stroke="#1b3b2d" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+                  <rect x="-7" y="-12" width="14" height="3.5" rx="1.5" />
+                  <line x1="0" y1="2" x2="0" y2="30" stroke="#1b3b2d" stroke-width="3.5" stroke-linecap="round"/>
+                  <rect x="-3" y="27" width="6" height="5" rx="1.5" />
+                </g>
+                <g transform="rotate(45)">
+                  <path d="M -13 -30 C -6 -32 6 -32 13 -30 C 15 -30 15 -26 13 -26 C 6 -28 -6 -28 -13 -26 C -15 -26 -15 -30 -13 -30 Z" />
+                  <path d="M -9 -26 L -3 2 L 3 2 L 9 -26" stroke="#1b3b2d" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+                  <rect x="-7" y="-12" width="14" height="3.5" rx="1.5" />
+                  <line x1="0" y1="2" x2="0" y2="30" stroke="#1b3b2d" stroke-width="3.5" stroke-linecap="round"/>
+                  <rect x="-3" y="27" width="6" height="5" rx="1.5" />
+                </g>
+              </g>
+            </svg>
+          </div>
+          <h2 id="txt-page-login-title" class="text-2xl font-black text-botanical-primary tracking-tight">
+            Welcome Back to CRUTCH
+          </h2>
+          <p id="txt-page-login-sub" class="text-xs font-bold text-slate-600">
+            Sign in to access your saved medical equipment requests and community donations.
+          </p>
+        </div>
+
+        <div class="bg-white rounded-3xl p-5 border-2 border-botanical-border shadow-lg space-y-4">
+          <form onsubmit="handleLoginSubmit(event)" class="space-y-3.5">
+            <div>
+              <label id="lbl-login-email" for="login-email" class="block font-black text-botanical-primary text-xs mb-1">
+                Email Address or Phone:
+              </label>
+              <div class="relative">
+                <i class="fa-solid fa-envelope absolute left-3.5 top-3.5 text-botanical-primary/50 text-xs"></i>
+                <input type="text" id="login-email" required placeholder="e.g. robert@example.com" value="devin.kelly@compscihigh.org" class="w-full border-2 border-botanical-border rounded-xl pl-9 pr-3 py-2.5 text-sm font-bold text-slate-800 focus:border-botanical-primary focus:ring-0">
+              </div>
+            </div>
+
+            <div>
+              <div class="flex items-center justify-between mb-1">
+                <label id="lbl-login-pass" for="login-password" class="block font-black text-botanical-primary text-xs">
+                  Password:
+                </label>
+                <button type="button" onclick="showToast('Password reset link sent to registered email.')" class="text-[11px] text-botanical-primary font-bold hover:underline">
+                  Forgot?
+                </button>
+              </div>
+              <div class="relative">
+                <i class="fa-solid fa-lock absolute left-3.5 top-3.5 text-botanical-primary/50 text-xs"></i>
+                <input type="password" id="login-password" required placeholder="••••••••" value="demo1234" class="w-full border-2 border-botanical-border rounded-xl pl-9 pr-3 py-2.5 text-sm font-bold text-slate-800 focus:border-botanical-primary focus:ring-0">
+              </div>
+            </div>
+
+            <button id="btn-login-submit" type="submit" class="w-full bg-botanical-primary hover:bg-emerald-900 text-white font-black py-3.5 rounded-xl text-base shadow-lg flex items-center justify-center gap-2 active:scale-95 transition-all mt-2">
+              <span>Log In to Account</span>
+              <i class="fa-solid fa-arrow-right"></i>
+            </button>
+          </form>
+
+          <button onclick="showScreen('screen-signup')" class="w-full bg-botanical-light hover:bg-emerald-100 text-botanical-primary font-bold py-2.5 rounded-xl text-xs border border-botanical-border flex items-center justify-center gap-2 transition-all">
+            <span>Don't have an account? <strong>Create One</strong></span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- DISTINCT FULL-SCREEN SIGN UP PAGE -->
+    <div id="screen-signup" class="app-screen absolute inset-0 bg-botanical-cream z-50 hidden flex-col transition-all duration-300 overflow-y-auto no-scrollbar">
+      <div class="bg-botanical-dark text-white p-4 flex items-center justify-between border-b-4 border-botanical-gold shrink-0 sticky top-0 z-20">
+        <button onclick="showScreen('screen-login')" class="bg-botanical-primary hover:bg-emerald-900 text-botanical-gold px-3 py-1.5 rounded-xl border border-botanical-gold/50 text-xs font-black flex items-center gap-2 active:scale-95">
+          <i class="fa-solid fa-arrow-left"></i>
+          <span>Log In</span>
+        </button>
+        <span class="text-xs font-black text-botanical-gold uppercase tracking-widest flex items-center gap-1.5">
+          <i class="fa-solid fa-user-plus"></i> Join CRUTCH
+        </span>
+        <button onclick="enterMainApp('Guest')" class="text-botanical-light/80 hover:text-white text-xs font-bold underline">
+          Guest
+        </button>
+      </div>
+
+      <div class="p-5 space-y-4 max-w-sm mx-auto w-full my-auto">
+        <div class="text-center space-y-1">
+          <h2 id="txt-page-signup-title" class="text-2xl font-black text-botanical-primary tracking-tight">
+            Create Your Account
+          </h2>
+          <p id="txt-page-signup-sub" class="text-xs font-bold text-slate-600">
+            Join our community network to request items or volunteer locally.
+          </p>
+        </div>
+
+        <div class="bg-white rounded-3xl p-5 border-2 border-botanical-border shadow-lg space-y-3">
+          <form onsubmit="handleSignupSubmit(event)" class="space-y-3">
+            <div>
+              <label id="lbl-signup-name" for="signup-name" class="block font-black text-botanical-primary text-xs mb-1">Full Name:</label>
+              <input type="text" id="signup-name" required placeholder="e.g. Maria Gonzalez" value="Devin Kelly" class="w-full border-2 border-botanical-border rounded-xl p-2.5 text-sm font-bold">
+            </div>
+            <div>
+              <label id="lbl-signup-email" for="signup-email" class="block font-black text-botanical-primary text-xs mb-1">Email Address:</label>
+              <input type="email" id="signup-email" required placeholder="e.g. maria@example.com" value="devin.kelly@compscihigh.org" class="w-full border-2 border-botanical-border rounded-xl p-2.5 text-sm font-bold">
+            </div>
+            <div>
+              <label id="lbl-signup-phone" for="signup-phone" class="block font-black text-botanical-primary text-xs mb-1">Phone Number:</label>
+              <input type="tel" id="signup-phone" required placeholder="e.g. 555-019-2831" value="202-445-6502" class="w-full border-2 border-botanical-border rounded-xl p-2.5 text-sm font-bold">
+            </div>
+            <div>
+              <label id="lbl-signup-pass" for="signup-password" class="block font-black text-botanical-primary text-xs mb-1">Password:</label>
+              <input type="password" id="signup-password" required placeholder="Create password" value="demo1234" class="w-full border-2 border-botanical-border rounded-xl p-2.5 text-sm font-bold">
+            </div>
+            <button id="btn-signup-submit" type="submit" class="w-full bg-botanical-gold hover:bg-botanical-goldHover text-botanical-dark font-black py-3.5 rounded-xl text-base shadow flex items-center justify-center gap-2 active:scale-95 transition-all mt-2">
+              <span>Create Account</span>
+              <i class="fa-solid fa-check"></i>
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- ACCESSIBILITY & LANGUAGE HEADER TOOLBAR -->
+    <div class="bg-botanical-dark text-white px-4 py-2.5 border-b-2 border-botanical-gold shrink-0 z-30">
+      <div class="flex items-center justify-between gap-2 text-xs">
+        <div class="flex items-center gap-1.5 flex-1 min-w-0">
+          <i class="fa-solid fa-language text-botanical-gold text-lg shrink-0" aria-hidden="true"></i>
+          <select id="language-select" onchange="changeLanguage(this.value)" class="bg-botanical-primary text-botanical-gold font-bold px-2 py-1 rounded border border-botanical-gold focus:ring-2 focus:ring-white cursor-pointer text-xs w-full truncate" aria-label="Select Language">
+            <option value="en">🇺🇸 English</option>
+            <option value="es">🇪🇸 Español</option>
+          </select>
+        </div>
+
+        <div class="flex items-center gap-1 shrink-0">
+          <span id="txt-size-label" class="text-[10px] font-bold text-botanical-light/80">Text:</span>
+          <button onclick="changeFontSize('sm')" class="bg-botanical-primary text-white px-2 py-0.5 rounded font-bold border border-botanical-border text-xs">A-</button>
+          <button onclick="changeFontSize('md')" class="bg-botanical-primary text-white px-2 py-0.5 rounded font-bold border border-botanical-border text-xs">A</button>
+          <button onclick="changeFontSize('lg')" class="bg-botanical-primary text-white px-2 py-0.5 rounded font-bold border border-botanical-border text-xs">A+</button>
+          <button onclick="toggleContrast()" class="bg-botanical-gold text-botanical-dark font-bold px-2 py-0.5 rounded text-xs ml-0.5"><i class="fa-solid fa-circle-half-stroke"></i></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- HEADER WITH CRUTCH SIGNATURE BRANDING LOGO -->
+    <header class="bg-white px-4 py-3 border-b-2 border-botanical-primary/20 flex items-center justify-between shrink-0 shadow-sm z-20">
+      <div class="flex items-center gap-2.5">
+        <div class="w-10 h-10 bg-botanical-primary text-botanical-gold rounded-2xl flex items-center justify-center font-black text-xl shadow-md border border-botanical-gold/30 shrink-0 p-1">
+          <svg viewBox="0 0 100 100" class="w-full h-full" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M 50 88 C 20 68 8 50 8 32 C 8 18 20 8 34 8 C 43 8 48 13 50 17 C 52 13 57 8 66 8 C 80 8 92 18 92 32 C 92 50 80 68 50 88 Z" fill="#e5a93c"/>
+            <g transform="translate(50, 44)" stroke="#1b3b2d" fill="#1b3b2d">
+              <g transform="rotate(-45)">
+                <path d="M -13 -30 C -6 -32 6 -32 13 -30 C 15 -30 15 -26 13 -26 C 6 -28 -6 -28 -13 -26 C -15 -26 -15 -30 -13 -30 Z" />
+                <path d="M -9 -26 L -3 2 L 3 2 L 9 -26" stroke="#1b3b2d" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+                <rect x="-7" y="-12" width="14" height="3.5" rx="1.5" />
+                <line x1="0" y1="2" x2="0" y2="30" stroke="#1b3b2d" stroke-width="3.5" stroke-linecap="round"/>
+                <rect x="-3" y="27" width="6" height="5" rx="1.5" />
+              </g>
+              <g transform="rotate(45)">
+                <path d="M -13 -30 C -6 -32 6 -32 13 -30 C 15 -30 15 -26 13 -26 C 6 -28 -6 -28 -13 -26 C -15 -26 -15 -30 -13 -30 Z" />
+                <path d="M -9 -26 L -3 2 L 3 2 L 9 -26" stroke="#1b3b2d" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+                <rect x="-7" y="-12" width="14" height="3.5" rx="1.5" />
+                <line x1="0" y1="2" x2="0" y2="30" stroke="#1b3b2d" stroke-width="3.5" stroke-linecap="round"/>
+                <rect x="-3" y="27" width="6" height="5" rx="1.5" />
+              </g>
+            </g>
+          </svg>
+        </div>
+        <div>
+          <h2 class="text-lg font-black leading-none text-botanical-primary tracking-wide flex items-center gap-1.5">
+            CRUTCH <span class="text-[10px] bg-botanical-light text-botanical-primary border border-botanical-border px-2 py-0.5 rounded-full font-bold">MedInMotion</span>
+          </h2>
+          <p id="txt-subhead" class="text-[10px] font-bold text-botanical-primary/70 uppercase tracking-wider mt-0.5">
+            Free Community Medical Equipment
+          </p>
+        </div>
+      </div>
+
+      <div id="user-status-container" class="flex items-center gap-2">
+        <button onclick="showScreen('screen-login')" class="bg-botanical-light hover:bg-emerald-100 text-botanical-primary px-2.5 py-1.5 rounded-xl border border-botanical-border flex items-center gap-1.5 text-xs font-bold transition-all shadow-sm">
+          <i class="fa-solid fa-user-circle text-botanical-primary text-sm"></i>
+          <span id="user-display-name">Guest</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- MAIN HOMEPAGE CONTENT -->
+    <main class="flex-1 overflow-y-auto p-4 space-y-5 no-scrollbar bg-botanical-cream">
+
+      <!-- HELPLINE BANNER -->
+      <div class="bg-botanical-gold/15 border-2 border-botanical-gold/60 rounded-2xl p-3 flex items-center justify-between gap-3 text-xs font-bold">
+        <div class="flex items-center gap-2 text-amber-950">
+          <i class="fa-solid fa-phone-volume text-botanical-gold text-base shrink-0"></i>
+          <span><strong id="txt-helpline">Helpline:</strong> (718) 555-0199</span>
+        </div>
+        <a href="tel:7185550199" class="bg-botanical-gold hover:bg-botanical-goldHover text-botanical-dark px-3 py-1.5 rounded-xl font-black text-[11px] shadow active:scale-95 transition-transform shrink-0">
+          Call Now
+        </a>
+      </div>
+
+      <!-- ENHANCED LIVE DELIVERY STATUS CARD WITH PROGRESS STEPPER (QoL UPGRADE) -->
+      <div id="active-delivery-card" class="bg-botanical-dark text-white rounded-3xl p-4 border-2 border-botanical-gold shadow-xl space-y-3 relative overflow-hidden transition-all">
+        <!-- Header Info Row -->
+        <div class="flex items-center justify-between border-b border-emerald-700/60 pb-2.5">
+          <span class="text-xs font-black text-botanical-gold uppercase tracking-wider flex items-center gap-1.5">
+            <span class="relative flex h-2.5 w-2.5">
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-botanical-gold opacity-75"></span>
+              <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-botanical-gold"></span>
+            </span>
+            Live Delivery Progress
+          </span>
+          <button onclick="openNotificationLogModal()" class="bg-emerald-800 hover:bg-emerald-700 text-botanical-gold text-[10px] font-black px-2.5 py-1 rounded-full border border-botanical-gold/40 flex items-center gap-1 transition-all active:scale-95">
+            <i class="fa-solid fa-bell"></i>
+            <span>Log (<span id="unread-log-count">3</span>)</span>
+          </button>
+        </div>
+
+        <!-- Stage Progress Stepper Bar -->
+        <div class="space-y-2 pt-1">
+          <div class="flex items-center justify-between text-[11px] font-bold">
+            <span id="tracker-current-stage-title" class="text-botanical-gold font-black">Stage 2: Driver Assigned & En Route</span>
+            <span id="tracker-percentage-text" class="text-emerald-300 font-mono">50%</span>
+          </div>
+
+          <!-- Outer Progress Bar Shell -->
+          <div class="w-full bg-emerald-950/80 h-3.5 rounded-full border border-emerald-700 p-0.5 overflow-hidden relative shadow-inner">
+            <div id="tracker-progress-bar" class="h-full bg-botanical-gold rounded-full transition-all duration-700 ease-out progress-shimmer" style="width: 50%;"></div>
+          </div>
+
+          <!-- Stage Dots Row -->
+          <div class="grid grid-cols-4 text-center text-[9px] font-bold pt-1 gap-0.5">
+            <div id="step-node-1" class="space-y-1 text-botanical-gold font-black">
+              <div class="w-5 h-5 rounded-full bg-botanical-gold text-botanical-dark mx-auto flex items-center justify-center text-[10px] shadow"><i class="fa-solid fa-check"></i></div>
+              <span>Confirmed</span>
+            </div>
+            <div id="step-node-2" class="space-y-1 text-botanical-gold font-black">
+              <div class="w-5 h-5 rounded-full bg-botanical-gold text-botanical-dark mx-auto flex items-center justify-center text-[10px] shadow">2</div>
+              <span>En Route</span>
+            </div>
+            <div id="step-node-3" class="space-y-1 text-emerald-400/60">
+              <div class="w-5 h-5 rounded-full bg-emerald-900 border border-emerald-700 mx-auto flex items-center justify-center text-[10px]">3</div>
+              <span>Picked Up</span>
+            </div>
+            <div id="step-node-4" class="space-y-1 text-emerald-400/60">
+              <div class="w-5 h-5 rounded-full bg-emerald-900 border border-emerald-700 mx-auto flex items-center justify-center text-[10px]">4</div>
+              <span>Delivered</span>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Driver & ETA Info Box -->
+        <div class="grid grid-cols-2 gap-2 text-xs pt-1 border-t border-emerald-800/80">
+          <div>
+            <p class="text-[9px] font-bold text-emerald-300 uppercase tracking-wider">Assigned Driver</p>
+            <p id="delivery-driver-name" class="font-black text-white text-xs truncate">Carlos R. (Volunteer)</p>
+          </div>
+          <div>
+            <p class="text-[9px] font-bold text-emerald-300 uppercase tracking-wider">Est. Arrival</p>
+            <p id="delivery-eta" class="font-black text-botanical-gold text-xs">~ 18 Mins</p>
+          </div>
+        </div>
+
+        <!-- Item Detail & Quick Action Buttons -->
+        <div class="bg-emerald-950/80 p-2.5 rounded-xl border border-emerald-700 text-[11px] flex items-center justify-between gap-2">
+          <div class="truncate">
+            <span class="text-emerald-300 text-[10px] font-bold block">Equipment:</span>
+            <strong id="delivery-item-name" class="text-white font-black text-xs">Standard Wheelchair</strong>
+          </div>
+          <div class="flex items-center gap-1.5 shrink-0">
+            <button onclick="openDriverContactModal()" class="bg-botanical-gold hover:bg-botanical-goldHover text-botanical-dark font-black px-2.5 py-1.5 rounded-lg text-[10px] flex items-center gap-1 shadow active:scale-95">
+              <i class="fa-solid fa-comment-dots"></i>
+              <span>Contact Driver</span>
+            </button>
+            <button onclick="advanceDeliveryProgressSimulation()" class="bg-emerald-800 hover:bg-emerald-700 text-botanical-gold font-black px-2.5 py-1.5 rounded-lg text-[10px] border border-botanical-gold/40 flex items-center gap-1 active:scale-95">
+              <i class="fa-solid fa-play text-[9px]"></i>
+              <span>Simulate Next</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- HERO HEADLINE -->
+      <div class="bg-white rounded-3xl p-5 border-2 border-botanical-border/60 shadow-sm space-y-3 relative overflow-hidden">
+        <div class="flex items-center gap-2 flex-wrap">
+          <span id="txt-free-badge" class="bg-botanical-red text-white text-[11px] font-black px-2.5 py-1 rounded-full uppercase tracking-wide">100% Free</span>
+          <span id="txt-badge-tag" class="text-botanical-primary/80 text-xs font-bold">🌱 Serving Seniors & Families</span>
+        </div>
+        <h1 id="txt-hero-title" class="text-xl font-black text-botanical-primary leading-snug">
+          Free Medical Equipment for Seniors & Low-Income Families
+        </h1>
+        <p id="txt-hero-desc" class="text-xs text-slate-600 font-bold leading-relaxed">
+          Get wheelchairs, walkers, shower seats, and supplies at zero cost, provided by local churches, CBOs, and neighbors.
+        </p>
+      </div>
+
+      <!-- MAIN HOMEPAGE ACTION BUTTON CARDS -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <button onclick="scrollToMapAndInventory()" class="w-full bg-botanical-red text-white p-4 rounded-3xl shadow-lg hover:bg-red-900 text-left flex items-center justify-between gap-3 transform active:scale-95 transition-all border-2 border-red-950 group">
+          <div class="space-y-0.5">
+            <h3 id="btn-need-title" class="text-base font-black tracking-tight leading-tight flex items-center gap-1.5">
+              <i class="fa-solid fa-wheelchair text-botanical-gold"></i>
+              I NEED Free Equipment
+            </h3>
+            <p id="btn-need-desc" class="text-[11px] font-bold text-red-100">See map of CBO closets & available items</p>
+          </div>
+          <div class="w-10 h-10 bg-white/20 rounded-2xl flex items-center justify-center text-white text-xl font-black shrink-0 group-hover:translate-x-1 transition-transform">
+            <i class="fa-solid fa-arrow-down"></i>
+          </div>
+        </button>
+
+        <button onclick="openHelpChooserModal()" class="w-full bg-botanical-primary text-white p-4 rounded-3xl shadow-lg hover:bg-emerald-900 text-left flex items-center justify-between gap-3 transform active:scale-95 transition-all border-2 border-botanical-dark group">
+          <div class="space-y-0.5">
+            <h3 id="btn-help-title" class="text-base font-black tracking-tight leading-tight flex items-center gap-1.5">
+              <i class="fa-solid fa-hand-holding-heart text-botanical-gold"></i>
+              I WANT to Help
+            </h3>
+            <p id="btn-help-desc" class="text-[11px] font-bold text-botanical-light/90">Donate, transport, or list CBO items</p>
+          </div>
+          <div class="w-10 h-10 bg-white/20 rounded-2xl flex items-center justify-center text-white text-xl font-black shrink-0 group-hover:scale-110 transition-transform">
+            <i class="fa-solid fa-heart"></i>
+          </div>
+        </button>
+      </div>
+
+      <!-- SEARCH & INVENTORY QUICK FILTER BAR (QoL UPGRADE) -->
+      <div class="bg-white rounded-3xl p-4 border-2 border-botanical-border/60 shadow-sm space-y-3">
+        <div class="flex items-center justify-between">
+          <h3 class="text-xs font-black text-botanical-primary flex items-center gap-1.5">
+            <i class="fa-solid fa-magnifying-glass text-botanical-gold"></i>
+            <span>Search Available Equipment</span>
+          </h3>
+          <span class="text-[10px] font-bold bg-botanical-light text-botanical-primary px-2 py-0.5 rounded-full border border-botanical-border">Bronx Closets</span>
+        </div>
+
+        <div class="relative">
+          <i class="fa-solid fa-search absolute left-3.5 top-3.5 text-botanical-primary/50 text-xs"></i>
+          <input type="text" id="equipment-search-input" onkeyup="filterInventoryBySearch(this.value)" placeholder="Search 'wheelchair', 'rollator', 'shower'..." class="w-full border-2 border-botanical-border rounded-xl pl-9 pr-3 py-2 text-xs font-bold text-slate-800 focus:border-botanical-primary focus:ring-0">
+        </div>
+      </div>
+
+      <!-- INTERACTIVE MAP SECTION (CBO & TRANSPORT PICKUP MAP) -->
+      <section id="map-section" class="bg-white rounded-3xl p-4 border-2 border-botanical-border/60 shadow-sm space-y-3">
+        <div class="flex items-center justify-between flex-wrap gap-2">
+          <div>
+            <h3 id="txt-map-title" class="text-base font-black text-botanical-primary flex items-center gap-1.5">
+              <i class="fa-solid fa-map-location-dot text-botanical-primary"></i>
+              <span>Equipment Pickups & CBO Closets</span>
+            </h3>
+            <p id="txt-map-sub" class="text-[11px] font-bold text-slate-500">Tap pins for equipment pick-up & delivery locations</p>
+          </div>
+          
+          <button onclick="getUserLocation()" class="bg-botanical-gold hover:bg-botanical-goldHover text-botanical-dark font-black text-xs px-3 py-1.5 rounded-xl flex items-center gap-1 shadow active:scale-95 transition-all">
+            <i class="fa-solid fa-location-crosshairs"></i>
+            <span id="btn-near-me">Near Me</span>
+          </button>
+        </div>
+
+        <!-- Category Filters Pill Row -->
+        <div class="flex items-center gap-1.5 overflow-x-auto pb-1 text-[11px] font-bold no-scrollbar">
+          <button id="map-filter-all" onclick="filterMapByCategory('all')" class="bg-botanical-primary text-white px-3 py-1 rounded-full border border-botanical-primary shrink-0">
+            <span id="txt-filter-all">All Locations</span>
+          </button>
+          <button id="map-filter-wheelchair" onclick="filterMapByCategory('wheelchair')" class="bg-botanical-light text-botanical-primary hover:bg-emerald-100 px-3 py-1 rounded-full border border-botanical-border shrink-0">
+            <span>Wheelchairs</span>
+          </button>
+          <button id="map-filter-walker" onclick="filterMapByCategory('walker')" class="bg-botanical-light text-botanical-primary hover:bg-emerald-100 px-3 py-1 rounded-full border border-botanical-border shrink-0">
+            <span>Walkers</span>
+          </button>
+          <button id="map-filter-shower" onclick="filterMapByCategory('shower')" class="bg-botanical-light text-botanical-primary hover:bg-emerald-100 px-3 py-1 rounded-full border border-botanical-border shrink-0">
+            <span>Shower Seats</span>
+          </button>
+        </div>
+
+        <!-- Leaflet Map Container -->
+        <div id="cbo-map" class="w-full h-60 rounded-2xl border-2 border-botanical-border shadow-inner z-10"></div>
+
+        <!-- Active Selected CBO Info Card -->
+        <div id="selected-cbo-card" class="bg-botanical-light/60 border-2 border-botanical-border p-3 rounded-2xl space-y-2">
+          <div class="flex items-start justify-between gap-2">
+            <div>
+              <h4 id="cbo-info-name" class="font-black text-xs text-botanical-primary leading-tight">Mott Haven Community Health Closet</h4>
+              <p id="cbo-info-address" class="text-[11px] font-bold text-slate-600">427 E 144th St, Bronx, NY 10454</p>
+            </div>
+            <div class="flex flex-col items-end gap-1 shrink-0">
+              <span class="bg-emerald-100 text-emerald-900 text-[10px] font-black px-2 py-0.5 rounded-full border border-emerald-300">Active Hub</span>
+              <button onclick="toggleFavoriteCBO(1)" id="btn-fav-cbo" class="text-xs font-bold text-slate-400 hover:text-amber-500 transition-colors">
+                <i class="fa-regular fa-star"></i> Save
+              </button>
+            </div>
+          </div>
+
+          <div id="cbo-info-items" class="flex flex-wrap gap-1">
+            <span class="bg-white text-botanical-primary border border-botanical-border px-2 py-0.5 rounded-md text-[10px] font-bold">✓ Wheelchairs (2)</span>
+            <span class="bg-white text-botanical-primary border border-botanical-border px-2 py-0.5 rounded-md text-[10px] font-bold">✓ Walkers (4)</span>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2 pt-1">
+            <button id="btn-cbo-call" onclick="callSelectedCBO()" class="bg-botanical-dark text-white font-bold py-2 rounded-xl text-xs flex items-center justify-center gap-1.5 hover:bg-emerald-950">
+              <i class="fa-solid fa-phone text-botanical-gold"></i>
+              <span id="txt-cbo-call">Call Location</span>
+            </button>
+            <button onclick="openRequestModal()" class="bg-botanical-primary text-white font-bold py-2 rounded-xl text-xs flex items-center justify-center gap-1.5 hover:bg-emerald-800">
+              <i class="fa-solid fa-calendar-check text-botanical-gold"></i>
+              <span id="txt-cbo-request">Schedule Pickup</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- FOOTER CREDITS -->
+      <footer class="text-center py-3 text-[11px] font-bold text-slate-500 space-y-1 border-t border-botanical-border/60">
+        <p>Created by Athalia Pino • CompSci High South Bronx</p>
+        <p class="text-[10px]">Direct Contact: <a href="mailto:athalia.pino27@compscihigh.org" class="text-botanical-primary underline">athalia.pino27@compscihigh.org</a></p>
+      </footer>
+    </main>
+
+    <!-- BOTTOM STICKY NAVIGATION BAR -->
+    <nav class="bg-white border-t-2 border-botanical-border/60 px-3 py-2 shrink-0 z-30">
+      <div class="grid grid-cols-4 gap-1 text-center">
+        <button onclick="enterMainApp()" class="flex flex-col items-center justify-center p-1.5 text-botanical-primary font-bold rounded-xl active:bg-emerald-50">
+          <i class="fa-solid fa-house text-lg"></i>
+          <span id="nav-home" class="text-[10px] font-black mt-0.5">Home</span>
+        </button>
+
+        <button onclick="scrollToMapAndInventory()" class="flex flex-col items-center justify-center p-1.5 text-slate-600 hover:text-botanical-primary font-bold rounded-xl active:bg-slate-100">
+          <i class="fa-solid fa-map-location-dot text-lg"></i>
+          <span id="nav-map" class="text-[10px] font-bold mt-0.5">Pickups Map</span>
+        </button>
+
+        <button onclick="openRequestModal()" class="flex flex-col items-center justify-center p-1.5 text-slate-600 hover:text-botanical-red font-bold rounded-xl active:bg-slate-100">
+          <i class="fa-solid fa-calendar-check text-lg"></i>
+          <span id="nav-get" class="text-[10px] font-bold mt-0.5">Schedule</span>
+        </button>
+
+        <button onclick="openHelpChooserModal()" class="flex flex-col items-center justify-center p-1.5 text-slate-600 hover:text-botanical-primary font-bold rounded-xl active:bg-slate-100">
+          <i class="fa-solid fa-hand-holding-heart text-lg"></i>
+          <span id="nav-help" class="text-[10px] font-bold mt-0.5">Help Out</span>
+        </button>
+      </div>
+    </nav>
+  </div>
+
+  <!-- MODALS SECTION -->
+
+  <!-- MODAL 1: I WANT TO HELP CHOOSER MODAL -->
+  <div id="modal-help-chooser" class="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 hidden items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-sm w-full p-5 border-2 border-botanical-border shadow-2xl space-y-4 animate-in fade-in zoom-in duration-200">
+      <div class="flex items-center justify-between border-b border-botanical-border/60 pb-3">
+        <h3 id="txt-modal1-title" class="text-lg font-black text-botanical-primary flex items-center gap-2">
+          <i class="fa-solid fa-hand-holding-heart text-botanical-gold"></i>
+          I Want to Help
+        </h3>
+        <button onclick="closeModal('modal-help-chooser')" class="w-8 h-8 rounded-full bg-botanical-light text-botanical-primary font-black flex items-center justify-center hover:bg-emerald-100">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="space-y-2.5">
+        <button onclick="openDonateForm()" class="w-full bg-botanical-light hover:bg-emerald-100 border-2 border-botanical-border p-3.5 rounded-2xl text-left flex items-center justify-between gap-3 active:scale-98 transition-all group">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-botanical-primary text-botanical-gold rounded-xl flex items-center justify-center text-lg shrink-0">
+              <i class="fa-solid fa-box-open"></i>
+            </div>
+            <div>
+              <h4 id="txt-opt-donate-title" class="text-xs font-black text-botanical-primary">1. Donate Equipment</h4>
+              <p id="txt-opt-donate-sub" class="text-[10px] font-bold text-slate-600">Upload photo, condition & details</p>
+            </div>
+          </div>
+          <i class="fa-solid fa-chevron-right text-botanical-primary group-hover:translate-x-1 transition-transform"></i>
+        </button>
+
+        <button onclick="openTransportForm()" class="w-full bg-botanical-light hover:bg-emerald-100 border-2 border-botanical-border p-3.5 rounded-2xl text-left flex items-center justify-between gap-3 active:scale-98 transition-all group">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-botanical-gold text-botanical-dark rounded-xl flex items-center justify-center text-lg shrink-0">
+              <i class="fa-solid fa-truck-ramps"></i>
+            </div>
+            <div>
+              <h4 id="txt-opt-transport-title" class="text-xs font-black text-botanical-primary">2. Volunteer Transport Driver</h4>
+              <p id="txt-opt-transport-sub" class="text-[10px] font-bold text-slate-600">View pending equipment deliveries near you</p>
+            </div>
+          </div>
+          <i class="fa-solid fa-chevron-right text-botanical-primary group-hover:translate-x-1 transition-transform"></i>
+        </button>
+
+        <button onclick="chooseCboPath()" class="w-full bg-botanical-light hover:bg-emerald-100 border-2 border-botanical-border p-3.5 rounded-2xl text-left flex items-center justify-between gap-3 active:scale-98 transition-all group">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-emerald-700 text-white rounded-xl flex items-center justify-center text-lg shrink-0">
+              <i class="fa-solid fa-church"></i>
+            </div>
+            <div>
+              <h4 id="txt-opt-cbo-title" class="text-xs font-black text-botanical-primary">3. List CBO Items</h4>
+              <p id="txt-opt-cbo-sub" class="text-[10px] font-bold text-slate-600">Organizations & churches post closet inventory</p>
+            </div>
+          </div>
+          <i class="fa-solid fa-chevron-right text-botanical-primary group-hover:translate-x-1 transition-transform"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 2: DONATE EQUIPMENT FORM -->
+  <div id="modal-donate" class="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 hidden items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-sm w-full p-5 border-2 border-botanical-border shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto no-scrollbar">
+      <div class="flex items-center justify-between border-b border-botanical-border/60 pb-3">
+        <h3 id="txt-modal3-title" class="text-base font-black text-botanical-primary flex items-center gap-2">
+          <i class="fa-solid fa-box-open text-botanical-gold"></i>
+          Donate Medical Equipment
+        </h3>
+        <button onclick="closeModal('modal-donate')" class="w-8 h-8 rounded-full bg-botanical-light text-botanical-primary font-black flex items-center justify-center hover:bg-emerald-100">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <form onsubmit="handleDonateSubmit(event)" class="space-y-3">
+        <div>
+          <label id="lbl-donate-name" for="donate-name" class="block text-xs font-black text-botanical-primary mb-1">Your Name:</label>
+          <input type="text" id="donate-name" required placeholder="e.g. Maria Perez" class="w-full border-2 border-botanical-border rounded-xl p-2.5 text-xs font-bold text-slate-800">
+        </div>
+
+        <div>
+          <label id="lbl-donate-item" for="donate-item" class="block text-xs font-black text-botanical-primary mb-1">Item to Donate:</label>
+          <select id="donate-item" required class="w-full border-2 border-botanical-border rounded-xl p-2.5 text-xs font-bold bg-white text-slate-800">
+            <option value="Wheelchair">Wheelchair (Standard / Transport)</option>
+            <option value="Walker / Rollator">Walker / Rollator</option>
+            <option value="Shower Seat">Shower Seat</option>
+            <option value="Sealed Medical Supplies">Sealed Medical Supplies</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="donate-condition-select" class="block text-xs font-black text-botanical-primary mb-1">Equipment Condition:</label>
+          <select id="donate-condition-select" required class="w-full border-2 border-botanical-border rounded-xl p-2.5 text-xs font-bold bg-white text-slate-800">
+            <option value="Brand New / Sealed">Brand New / Sealed</option>
+            <option value="Like New (Excellent)">Like New (Excellent Condition)</option>
+            <option value="Lightly Used (Good)">Lightly Used (Good Condition)</option>
+            <option value="Fair (Functional)">Fair (Fully Functional)</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="donate-file" class="block text-xs font-black text-botanical-primary mb-1">Upload Photos / File:</label>
+          <div class="relative border-2 border-dashed border-botanical-border rounded-xl p-3 text-center bg-botanical-light/40 hover:bg-emerald-50 transition-colors cursor-pointer">
+            <input type="file" id="donate-file" accept="image/*,.pdf" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onchange="updateFileName(this)">
+            <i class="fa-solid fa-cloud-arrow-up text-botanical-primary text-xl mb-1"></i>
+            <p id="file-upload-label" class="text-[11px] font-bold text-slate-600">Click or drag image files to attach</p>
+          </div>
+        </div>
+
+        <div>
+          <label for="donate-description" class="block text-xs font-black text-botanical-primary mb-1">Equipment Description:</label>
+          <textarea id="donate-description" rows="3" required placeholder="Describe dimensions, features, brand, or specific pickup notes..." class="w-full border-2 border-botanical-border rounded-xl p-2.5 text-xs font-bold text-slate-800"></textarea>
+        </div>
+
+        <button id="btn-donate-submit" type="submit" class="w-full bg-botanical-primary hover:bg-emerald-900 text-white font-black py-3 rounded-xl text-xs shadow-lg flex items-center justify-center gap-2 active:scale-95 transition-all">
+          <span>Submit Equipment Donation</span>
+          <i class="fa-solid fa-paper-plane"></i>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL 4: CBO INVENTORY LISTING FORM -->
+  <div id="modal-cbo" class="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 hidden items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-sm w-full p-5 border-2 border-botanical-border shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto no-scrollbar">
+      <div class="flex items-center justify-between border-b border-botanical-border/60 pb-3">
+        <h3 id="txt-modal5-title" class="text-base font-black text-botanical-primary flex items-center gap-2">
+          <i class="fa-solid fa-church text-botanical-gold"></i>
+          CBO Inventory Listing
+        </h3>
+        <button onclick="closeModal('modal-cbo')" class="w-8 h-8 rounded-full bg-botanical-light text-botanical-primary font-black flex items-center justify-center hover:bg-emerald-100">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <form onsubmit="handleCboSubmit(event)" class="space-y-3">
+        <div>
+          <label id="lbl-cbo-name" for="cbo-org-name" class="block text-xs font-black text-botanical-primary mb-1">CBO / Church Name:</label>
+          <input type="text" id="cbo-org-name" required placeholder="e.g. St. Ann's Center" class="w-full border-2 border-botanical-border rounded-xl p-2.5 text-xs font-bold text-slate-800">
+        </div>
+
+        <div>
+          <label id="lbl-cbo-item" for="cbo-item-type" class="block text-xs font-black text-botanical-primary mb-1">Equipment Type:</label>
+          <input type="text" id="cbo-item-type" required placeholder="e.g. Wheelchairs, Walkers" class="w-full border-2 border-botanical-border rounded-xl p-2.5 text-xs font-bold text-slate-800">
+        </div>
+
+        <button id="btn-cbo-submit" type="submit" class="w-full bg-botanical-primary hover:bg-emerald-900 text-white font-black py-3 rounded-xl text-xs shadow-lg flex items-center justify-center gap-2 active:scale-95 transition-all">
+          <span>Post Available Inventory</span>
+          <i class="fa-solid fa-cloud-arrow-up"></i>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: DRIVER ASSIGNMENTS LIST -->
+  <div id="modal-driver-assignments" class="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 hidden items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-md w-full p-5 border-2 border-botanical-border shadow-2xl space-y-4 max-h-[90vh] flex flex-col">
+      <div class="flex items-center justify-between border-b border-botanical-border/60 pb-3 shrink-0">
+        <div>
+          <h3 class="text-base font-black text-botanical-primary flex items-center gap-2">
+            <i class="fa-solid fa-truck-fast text-botanical-gold"></i>
+            <span>Available Delivery Assignments</span>
+          </h3>
+          <p class="text-[11px] font-bold text-slate-500">Ordered by Pickup-to-Delivery Distance</p>
+        </div>
+        <button onclick="closeModal('modal-driver-assignments')" class="w-8 h-8 rounded-full bg-botanical-light text-botanical-primary font-black flex items-center justify-center hover:bg-emerald-100">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="bg-botanical-light p-2.5 rounded-xl border border-botanical-border text-xs flex items-center justify-between shrink-0 font-bold text-botanical-primary">
+        <span class="flex items-center gap-1.5">
+          <i class="fa-solid fa-arrow-down-short-wide text-botanical-gold"></i> Sorted: Closest First
+        </span>
+        <span id="assignment-count-badge" class="bg-botanical-primary text-botanical-gold text-[10px] px-2 py-0.5 rounded-full font-black">5 Available</span>
+      </div>
+
+      <div id="assignments-list-container" class="space-y-3 overflow-y-auto flex-1 pr-1 no-scrollbar">
+        <!-- Rendered dynamically -->
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: ROUTE & DIRECTIONS NAVIGATION MAP -->
+  <div id="modal-route-directions" class="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 hidden items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-md w-full p-5 border-2 border-botanical-border shadow-2xl space-y-4 max-h-[92vh] flex flex-col">
+      <div class="flex items-center justify-between border-b border-botanical-border/60 pb-3 shrink-0">
+        <div class="flex items-center gap-2">
+          <button onclick="backToAssignments()" class="w-8 h-8 rounded-xl bg-botanical-light text-botanical-primary font-black flex items-center justify-center hover:bg-emerald-100 border border-botanical-border">
+            <i class="fa-solid fa-arrow-left"></i>
+          </button>
+          <div>
+            <h3 class="text-sm font-black text-botanical-primary">Route & Traffic Navigation</h3>
+            <p id="route-item-title" class="text-[11px] font-bold text-botanical-gold dark:text-emerald-800">Standard Wheelchair</p>
+          </div>
+        </div>
+        <button onclick="closeModal('modal-route-directions')" class="w-8 h-8 rounded-full bg-botanical-light text-botanical-primary font-black flex items-center justify-center hover:bg-emerald-100">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="overflow-y-auto flex-1 space-y-3 pr-1 no-scrollbar">
+        <div class="relative">
+          <div id="route-map" class="w-full h-52 rounded-2xl border-2 border-botanical-border shadow-inner z-10"></div>
+          <div class="absolute top-2 right-2 bg-white/90 backdrop-blur-xs px-2.5 py-1 rounded-lg text-[10px] font-black text-botanical-primary border border-botanical-border shadow z-20 flex items-center gap-1">
+            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span> Live Traffic Active
+          </div>
+        </div>
+
+        <div class="bg-botanical-dark text-white p-3.5 rounded-2xl border-2 border-botanical-gold shadow-md space-y-2">
+          <div class="grid grid-cols-3 text-center border-b border-emerald-800 pb-2">
+            <div>
+              <p class="text-[9px] font-bold text-emerald-300 uppercase">Distance</p>
+              <p id="route-summary-distance" class="text-sm font-black text-botanical-gold">0.6 mi</p>
+            </div>
+            <div>
+              <p class="text-[9px] font-bold text-emerald-300 uppercase">Est. Drive Time</p>
+              <p id="route-summary-time" class="text-sm font-black text-white">~5 mins</p>
+            </div>
+            <div>
+              <p class="text-[9px] font-bold text-emerald-300 uppercase">Bronx Traffic</p>
+              <p id="route-summary-traffic" class="text-xs font-black text-emerald-300 mt-0.5">Light</p>
+            </div>
+          </div>
+
+          <div class="space-y-1.5 text-xs pt-1">
+            <div class="flex items-start gap-2">
+              <span class="bg-emerald-500 text-white rounded-full w-4 h-4 text-[9px] flex items-center justify-center font-black shrink-0 mt-0.5">A</span>
+              <div>
+                <p class="text-[10px] font-bold text-emerald-300">PICKUP (CBO):</p>
+                <p id="route-pickup-addr" class="font-bold text-white text-[11px]">Mott Haven CBO Closet (427 E 144th St)</p>
+              </div>
+            </div>
+            <div class="flex items-start gap-2">
+              <span class="bg-red-500 text-white rounded-full w-4 h-4 text-[9px] flex items-center justify-center font-black shrink-0 mt-0.5">B</span>
+              <div>
+                <p class="text-[10px] font-bold text-emerald-300">DELIVERY DESTINATION:</p>
+                <p id="route-delivery-addr" class="font-bold text-white text-[11px]">301 E 138th St, Apt 4B (Mrs. Rosa M.)</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-2xl border-2 border-botanical-border p-3 space-y-2">
+          <h4 class="text-xs font-black text-botanical-primary flex items-center gap-1.5">
+            <i class="fa-solid fa-diamond-turn-right text-botanical-gold"></i>
+            Turn-by-Turn Directions
+          </h4>
+          <ol id="route-steps-list" class="space-y-2 text-xs font-bold text-slate-700 list-decimal list-inside">
+          </ol>
+        </div>
+      </div>
+
+      <div class="space-y-2 pt-2 border-t border-botanical-border/60 shrink-0">
+        <button id="btn-accept-assignment" onclick="acceptActiveAssignment()" class="w-full bg-botanical-gold hover:bg-botanical-goldHover text-botanical-dark font-black py-3.5 rounded-xl text-xs shadow-lg flex items-center justify-center gap-2 active:scale-95 transition-all">
+          <i class="fa-solid fa-circle-check text-base"></i>
+          <span>Accept Assignment & Start Route</span>
+        </button>
+
+        <button onclick="launchExternalMaps()" class="w-full bg-botanical-light hover:bg-emerald-100 text-botanical-primary font-bold py-2.5 rounded-xl text-xs border border-botanical-border flex items-center justify-center gap-2 transition-all">
+          <i class="fa-solid fa-location-arrow"></i>
+          <span>Open in Google Maps Navigation</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- NEW QoL MODAL: LIVE ACTIVITY & NOTIFICATION LOG MODAL -->
+  <div id="modal-notification-log" class="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 hidden items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-sm w-full p-5 border-2 border-botanical-border shadow-2xl space-y-4 max-h-[85vh] flex flex-col">
+      <div class="flex items-center justify-between border-b border-botanical-border/60 pb-3 shrink-0">
+        <h3 class="text-base font-black text-botanical-primary flex items-center gap-2">
+          <i class="fa-solid fa-bell text-botanical-gold"></i>
+          Live Delivery Notifications
+        </h3>
+        <button onclick="closeModal('modal-notification-log')" class="w-8 h-8 rounded-full bg-botanical-light text-botanical-primary font-black flex items-center justify-center hover:bg-emerald-100">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="flex items-center justify-between text-xs font-bold text-slate-500 shrink-0">
+        <span>Delivery #CRU-8921 Updates</span>
+        <button onclick="clearNotificationLogs()" class="text-botanical-red hover:underline text-[11px]">Clear All</button>
+      </div>
+
+      <div id="notification-logs-container" class="space-y-2.5 overflow-y-auto flex-1 pr-1 no-scrollbar">
+        <!-- Rendered dynamically -->
+      </div>
+
+      <button onclick="closeModal('modal-notification-log')" class="w-full bg-botanical-primary text-white font-black py-2.5 rounded-xl text-xs shadow active:scale-95 shrink-0">
+        Close Activity Feed
+      </button>
+    </div>
+  </div>
+
+  <!-- NEW QoL MODAL: DIRECT DRIVER CONTACT / CHAT MODAL -->
+  <div id="modal-driver-contact" class="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 hidden items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-sm w-full p-5 border-2 border-botanical-border shadow-2xl space-y-4">
+      <div class="flex items-center justify-between border-b border-botanical-border/60 pb-3">
+        <h3 class="text-base font-black text-botanical-primary flex items-center gap-2">
+          <i class="fa-solid fa-headset text-botanical-gold"></i>
+          Contact Assigned Driver
+        </h3>
+        <button onclick="closeModal('modal-driver-contact')" class="w-8 h-8 rounded-full bg-botanical-light text-botanical-primary font-black flex items-center justify-center hover:bg-emerald-100">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="bg-botanical-light p-3 rounded-2xl border border-botanical-border flex items-center gap-3">
+        <div class="w-12 h-12 bg-botanical-primary text-botanical-gold rounded-full flex items-center justify-center font-black text-xl shadow shrink-0">
+          CR
+        </div>
+        <div>
+          <h4 id="driver-contact-name" class="text-xs font-black text-botanical-primary">Carlos R. (Volunteer Driver)</h4>
+          <p class="text-[10px] font-bold text-emerald-800">Vehicle: White Honda Civic (NY #K92-11A)</p>
+          <span class="inline-block bg-emerald-200 text-emerald-900 text-[9px] font-black px-2 py-0.5 rounded-full mt-0.5">En Route • 18 mins away</span>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-2">
+        <a href="tel:7185550199" class="bg-botanical-primary text-white font-black py-3 rounded-xl text-xs flex items-center justify-center gap-2 shadow active:scale-95 text-center">
+          <i class="fa-solid fa-phone text-botanical-gold"></i>
+          <span>Call Driver</span>
+        </a>
+        <button onclick="sendQuickSmsToDriver()" class="bg-botanical-gold text-botanical-dark font-black py-3 rounded-xl text-xs flex items-center justify-center gap-2 shadow active:scale-95">
+          <i class="fa-solid fa-comment-sms"></i>
+          <span>Send SMS</span>
+        </button>
+      </div>
+
+      <div class="space-y-1.5 pt-1">
+        <p class="text-[10px] font-bold text-slate-500 uppercase">Quick Pre-set Messages:</p>
+        <button onclick="sendPresetMsg('I am at the front door awaiting delivery!')" class="w-full bg-botanical-cream hover:bg-emerald-100 border border-botanical-border p-2 rounded-xl text-left text-xs font-bold text-slate-700">
+          "I am at the front door awaiting delivery!"
+        </button>
+        <button onclick="sendPresetMsg('Please buzz Apartment 4B when arrived.')" class="w-full bg-botanical-cream hover:bg-emerald-100 border border-botanical-border p-2 rounded-xl text-left text-xs font-bold text-slate-700">
+          "Please buzz Apartment 4B when arrived."
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 5: REQUEST & SCHEDULE PICKUP / DELIVERY FORM -->
+  <div id="modal-request" class="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 hidden items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-sm w-full p-5 border-2 border-botanical-border shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto no-scrollbar">
+      <div class="flex items-center justify-between border-b border-botanical-border/60 pb-3">
+        <h3 id="txt-modal6-title" class="text-base font-black text-botanical-red flex items-center gap-2">
+          <i class="fa-solid fa-calendar-check text-botanical-gold"></i>
+          Schedule Equipment Request
+        </h3>
+        <button onclick="closeModal('modal-request')" class="w-8 h-8 rounded-full bg-botanical-light text-botanical-primary font-black flex items-center justify-center hover:bg-emerald-100">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <form onsubmit="handleRequestSubmit(event)" class="space-y-3">
+        <div>
+          <label id="lbl-req-name" for="req-name" class="block text-xs font-black text-botanical-primary mb-1">Your Full Name:</label>
+          <input type="text" id="req-name" required placeholder="e.g. Jose Rivera" class="w-full border-2 border-botanical-border rounded-xl p-2.5 text-xs font-bold text-slate-800">
+        </div>
+
+        <div>
+          <label id="lbl-req-phone" for="req-phone" class="block text-xs font-black text-botanical-primary mb-1">Phone Number:</label>
+          <input type="tel" id="req-phone" required placeholder="e.g. (718) 555-0182" class="w-full border-2 border-botanical-border rounded-xl p-2.5 text-xs font-bold text-slate-800">
+        </div>
+
+        <div>
+          <label id="lbl-req-item" for="req-item" class="block text-xs font-black text-botanical-primary mb-1">Item Requested:</label>
+          <select id="req-item" required class="w-full border-2 border-botanical-border rounded-xl p-2.5 text-xs font-bold bg-white text-slate-800">
+            <option value="Standard Wheelchair">Standard Wheelchair</option>
+            <option value="Walker / Rollator">Walker / Rollator</option>
+            <option value="Shower Chair">Shower Chair</option>
+          </select>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label for="pickup-date" class="block text-xs font-black text-botanical-primary mb-1">Preferred Date:</label>
+            <input type="date" id="pickup-date" required class="w-full border-2 border-botanical-border rounded-xl p-2 text-xs font-bold text-slate-800">
+          </div>
+          <div>
+            <label for="pickup-time" class="block text-xs font-black text-botanical-primary mb-1">Preferred Time:</label>
+            <input type="time" id="pickup-time" required class="w-full border-2 border-botanical-border rounded-xl p-2 text-xs font-bold text-slate-800">
+          </div>
+        </div>
+
+        <div>
+          <label for="req-address" class="block text-xs font-black text-botanical-primary mb-1">Delivery Address or Pickup Hub:</label>
+          <input type="text" id="req-address" required placeholder="e.g. 144th St & Willis Ave, Bronx" class="w-full border-2 border-botanical-border rounded-xl p-2.5 text-xs font-bold text-slate-800">
+        </div>
+
+        <button id="btn-req-submit" type="submit" class="w-full bg-botanical-red hover:bg-red-900 text-white font-black py-3.5 rounded-xl text-xs shadow-lg flex items-center justify-center gap-2 active:scale-95 transition-all">
+          <i class="fa-solid fa-calendar-check"></i>
+          <span>Schedule Pickup & Submit Request</span>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATION CONTAINER -->
+  <div id="toast-message" class="fixed bottom-16 left-1/2 -translate-x-1/2 bg-botanical-dark text-white font-bold px-5 py-3.5 rounded-2xl shadow-2xl z-50 transition-all transform translate-y-20 opacity-0 pointer-events-none max-w-xs w-11/12 text-center border-2 border-botanical-gold text-xs flex items-center justify-center gap-2">
+  </div>
+
+  <!-- APPLICATION LOGIC & INTERACTIVITY JS -->
+  <script>
+    let currentUserName = "Guest";
+
+    /* REAL-TIME DELIVERY PROGRESS & NOTIFICATIONS STATE OBJECT */
+    const currentDeliveryState = {
+      active: true,
+      stage: 2, // 1: Confirmed (25%), 2: En Route (50%), 3: Picked Up (75%), 4: Delivered (100%)
+      driver: "Carlos R. (Volunteer)",
+      item: "Standard Wheelchair",
+      eta: "~18 mins",
+      logs: [
+        { time: "10:14 AM", text: "Request #CRU-8921 confirmed by Mott Haven CBO", icon: "fa-circle-check", color: "text-emerald-500" },
+        { time: "10:20 AM", text: "Volunteer driver Carlos R. assigned to transport", icon: "fa-truck-fast", color: "text-botanical-gold" },
+        { time: "10:28 AM", text: "Driver is 18 mins away from CBO pickup hub", icon: "fa-location-dot", color: "text-emerald-400" }
+      ]
+    };
+
+    let favoritedCBOs = new Set();
+
+    function scrollToMapAndInventory() {
+      const mapSec = document.getElementById('map-section');
+      if (mapSec) {
+        mapSec.scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+
+    function enterMainApp(username) {
+      if (username) {
+        currentUserName = username;
+        document.getElementById('user-display-name').innerText = username;
+      }
+      
+      const screens = document.querySelectorAll('.app-screen');
+      screens.forEach(s => {
+        s.classList.add('hidden');
+        s.classList.remove('flex');
+      });
+
+      initMap();
+      updateDeliveryTrackerUI();
+    }
+
+    /* LIVE DELIVERY TRACKER PROGRESS & STEPPER LOGIC */
+    function updateDeliveryTrackerUI() {
+      const stageTitle = document.getElementById('tracker-current-stage-title');
+      const percText = document.getElementById('tracker-percentage-text');
+      const progressBar = document.getElementById('tracker-progress-bar');
+      const etaText = document.getElementById('delivery-eta');
+      const logBadge = document.getElementById('unread-log-count');
+
+      if (!stageTitle || !progressBar) return;
+
+      let perc = 25;
+      let title = "Stage 1: Request Confirmed";
+
+      if (currentDeliveryState.stage === 1) {
+        perc = 25;
+        title = "Stage 1: Request Confirmed";
+        if (etaText) etaText.innerText = "~30 mins";
+      } else if (currentDeliveryState.stage === 2) {
+        perc = 50;
+        title = "Stage 2: Driver Assigned & En Route";
+        if (etaText) etaText.innerText = "~18 mins";
+      } else if (currentDeliveryState.stage === 3) {
+        perc = 75;
+        title = "Stage 3: Item Picked Up from CBO";
+        if (etaText) etaText.innerText = "~8 mins";
+      } else if (currentDeliveryState.stage === 4) {
+        perc = 100;
+        title = "Stage 4: Equipment Delivered!";
+        if (etaText) etaText.innerText = "Arrived!";
+      }
+
+      stageTitle.innerText = title;
+      percText.innerText = `${perc}%`;
+      progressBar.style.width = `${perc}%`;
+
+      if (logBadge) logBadge.innerText = currentDeliveryState.logs.length;
+
+      // Update node highlight visuals
+      for (let i = 1; i <= 4; i++) {
+        const node = document.getElementById(`step-node-${i}`);
+        if (!node) continue;
+        if (i <= currentDeliveryState.stage) {
+          node.className = "space-y-1 text-botanical-gold font-black";
+          node.children[0].className = "w-5 h-5 rounded-full bg-botanical-gold text-botanical-dark mx-auto flex items-center justify-center text-[10px] shadow font-black";
+        } else {
+          node.className = "space-y-1 text-emerald-400/60 font-bold";
+          node.children[0].className = "w-5 h-5 rounded-full bg-emerald-900 border border-emerald-700 mx-auto flex items-center justify-center text-[10px]";
+        }
+      }
+
+      renderNotificationLogs();
+    }
+
+    function advanceDeliveryProgressSimulation() {
+      if (currentDeliveryState.stage < 4) {
+        currentDeliveryState.stage++;
+      } else {
+        currentDeliveryState.stage = 1; // Reset loop for testing
+      }
+
+      const now = new Date();
+      const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+      let logText = "";
+      if (currentDeliveryState.stage === 1) {
+        logText = "Request reset for demo purposes";
+      } else if (currentDeliveryState.stage === 2) {
+        logText = "Driver Carlos R. is en route to Mott Haven CBO";
+      } else if (currentDeliveryState.stage === 3) {
+        logText = "Standard Wheelchair loaded! Driver heading to your address";
+      } else if (currentDeliveryState.stage === 4) {
+        logText = "SUCCESS! Wheelchair safely delivered to destination";
+      }
+
+      currentDeliveryState.logs.unshift({
+        time: timeStr,
+        text: logText,
+        icon: currentDeliveryState.stage === 4 ? "fa-circle-check" : "fa-truck-fast",
+        color: currentDeliveryState.stage === 4 ? "text-emerald-400" : "text-botanical-gold"
+      });
+
+      updateDeliveryTrackerUI();
+      showToast(`🔔 Status Update: ${logText}`);
+    }
+
+    function openNotificationLogModal() {
+      renderNotificationLogs();
+      openModal('modal-notification-log');
+    }
+
+    function renderNotificationLogs() {
+      const container = document.getElementById('notification-logs-container');
+      if (!container) return;
+
+      container.innerHTML = currentDeliveryState.logs.map(log => `
+        <div class="bg-botanical-cream p-3 rounded-2xl border border-botanical-border text-xs flex items-start gap-2.5">
+          <i class="fa-solid ${log.icon} ${log.color} text-sm mt-0.5 shrink-0"></i>
+          <div class="space-y-0.5 flex-1">
+            <div class="flex items-center justify-between text-[10px] font-bold text-slate-500">
+              <span>Status Alert</span>
+              <span>${log.time}</span>
+            </div>
+            <p class="font-bold text-slate-800 text-xs">${log.text}</p>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function clearNotificationLogs() {
+      currentDeliveryState.logs = [];
+      renderNotificationLogs();
+      const badge = document.getElementById('unread-log-count');
+      if (badge) badge.innerText = "0";
+      showToast("Notification logs cleared.");
+    }
+
+    function openDriverContactModal() {
+      openModal('modal-driver-contact');
+    }
+
+    function sendQuickSmsToDriver() {
+      closeModal('modal-driver-contact');
+      showToast("SMS sent to Driver Carlos R.!");
+    }
+
+    function sendPresetMsg(msg) {
+      closeModal('modal-driver-contact');
+      showToast(`Sent to Driver: "${msg}"`);
+    }
+
+    function toggleFavoriteCBO(cboId) {
+      const btn = document.getElementById('btn-fav-cbo');
+      if (favoritedCBOs.has(cboId)) {
+        favoritedCBOs.delete(cboId);
+        if (btn) btn.innerHTML = `<i class="fa-regular fa-star"></i> Save`;
+        showToast("Removed from saved locations.");
+      } else {
+        favoritedCBOs.add(cboId);
+        if (btn) btn.innerHTML = `<i class="fa-solid fa-star text-amber-500"></i> Saved`;
+        showToast("Saved to your favorites!");
+      }
+    }
+
+    function filterInventoryBySearch(query) {
+      const q = query.toLowerCase().trim();
+      if (!q) {
+        renderMapMarkers('all');
+        return;
+      }
+      
+      if (q.includes('wheel') || q.includes('chair')) {
+        renderMapMarkers('wheelchair');
+      } else if (q.includes('walk') || q.includes('roll')) {
+        renderMapMarkers('walker');
+      } else if (q.includes('show') || q.includes('seat') || q.includes('bench')) {
+        renderMapMarkers('shower');
+      }
+    }
+
+    function openTransportForm() {
+      closeModal('modal-help-chooser');
+      openDriverAssignmentsModal();
+    }
+
+    // Generated realistic Bronx CBO and Delivery Assignment Data
+    const bronxDriverAssignments = [
+      {
+        id: "assign-101",
+        item: "Standard Heavy-Duty Wheelchair",
+        itemCategory: "Wheelchair",
+        urgency: "High Priority • Post-Op Senior",
+        cboName: "Mott Haven CBO Closet",
+        cboAddress: "427 E 144th St, Bronx, NY 10454",
+        cboLat: 40.8125,
+        cboLng: -73.9210,
+        deliveryRecipient: "Mrs. Rosa M.",
+        deliveryAddress: "301 E 138th St, Apt 4B, Bronx, NY 10454",
+        deliveryLat: 40.8092,
+        deliveryLng: -73.9248,
+        distanceMiles: 0.6,
+        estDriveMins: 5,
+        trafficStatus: "Light Traffic",
+        trafficColor: "text-emerald-600",
+        steps: [
+          "Head west on E 144th St toward Willis Ave (0.2 mi)",
+          "Turn left onto Willis Ave (0.3 mi)",
+          "Turn left onto E 138th St; destination is on the left (0.1 mi)"
+        ]
+      },
+      {
+        id: "assign-102",
+        item: "Foldable Rollator Walker with Seat",
+        itemCategory: "Walker",
+        urgency: "Elderly Mobility Need",
+        cboName: "St. Ann's Community Care Closet",
+        cboAddress: "292 E 140th St, Bronx, NY 10454",
+        cboLat: 40.8105,
+        cboLng: -73.9220,
+        deliveryRecipient: "Mr. Hector V.",
+        deliveryAddress: "620 Trinity Ave, Bronx, NY 10455",
+        deliveryLat: 40.8170,
+        deliveryLng: -73.9085,
+        distanceMiles: 1.2,
+        estDriveMins: 8,
+        trafficStatus: "Moderate Traffic (+2 mins)",
+        trafficColor: "text-amber-600",
+        steps: [
+          "Head east on E 140th St toward Brook Ave (0.3 mi)",
+          "Turn left onto Brook Ave and merge onto Westchester Ave (0.5 mi)",
+          "Turn right onto Trinity Ave (0.4 mi)"
+        ]
+      },
+      {
+        id: "assign-103",
+        item: "Adjustable Shower Bench & Grab Bar",
+        itemCategory: "Shower Seat",
+        urgency: "Safety Urgent",
+        cboName: "The Hub Health Equipment Closet",
+        cboAddress: "2924 3rd Ave, Bronx, NY 10455",
+        cboLat: 40.8178,
+        cboLng: -73.9165,
+        deliveryRecipient: "Grand Concourse Senior Residence",
+        deliveryAddress: "1188 Grand Concourse, Bronx, NY 10456",
+        deliveryLat: 40.8335,
+        deliveryLng: -73.9182,
+        distanceMiles: 1.8,
+        estDriveMins: 12,
+        trafficStatus: "Moderate Traffic (+3 mins)",
+        trafficColor: "text-amber-600",
+        steps: [
+          "Head north on 3rd Ave toward E 152nd St (0.5 mi)",
+          "Turn left onto E 161st St (0.6 mi)",
+          "Turn right onto Grand Concourse (0.7 mi)"
+        ]
+      }
+    ];
+
+    let activeSelectedAssignment = null;
+    let routeMap = null;
+    let routePolyline = null;
+    let routeMarkersGroup = null;
+
+    function openDriverAssignmentsModal() {
+      const sorted = [...bronxDriverAssignments].sort((a, b) => a.distanceMiles - b.distanceMiles);
+      renderDriverAssignmentsList(sorted);
+      openModal('modal-driver-assignments');
+    }
+
+    function renderDriverAssignmentsList(assignments) {
+      const container = document.getElementById('assignments-list-container');
+      const badge = document.getElementById('assignment-count-badge');
+      if (!container) return;
+
+      if (badge) badge.innerText = `${assignments.length} Available`;
+
+      container.innerHTML = assignments.map(a => `
+        <div class="bg-white rounded-2xl border-2 border-botanical-border p-3.5 shadow-sm hover:border-botanical-primary transition-all space-y-2">
+          <div class="flex items-start justify-between gap-2">
+            <div>
+              <span class="bg-red-100 text-red-900 text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider">${a.urgency}</span>
+              <h4 class="font-black text-xs text-botanical-primary mt-1 flex items-center gap-1.5">
+                <i class="fa-solid fa-box text-botanical-gold"></i>
+                ${a.item}
+              </h4>
+            </div>
+            <div class="text-right shrink-0">
+              <span class="text-xs font-black text-botanical-primary block">${a.distanceMiles} mi</span>
+              <span class="text-[10px] font-bold ${a.trafficColor}">${a.trafficStatus}</span>
+            </div>
+          </div>
+
+          <div class="bg-botanical-light/60 p-2 rounded-xl text-[11px] font-bold space-y-1 text-slate-700 border border-botanical-border/50">
+            <p><strong class="text-botanical-primary">Pickup:</strong> ${a.cboName} (${a.cboAddress.split(',')[0]})</p>
+            <p><strong class="text-botanical-primary">Delivery:</strong> ${a.deliveryRecipient} (${a.deliveryAddress.split(',')[0]})</p>
+          </div>
+
+          <div class="flex items-center justify-between gap-2 pt-1">
+            <span class="text-[10px] font-bold text-slate-500">Est. Time: <strong class="text-slate-800">~${a.estDriveMins} mins</strong></span>
+            <button onclick="selectAssignment('${a.id}')" class="bg-botanical-primary hover:bg-emerald-900 text-white font-black px-3 py-1.5 rounded-xl text-xs shadow flex items-center gap-1.5 active:scale-95 transition-all">
+              <span>View Route & Directions</span>
+              <i class="fa-solid fa-arrow-right text-[10px]"></i>
+            </button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function selectAssignment(id) {
+      const found = bronxDriverAssignments.find(a => a.id === id);
+      if (!found) return;
+
+      activeSelectedAssignment = found;
+      closeModal('modal-driver-assignments');
+      
+      document.getElementById('route-item-title').innerText = found.item;
+      document.getElementById('route-summary-distance').innerText = `${found.distanceMiles} mi`;
+      document.getElementById('route-summary-time').innerText = `~${found.estDriveMins} mins`;
+      document.getElementById('route-summary-traffic').innerText = found.trafficStatus.split(' ')[0];
+      
+      document.getElementById('route-pickup-addr').innerText = `${found.cboName} (${found.cboAddress})`;
+      document.getElementById('route-delivery-addr').innerText = `${found.deliveryAddress} (${found.deliveryRecipient})`;
+
+      const stepsList = document.getElementById('route-steps-list');
+      if (stepsList) {
+        stepsList.innerHTML = found.steps.map(step => `
+          <li class="pl-1 leading-snug">${step}</li>
+        `).join('');
+      }
+
+      openModal('modal-route-directions');
+
+      setTimeout(() => {
+        initRouteMap(found);
+      }, 150);
+    }
+
+    function initRouteMap(assignment) {
+      if (!routeMap) {
+        routeMap = L.map('route-map', {
+          zoomControl: true,
+          scrollWheelZoom: false
+        });
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: '&copy; OpenStreetMap',
+          maxZoom: 18
+        }).addTo(routeMap);
+
+        routeMarkersGroup = L.layerGroup().addTo(routeMap);
+      }
+
+      routeMap.invalidateSize();
+      routeMarkersGroup.clearLayers();
+
+      const pLat = assignment.cboLat;
+      const pLng = assignment.cboLng;
+      const dLat = assignment.deliveryLat;
+      const dLng = assignment.deliveryLng;
+
+      const pickupIcon = L.divIcon({
+        html: `<div style="background-color: #2d5a44; border: 3px solid #e5a93c; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 13px; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">A</div>`,
+        className: '',
+        iconSize: [32, 32],
+        iconAnchor: [16, 16]
+      });
+
+      const dropoffIcon = L.divIcon({
+        html: `<div style="background-color: #a83232; border: 3px solid #e5a93c; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 13px; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">B</div>`,
+        className: '',
+        iconSize: [32, 32],
+        iconAnchor: [16, 16]
+      });
+
+      const m1 = L.marker([pLat, pLng], { icon: pickupIcon }).bindPopup(`<b>Pickup:</b> ${assignment.cboName}`);
+      const m2 = L.marker([dLat, dLng], { icon: dropoffIcon }).bindPopup(`<b>Delivery:</b> ${assignment.deliveryRecipient}`);
+
+      routeMarkersGroup.addLayer(m1);
+      routeMarkersGroup.addLayer(m2);
+
+      const latlngs = [
+        [pLat, pLng],
+        [pLat + (dLat - pLat) * 0.4, pLng + (dLng - pLng) * 0.1],
+        [dLat, dLng]
+      ];
+
+      if (routePolyline) {
+        routeMap.removeLayer(routePolyline);
+      }
+
+      routePolyline = L.polyline(latlngs, {
+        color: '#2d5a44',
+        weight: 5,
+        opacity: 0.85,
+        dashArray: '8, 8'
+      }).addTo(routeMap);
+
+      const bounds = L.latLngBounds([pLat, pLng], [dLat, dLng]);
+      routeMap.fitBounds(bounds, { padding: [35, 35] });
+    }
+
+    function backToAssignments() {
+      closeModal('modal-route-directions');
+      openModal('modal-driver-assignments');
+    }
+
+    function acceptActiveAssignment() {
+      if (!activeSelectedAssignment) return;
+
+      closeModal('modal-route-directions');
+
+      currentDeliveryState.stage = 2;
+      currentDeliveryState.driver = `${currentUserName || 'Driver'} (Volunteer Driver)`;
+      currentDeliveryState.item = activeSelectedAssignment.item;
+      currentDeliveryState.eta = `~${activeSelectedAssignment.estDriveMins} mins`;
+
+      updateDeliveryTrackerUI();
+      showToast(`Assignment Accepted! Delivery route active for ${activeSelectedAssignment.item}.`);
+      scrollToMapAndInventory();
+    }
+
+    function launchExternalMaps() {
+      if (!activeSelectedAssignment) return;
+      const origin = encodeURIComponent(activeSelectedAssignment.cboAddress);
+      const dest = encodeURIComponent(activeSelectedAssignment.deliveryAddress);
+      const url = `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${dest}&travelmode=driving`;
+      window.open(url, '_blank');
+    }
+
+    function showScreen(screenId) {
+      const screens = document.querySelectorAll('.app-screen');
+      screens.forEach(s => {
+        s.classList.add('hidden');
+        s.classList.remove('flex');
+      });
+
+      const target = document.getElementById(screenId);
+      if (target) {
+        target.classList.remove('hidden');
+        target.classList.add('flex');
+      }
+    }
+
+    function showToast(message) {
+      const toast = document.getElementById('toast-message');
+      toast.innerHTML = `<i class="fa-solid fa-bell text-botanical-gold"></i> <span>${message}</span>`;
+      toast.classList.remove('translate-y-20', 'opacity-0', 'pointer-events-none');
+      toast.classList.add('translate-y-0', 'opacity-100');
+      
+      setTimeout(() => {
+        toast.classList.remove('translate-y-0', 'opacity-100');
+        toast.classList.add('translate-y-20', 'opacity-0', 'pointer-events-none');
+      }, 4000);
+    }
+
+    function openModal(id) {
+      const el = document.getElementById(id);
+      if (el) {
+        el.classList.remove('hidden');
+        el.classList.add('flex');
+      }
+    }
+
+    function closeModal(id) {
+      const el = document.getElementById(id);
+      if (el) {
+        el.classList.add('hidden');
+        el.classList.remove('flex');
+      }
+    }
+
+    function openHelpChooserModal() { openModal('modal-help-chooser'); }
+    function openRequestModal() { openModal('modal-request'); }
+    function openDonateForm() { closeModal('modal-help-chooser'); openModal('modal-donate'); }
+    function chooseCboPath() { closeModal('modal-help-chooser'); openModal('modal-cbo'); }
+
+    function updateFileName(input) {
+      const label = document.getElementById('file-upload-label');
+      if (input.files && input.files[0]) {
+        label.innerText = `File attached: ${input.files[0].name}`;
+        label.classList.add('text-botanical-primary', 'font-black');
+      }
+    }
+
+    function handleLoginSubmit(e) {
+      e.preventDefault();
+      const val = document.getElementById('login-email').value;
+      let name = 'Devin Kelly';
+      if (val && !val.includes('devin.kelly')) {
+        name = val.split('@')[0];
+      }
+      enterMainApp(name);
+      showToast(`Welcome back, ${name}!`);
+    }
+
+    function handleSignupSubmit(e) {
+      e.preventDefault();
+      const name = document.getElementById('signup-name').value || 'Devin Kelly';
+      enterMainApp(name);
+      showToast(`Welcome to CRUTCH, ${name}!`);
+    }
+
+    function handleDonateSubmit(e) {
+      e.preventDefault();
+      closeModal('modal-donate');
+      showToast("Donation submitted! Details & attachments sent to athalia.pino27@compscihigh.org.");
+    }
+
+    function handleCboSubmit(e) {
+      e.preventDefault();
+      closeModal('modal-cbo');
+      showToast("CBO Inventory submitted!");
+    }
+
+    function handleRequestSubmit(e) {
+      e.preventDefault();
+      const item = document.getElementById('req-item').value;
+      closeModal('modal-request');
+      
+      currentDeliveryState.stage = 1;
+      currentDeliveryState.item = item;
+      currentDeliveryState.eta = "~25 mins";
+
+      updateDeliveryTrackerUI();
+      showToast(`Pickup scheduled for ${item}! Track live progress above.`);
+    }
+
+    /* CBO Map Data & Pickups/Deliveries */
+    const cboData = [
+      {
+        id: 1,
+        name: "Mott Haven CBO Hub (Pickup Point)",
+        address: "427 E 144th St, Bronx, NY",
+        phone: "718-555-0144",
+        lat: 40.8125,
+        lng: -73.9210,
+        categories: ["wheelchair", "walker"],
+        items: ["Wheelchairs (2)", "Walkers (4)"],
+        type: "Hub"
+      },
+      {
+        id: 2,
+        name: "The Hub Equipment Station",
+        address: "2924 3rd Ave, Bronx, NY",
+        phone: "718-555-0192",
+        lat: 40.8178,
+        lng: -73.9165,
+        categories: ["walker", "shower"],
+        items: ["Rollators (3)", "Shower Benches"],
+        type: "Hub"
+      },
+      {
+        id: 3,
+        name: "Equipment Delivery Request #102",
+        address: "301 E 161st St, Bronx, NY",
+        phone: "718-555-0301",
+        lat: 40.8260,
+        lng: -73.9215,
+        categories: ["wheelchair"],
+        items: ["Deliver: Wheelchair to Senior"],
+        type: "Delivery"
+      }
+    ];
+
+    let map = null;
+    let markersGroup = null;
+
+    function initMap() {
+      if (map !== null) {
+        map.invalidateSize();
+        return;
+      }
+
+      const defaultLat = 40.8178;
+      const defaultLng = -73.9165;
+
+      map = L.map('cbo-map', {
+        zoomControl: true,
+        scrollWheelZoom: false
+      }).setView([defaultLat, defaultLng], 13);
+
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap',
+        maxZoom: 18
+      }).addTo(map);
+
+      markersGroup = L.layerGroup().addTo(map);
+      renderMapMarkers('all');
+    }
+
+    function renderMapMarkers(categoryFilter) {
+      if (!map || !markersGroup) return;
+      markersGroup.clearLayers();
+
+      const filtered = categoryFilter === 'all' 
+        ? cboData 
+        : cboData.filter(cbo => cbo.categories.includes(categoryFilter));
+
+      filtered.forEach(cbo => {
+        const isDelivery = cbo.type === "Delivery";
+        const bgCol = isDelivery ? '#a83232' : '#2d5a44';
+        const iconClass = isDelivery ? 'fa-truck' : 'fa-hand-holding-heart';
+
+        const iconHtml = `
+          <div style="background-color: ${bgCol}; border: 3px solid #e5a93c; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; box-shadow: 0 4px 12px rgba(0,0,0,0.3);">
+            <i class="fa-solid ${iconClass}" style="font-size: 15px; color: #e5a93c;"></i>
+          </div>
+        `;
+
+        const customIcon = L.divIcon({
+          html: iconHtml,
+          className: '',
+          iconSize: [36, 36],
+          iconAnchor: [18, 18],
+          popupAnchor: [0, -18]
+        });
+
+        const marker = L.marker([cbo.lat, cbo.lng], { icon: customIcon });
+        
+        const popupContent = `
+          <div class="space-y-1">
+            <span class="text-[9px] font-black uppercase px-2 py-0.5 rounded ${isDelivery ? 'bg-red-100 text-red-900' : 'bg-emerald-100 text-emerald-900'}">${cbo.type}</span>
+            <h5 class="font-black text-botanical-primary text-xs mt-1">${cbo.name}</h5>
+            <p class="text-[11px] font-bold text-slate-700">${cbo.address}</p>
+            <p class="text-[10px] text-emerald-800 font-bold">${cbo.items.join(', ')}</p>
+          </div>
+        `;
+        
+        marker.bindPopup(popupContent);
+        markersGroup.addLayer(marker);
+      });
+    }
+
+    function filterMapByCategory(cat) {
+      renderMapMarkers(cat);
+      scrollToMapAndInventory();
+    }
+
+    function getUserLocation() {
+      if (!navigator.geolocation) {
+        showToast("Geolocation not supported.");
+        return;
+      }
+
+      showToast("Locating driver position...");
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          if (map) {
+            map.setView([pos.coords.latitude, pos.coords.longitude], 14);
+            showToast("Map centered on your current location.");
+          }
+        },
+        () => showToast("Location unavailable.")
+      );
+    }
+
+    function changeFontSize(size) {
+      const body = document.getElementById('main-body');
+      body.classList.remove('font-scale-sm', 'font-scale-md', 'font-scale-lg');
+      if (size === 'sm') body.classList.add('font-scale-sm');
+      if (size === 'md') body.classList.add('font-scale-md');
+      if (size === 'lg') body.classList.add('font-scale-lg');
+    }
+
+    function toggleContrast() {
+      document.body.classList.toggle('high-contrast');
+    }
+
+    window.onload = function() {
+      updateDeliveryTrackerUI();
+    };
+  </script>
+</body>
+</html>

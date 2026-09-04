@@ -1,0 +1,1002 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tip Tier - Anonymous Community Safety Portal</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- React, ReactDOM, Babel, Lucide Icons, and Firebase via CDN -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    /* Custom scrollbar & smoothness */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #020617;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #1e293b;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #334155;
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 font-sans antialiased selection:bg-cyan-500 selection:text-slate-950">
+
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useMemo } = React;
+
+    // Safety Categories
+    const CATEGORIES = [
+      { id: 'theft', label: 'Theft / Property Loss', icon: '🎒' },
+      { id: 'safety', label: 'General Safety Concern', icon: '⚠️' },
+      { id: 'missing', label: 'Missing Person Info', icon: '🔍' },
+      { id: 'vandalism', label: 'Vandalism / Property Damage', icon: '🎨' },
+      { id: 'fraud', label: 'Fraud / Online Scam', icon: '💳' },
+      { id: 'bullying', label: 'School / Peer Safety', icon: '🤝' },
+      { id: 'other', label: 'Other Concern', icon: '📝' }
+    ];
+
+    function App() {
+      // Device Mode Toggle
+      const [deviceFrame, setDeviceFrame] = useState('responsive'); // 'responsive' | 'mobile'
+
+      // Navigation View Router
+      const [currentView, setCurrentView] = useState('home'); 
+      
+      // Modals
+      const [showEmergencyModal, setShowEmergencyModal] = useState(false);
+      const [submittedTipId, setSubmittedTipId] = useState(null);
+      const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+      
+      // Standard Form Wizard State
+      const [formStep, setFormStep] = useState(1);
+      const [standardForm, setStandardForm] = useState({
+        category: 'theft',
+        whatHappened: '',
+        whereHappened: '',
+        whenHappened: '',
+        peopleDescription: '',
+        vehicleDescription: '',
+        evidenceFiles: [],
+      });
+
+      // Live Incident Form State
+      const [liveForm, setLiveForm] = useState({
+        category: 'safety',
+        currentActivity: '',
+        exactLocation: '',
+        directionOfTravel: '',
+        hazardLevel: 'low',
+        timeElapsed: 'just_now',
+        peopleCount: '',
+        vehicleInfo: '',
+        evidenceFiles: [],
+      });
+      
+      // Status Tracking Lookup
+      const [lookupId, setLookupId] = useState('');
+      const [foundTip, setFoundTip] = useState(null);
+      const [lookupError, setLookupError] = useState('');
+
+      // Admin State
+      const [adminPin, setAdminPin] = useState('');
+      const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
+      const [adminAuthError, setAdminAuthError] = useState('');
+      const [tipsList, setTipsList] = useState([]);
+      const [selectedTip, setSelectedTip] = useState(null);
+      const [filterCategory, setFilterCategory] = useState('all');
+      const [filterType, setFilterType] = useState('all');
+      const [filterStatus, setFilterStatus] = useState('active');
+      const [searchQuery, setSearchQuery] = useState('');
+
+      // Initialize Lucide Icons after component render
+      useEffect(() => {
+        if (window.lucide) {
+          window.lucide.createIcons();
+        }
+      });
+
+      // Helper to generate anonymous Tip Reference ID
+      const generateTipId = (isLive = false) => {
+        const prefix = isLive ? 'LIVE-' : 'TT-';
+        const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+        let code = prefix;
+        for (let i = 0; i < 5; i++) {
+          code += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        return code;
+      };
+
+      // EXIF Metadata Cleaning Simulation (In-Browser Canvas Processing)
+      const processFileUpload = (files, callback) => {
+        if (!files || !files.length) return;
+
+        Array.from(files).forEach(file => {
+          const reader = new FileReader();
+          reader.onload = (event) => {
+            const img = new Image();
+            img.src = event.target.result;
+            img.onload = () => {
+              const canvas = document.createElement('canvas');
+              canvas.width = img.width;
+              canvas.height = img.height;
+              const ctx = canvas.getContext('2d');
+              ctx.drawImage(img, 0, 0);
+              
+              const cleanedDataUrl = canvas.toDataURL('image/png');
+              callback({
+                id: 'EV-' + Math.random().toString(36).substr(2, 6),
+                name: file.name.replace(/[^a-zA-Z0-9._-]/g, '_'),
+                type: file.type,
+                preview: cleanedDataUrl,
+                size: (file.size / 1024).toFixed(1) + ' KB',
+                cleaned: true
+              });
+            };
+          };
+          reader.readAsDataURL(file);
+        });
+      };
+
+      // Submit Standard Tip
+      const handleStandardSubmit = (e) => {
+        e.preventDefault();
+        if (!standardForm.whatHappened || !standardForm.whereHappened) {
+          alert("Please complete the required details about what happened and location.");
+          return;
+        }
+
+        const tipRefCode = generateTipId(false);
+        const newTip = {
+          id: 'DOC-' + Date.now(),
+          tipCode: tipRefCode,
+          reportType: 'standard_tip',
+          isLive: false,
+          category: standardForm.category,
+          whatHappened: standardForm.whatHappened,
+          whereHappened: standardForm.whereHappened,
+          whenHappened: standardForm.whenHappened || 'Past/Unspecified',
+          peopleDescription: standardForm.peopleDescription || 'None provided',
+          vehicleDescription: standardForm.vehicleDescription || 'None provided',
+          evidence: standardForm.evidenceFiles.map(f => ({ name: f.name, type: f.type, preview: f.preview })),
+          status: 'New',
+          isSpam: false,
+          internalNotes: 'Tip received and awaiting officer triage.',
+          createdAt: new Date().toLocaleDateString('en-US', {
+            month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit'
+          })
+        };
+
+        setTipsList(prev => [newTip, ...prev]);
+        setSubmittedTipId(tipRefCode);
+        setFormStep(1);
+        setStandardForm({
+          category: 'theft', whatHappened: '', whereHappened: '', whenHappened: '',
+          peopleDescription: '', vehicleDescription: '', evidenceFiles: []
+        });
+        setCurrentView('success');
+      };
+
+      // Submit Live Crime Report
+      const handleLiveSubmit = (e) => {
+        e.preventDefault();
+        if (!liveForm.currentActivity || !liveForm.exactLocation) {
+          alert("Please describe the ongoing activity and current location.");
+          return;
+        }
+
+        const tipRefCode = generateTipId(true);
+        const newTip = {
+          id: 'DOC-' + Date.now(),
+          tipCode: tipRefCode,
+          reportType: 'live_incident',
+          isLive: true,
+          category: liveForm.category,
+          whatHappened: liveForm.currentActivity,
+          whereHappened: liveForm.exactLocation,
+          directionOfTravel: liveForm.directionOfTravel || 'Unknown',
+          hazardLevel: liveForm.hazardLevel,
+          whenHappened: liveForm.timeElapsed === 'just_now' ? 'Happening Right Now' : '5-10 Minutes Ago',
+          peopleDescription: liveForm.peopleCount ? `${liveForm.peopleCount} person(s) observed` : 'Unspecified',
+          vehicleDescription: liveForm.vehicleInfo || 'None reported',
+          evidence: liveForm.evidenceFiles.map(f => ({ name: f.name, type: f.type, preview: f.preview })),
+          status: 'New',
+          isSpam: false,
+          internalNotes: 'Priority live incident logged into active queue.',
+          createdAt: new Date().toLocaleDateString('en-US', {
+            month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit'
+          })
+        };
+
+        setTipsList(prev => [newTip, ...prev]);
+        setSubmittedTipId(tipRefCode);
+        setLiveForm({
+          category: 'safety', currentActivity: '', exactLocation: '', directionOfTravel: '',
+          hazardLevel: 'low', timeElapsed: 'just_now', peopleCount: '', vehicleInfo: '', evidenceFiles: []
+        });
+        setCurrentView('success');
+      };
+
+      // Track Tip Lookup
+      const handleLookupTip = (e) => {
+        e.preventDefault();
+        setLookupError('');
+        setFoundTip(null);
+
+        const cleanCode = lookupId.trim().toUpperCase();
+        if (!cleanCode) {
+          setLookupError("Please enter a valid Reference ID (e.g. TT-9X2Y4 or LIVE-3A8B9)");
+          return;
+        }
+
+        const match = tipsList.find(t => t.tipCode === cleanCode);
+        if (match) {
+          setFoundTip(match);
+        } else {
+          setLookupError("No record found for this Reference ID. Please verify the code.");
+        }
+      };
+
+      // Admin Authentication
+      const handleAdminLogin = (e) => {
+        e.preventDefault();
+        if (adminPin === 'ADMIN2026' || adminPin === 'admin') {
+          setIsAdminAuthenticated(true);
+          setAdminAuthError('');
+          setCurrentView('admin-dashboard');
+        } else {
+          setAdminAuthError('Invalid Access Code. Demo code is "ADMIN2026".');
+        }
+      };
+
+      // Admin Status & Anti-Spam Triage
+      const handleUpdateStatus = (tipDocId, newStatus, isSpamFlag = null) => {
+        setTipsList(prev => prev.map(t => {
+          if (t.id === tipDocId) {
+            const updated = { ...t, status: newStatus };
+            if (isSpamFlag !== null) updated.isSpam = isSpamFlag;
+            return updated;
+          }
+          return t;
+        }));
+
+        if (selectedTip && selectedTip.id === tipDocId) {
+          setSelectedTip(prev => ({
+            ...prev,
+            status: newStatus,
+            isSpam: isSpamFlag !== null ? isSpamFlag : prev.isSpam
+          }));
+        }
+      };
+
+      // Purge Record
+      const handlePurgeRecord = () => {
+        if (!selectedTip) return;
+        setTipsList(prev => prev.filter(t => t.id !== selectedTip.id));
+        setSelectedTip(null);
+        setShowDeleteConfirm(false);
+      };
+
+      // Admin Filtered View
+      const filteredTips = useMemo(() => {
+        return tipsList.filter(tip => {
+          if (filterStatus === 'active' && (tip.isSpam || tip.status === 'Archived')) return false;
+          if (filterStatus === 'spam' && !tip.isSpam) return false;
+          if (filterStatus === 'archived' && tip.status !== 'Archived') return false;
+
+          const matchesCategory = filterCategory === 'all' || tip.category === filterCategory;
+          const matchesType = filterType === 'all' || 
+            (filterType === 'live' && tip.isLive) || 
+            (filterType === 'standard' && !tip.isLive);
+          const q = searchQuery.toLowerCase();
+          const matchesSearch = !q || 
+            tip.tipCode.toLowerCase().includes(q) ||
+            tip.whatHappened.toLowerCase().includes(q) ||
+            tip.whereHappened.toLowerCase().includes(q);
+          
+          return matchesCategory && matchesType && matchesSearch;
+        });
+      }, [tipsList, filterCategory, filterType, filterStatus, searchQuery]);
+
+      return (
+        <div className="min-h-screen bg-slate-950 text-slate-100 font-sans flex flex-col items-center justify-start">
+          
+          {/* TOP DEVICE FRAME CONTROL BAR */}
+          <div className="w-full bg-slate-900 border-b border-slate-800 py-2 px-4 flex justify-between items-center text-xs">
+            <div className="flex items-center space-x-2">
+              <span className="font-bold text-cyan-400 flex items-center gap-1">
+                <i data-lucide="shield" className="w-4 h-4"></i> Tip Tier Web App
+              </span>
+            </div>
+
+            <div className="flex items-center gap-2 bg-slate-950 border border-slate-800 rounded-lg p-1">
+              <button
+                onClick={() => setDeviceFrame('mobile')}
+                className={`px-2.5 py-1 rounded text-[11px] font-medium transition flex items-center gap-1 ${
+                  deviceFrame === 'mobile' ? 'bg-cyan-600 text-slate-950 font-bold' : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                <i data-lucide="smartphone" className="w-3.5 h-3.5"></i> Mobile View
+              </button>
+              <button
+                onClick={() => setDeviceFrame('responsive')}
+                className={`px-2.5 py-1 rounded text-[11px] font-medium transition flex items-center gap-1 ${
+                  deviceFrame === 'responsive' ? 'bg-cyan-600 text-slate-950 font-bold' : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                <i data-lucide="monitor" className="w-3.5 h-3.5"></i> Full Website
+              </button>
+            </div>
+          </div>
+
+          {/* DEVICE FRAME WRAPPER */}
+          <div className={`w-full transition-all duration-300 ${
+            deviceFrame === 'mobile' 
+              ? 'max-w-[400px] my-6 border-[8px] border-slate-800 rounded-[38px] shadow-2xl overflow-hidden bg-slate-950 min-h-[760px]' 
+              : 'w-full flex-1'
+          }`}>
+            
+            <div className="w-full min-h-full flex flex-col">
+              
+              {/* EMERGENCY WARNING HEADER */}
+              <div className="bg-amber-500/10 border-b border-amber-500/20 text-amber-200 text-[11px] sm:text-xs py-2 px-3 flex justify-between items-center">
+                <div className="flex items-center space-x-1.5 truncate">
+                  <i data-lucide="alert-triangle" className="w-3.5 h-3.5 text-amber-400 shrink-0"></i>
+                  <p className="truncate">
+                    <span className="font-semibold text-amber-300">In danger?</span> Call <a href="tel:911" className="underline font-bold text-amber-300">911</a> immediately.
+                  </p>
+                </div>
+                <button 
+                  onClick={() => window.location.href = "https://www.google.com"}
+                  className="bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px] px-2 py-0.5 rounded border border-slate-700 shrink-0"
+                >
+                  Quick Exit ✕
+                </button>
+              </div>
+
+              {/* NAVIGATION HEADER */}
+              <header className="border-b border-slate-800 bg-slate-900/90 backdrop-blur sticky top-0 z-40">
+                <div className="px-3 sm:px-6 h-14 flex items-center justify-between">
+                  <div 
+                    onClick={() => setCurrentView('home')} 
+                    className="flex items-center space-x-2 cursor-pointer"
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-cyan-600/20 border border-cyan-500/40 flex items-center justify-center text-cyan-400">
+                      <i data-lucide="shield" className="w-5 h-5"></i>
+                    </div>
+                    <div>
+                      <span className="font-bold text-sm sm:text-base tracking-tight text-slate-100 flex items-center gap-1">
+                        Tip Tier <span className="text-[10px] bg-cyan-950 text-cyan-400 px-1.5 py-0.2 rounded border border-cyan-800">Anon</span>
+                      </span>
+                    </div>
+                  </div>
+
+                  <nav className="flex items-center space-x-1 text-xs">
+                    <button
+                      onClick={() => setCurrentView('home')}
+                      className={`px-2 py-1 rounded transition ${currentView === 'home' ? 'bg-slate-800 text-cyan-400' : 'text-slate-400'}`}
+                    >
+                      Home
+                    </button>
+                    <button
+                      onClick={() => setCurrentView('status-check')}
+                      className={`px-2 py-1 rounded transition ${currentView === 'status-check' ? 'bg-slate-800 text-cyan-400' : 'text-slate-400'}`}
+                    >
+                      Track
+                    </button>
+                    
+                    {isAdminAuthenticated ? (
+                      <button
+                        onClick={() => setCurrentView('admin-dashboard')}
+                        className="bg-cyan-950 text-cyan-300 border border-cyan-700/50 px-2 py-1 rounded flex items-center gap-1 text-[11px]"
+                      >
+                        <i data-lucide="user-check" className="w-3 h-3"></i> Admin
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => setCurrentView('admin-login')}
+                        className="text-slate-500 hover:text-slate-300 text-[11px] px-1.5 py-1"
+                      >
+                        Official Portal
+                      </button>
+                    )}
+                  </nav>
+                </div>
+              </header>
+
+              {/* MAIN CONTENT AREA */}
+              <main className="flex-1 p-3 sm:p-6 w-full max-w-5xl mx-auto">
+                
+                {/* VIEW: HOME */}
+                {currentView === 'home' && (
+                  <div className="space-y-6 py-2">
+                    <div className="text-center space-y-3">
+                      <div className="inline-flex items-center gap-1.5 bg-slate-900 border border-slate-800 px-3 py-1 rounded-full text-[11px] font-medium text-cyan-400">
+                        <i data-lucide="lock" className="w-3 h-3"></i> 100% Anonymous • No Account Required
+                      </div>
+                      
+                      <h1 className="text-2xl sm:text-4xl font-extrabold tracking-tight text-slate-100">
+                        Report Safety Details <br />
+                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-teal-300 to-emerald-400">
+                          Privately & Safely
+                        </span>
+                      </h1>
+
+                      <p className="text-xs sm:text-sm text-slate-400 max-w-lg mx-auto">
+                        Choose the option that fits your situation. You will never be asked for your name, phone number, or email.
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-3 pt-2">
+                      {/* WORKFLOW 1 */}
+                      <div 
+                        onClick={() => setCurrentView('standard-tip')}
+                        className="bg-slate-900 border border-slate-800 hover:border-cyan-500/50 p-4 sm:p-5 rounded-2xl cursor-pointer transition group shadow-lg space-y-2 text-left"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 flex items-center justify-center">
+                            <i data-lucide="file-text" className="w-5 h-5"></i>
+                          </div>
+                          <span className="text-[10px] bg-cyan-950 text-cyan-300 px-2 py-0.5 rounded border border-cyan-800 font-semibold">
+                            Guided 3-Step Form
+                          </span>
+                        </div>
+
+                        <h3 className="text-lg font-bold text-slate-100">Submit an Anonymous Tip</h3>
+                        <p className="text-xs text-slate-400">
+                          For past events, property damage, or general information received second-hand.
+                        </p>
+
+                        <div className="pt-1 flex items-center text-xs font-bold text-cyan-400">
+                          Start Guided Form <i data-lucide="chevron-right" className="w-4 h-4 ml-1"></i>
+                        </div>
+                      </div>
+
+                      {/* WORKFLOW 2 */}
+                      <div 
+                        onClick={() => setShowEmergencyModal(true)}
+                        className="bg-slate-900 border border-red-500/30 hover:border-red-500/60 p-4 sm:p-5 rounded-2xl cursor-pointer transition group shadow-lg space-y-2 text-left relative overflow-hidden"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="w-10 h-10 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 flex items-center justify-center">
+                            <i data-lucide="zap" className="w-5 h-5"></i>
+                          </div>
+                          <span className="text-[10px] bg-red-950 text-red-300 px-2 py-0.5 rounded border border-red-800 font-semibold animate-pulse">
+                            Fast Real-Time Intake
+                          </span>
+                        </div>
+
+                        <h3 className="text-lg font-bold text-slate-100">Incident Happening Now</h3>
+                        <p className="text-xs text-slate-400">
+                          For active incidents you are witnessing right now from a safe distance.
+                        </p>
+
+                        <div className="pt-1 flex items-center text-xs font-bold text-red-400">
+                          Launch Express Intake <i data-lucide="chevron-right" className="w-4 h-4 ml-1"></i>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-2 text-left">
+                      <div className="bg-slate-900/60 border border-slate-800/80 p-3 rounded-xl">
+                        <i data-lucide="alert-triangle" className="w-4 h-4 text-red-400 mb-1"></i>
+                        <h4 className="font-bold text-xs text-slate-200">Never Confront Anyone</h4>
+                        <p className="text-[11px] text-slate-400 mt-0.5">Stay at a safe distance. Do not approach suspects.</p>
+                      </div>
+
+                      <div className="bg-slate-900/60 border border-slate-800/80 p-3 rounded-xl">
+                        <i data-lucide="camera" className="w-4 h-4 text-amber-400 mb-1"></i>
+                        <h4 className="font-bold text-xs text-slate-200">Safe Evidence Only</h4>
+                        <p className="text-[11px] text-slate-400 mt-0.5">Only capture photos if it can be done safely.</p>
+                      </div>
+
+                      <div className="bg-slate-900/60 border border-slate-800/80 p-3 rounded-xl">
+                        <i data-lucide="eye-off" className="w-4 h-4 text-cyan-400 mb-1"></i>
+                        <h4 className="font-bold text-xs text-slate-200">EXIF Auto-Cleaned</h4>
+                        <p className="text-[11px] text-slate-400 mt-0.5">Hidden image camera metadata is automatically stripped.</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* VIEW: STANDARD FORM */}
+                {currentView === 'standard-tip' && (
+                  <div className="space-y-4 text-left">
+                    <button 
+                      onClick={() => setCurrentView('home')} 
+                      className="inline-flex items-center text-xs text-slate-400 gap-1"
+                    >
+                      <i data-lucide="arrow-left" className="w-3.5 h-3.5"></i> Back
+                    </button>
+
+                    <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-6 space-y-4 shadow-xl">
+                      
+                      <div className="space-y-1.5 border-b border-slate-800 pb-3">
+                        <div className="flex items-center justify-between text-xs text-slate-400">
+                          <span className="font-bold text-cyan-400 flex items-center gap-1">
+                            <i data-lucide="file-text" className="w-4 h-4"></i> Standard Tip Form
+                          </span>
+                          <span>Step {formStep} of 3</span>
+                        </div>
+
+                        <div className="w-full bg-slate-950 h-1.5 rounded-full overflow-hidden border border-slate-800">
+                          <div className="bg-cyan-500 h-full transition-all duration-300" style={{ width: `${(formStep / 3) * 100}%` }}></div>
+                        </div>
+                      </div>
+
+                      <form onSubmit={handleStandardSubmit} className="space-y-4">
+                        {formStep === 1 && (
+                          <div className="space-y-3">
+                            <div>
+                              <label className="block text-xs font-semibold text-slate-300 mb-1">Category</label>
+                              <select
+                                value={standardForm.category}
+                                onChange={(e) => setStandardForm({ ...standardForm, category: e.target.value })}
+                                className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-slate-200"
+                              >
+                                {CATEGORIES.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
+                              </select>
+                            </div>
+
+                            <div>
+                              <label className="block text-xs font-semibold text-slate-300 mb-1">
+                                What Happened? <span className="text-red-400">*</span>
+                              </label>
+                              <textarea
+                                required
+                                rows={3}
+                                value={standardForm.whatHappened}
+                                onChange={(e) => setStandardForm({ ...standardForm, whatHappened: e.target.value })}
+                                placeholder="Provide objective facts about the event..."
+                                className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-slate-200"
+                              />
+                            </div>
+
+                            <div>
+                              <label className="block text-xs font-semibold text-slate-300 mb-1">Location <span className="text-red-400">*</span></label>
+                              <input
+                                type="text"
+                                required
+                                value={standardForm.whereHappened}
+                                onChange={(e) => setStandardForm({ ...standardForm, whereHappened: e.target.value })}
+                                placeholder="e.g. Elm St near park"
+                                className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-slate-200"
+                              />
+                            </div>
+
+                            <div className="pt-2 flex justify-end">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (!standardForm.whatHappened || !standardForm.whereHappened) return alert("Fill in required fields.");
+                                  setFormStep(2);
+                                }}
+                                className="bg-cyan-600 hover:bg-cyan-500 text-slate-950 font-bold px-5 py-2 rounded-xl text-xs flex items-center gap-1"
+                              >
+                                Next <i data-lucide="chevron-right" className="w-4 h-4"></i>
+                              </button>
+                            </div>
+                          </div>
+                        )}
+
+                        {formStep === 2 && (
+                          <div className="space-y-3">
+                            <div>
+                              <label className="block text-xs font-semibold text-slate-300 mb-1">People / Suspect Description</label>
+                              <textarea
+                                rows={2}
+                                value={standardForm.peopleDescription}
+                                onChange={(e) => setStandardForm({ ...standardForm, peopleDescription: e.target.value })}
+                                placeholder="Clothing, physical details..."
+                                className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-slate-200"
+                              />
+                            </div>
+
+                            <div>
+                              <label className="block text-xs font-semibold text-slate-300 mb-1">Vehicles Involved</label>
+                              <textarea
+                                rows={2}
+                                value={standardForm.vehicleDescription}
+                                onChange={(e) => setStandardForm({ ...standardForm, vehicleDescription: e.target.value })}
+                                placeholder="Color, make/model, license plate..."
+                                className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-slate-200"
+                              />
+                            </div>
+
+                            <div className="flex justify-between pt-2">
+                              <button
+                                type="button"
+                                onClick={() => setFormStep(1)}
+                                className="bg-slate-800 text-slate-300 px-4 py-2 rounded-xl text-xs"
+                              >
+                                Back
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setFormStep(3)}
+                                className="bg-cyan-600 hover:bg-cyan-500 text-slate-950 font-bold px-5 py-2 rounded-xl text-xs flex items-center gap-1"
+                              >
+                                Next <i data-lucide="chevron-right" className="w-4 h-4"></i>
+                              </button>
+                            </div>
+                          </div>
+                        )}
+
+                        {formStep === 3 && (
+                          <div className="space-y-3">
+                            <div className="bg-slate-950 p-3 rounded-xl border border-slate-800 space-y-2">
+                              <label className="block text-xs font-semibold text-slate-300">Attach Photos (Optional)</label>
+                              <p className="text-[10px] text-slate-500">EXIF camera location tags auto-removed.</p>
+                              <input
+                                type="file"
+                                accept="image/*"
+                                multiple
+                                onChange={(e) => processFileUpload(e.target.files, (f) => {
+                                  setStandardForm(prev => ({ ...prev, evidenceFiles: [...prev.evidenceFiles, f] }));
+                                })}
+                                className="block w-full text-[11px] text-slate-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-[11px] file:bg-slate-800 file:text-slate-200"
+                              />
+                            </div>
+
+                            <div className="flex justify-between pt-2">
+                              <button
+                                type="button"
+                                onClick={() => setFormStep(2)}
+                                className="bg-slate-800 text-slate-300 px-4 py-2 rounded-xl text-xs"
+                              >
+                                Back
+                              </button>
+                              <button
+                                type="submit"
+                                className="bg-emerald-500 text-slate-950 font-bold px-6 py-2 rounded-xl text-xs flex items-center gap-1"
+                              >
+                                <i data-lucide="check-circle" className="w-4 h-4"></i> Complete & Submit
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </form>
+
+                    </div>
+                  </div>
+                )}
+
+                {/* VIEW: LIVE REPORT */}
+                {currentView === 'live-report' && (
+                  <div className="space-y-4 text-left">
+                    <button 
+                      onClick={() => setCurrentView('home')} 
+                      className="inline-flex items-center text-xs text-slate-400 gap-1"
+                    >
+                      <i data-lucide="arrow-left" className="w-3.5 h-3.5"></i> Back
+                    </button>
+
+                    <div className="bg-slate-900 border border-red-500/40 rounded-2xl p-4 sm:p-6 space-y-4 shadow-xl">
+                      <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                        <span className="text-xs font-bold text-red-400 flex items-center gap-1">
+                          <i data-lucide="zap" className="w-4 h-4"></i> Live Incident Report
+                        </span>
+                        <span className="bg-red-500/20 text-red-400 text-[10px] px-2 py-0.5 rounded font-bold animate-pulse">
+                          PRIORITY
+                        </span>
+                      </div>
+
+                      <form onSubmit={handleLiveSubmit} className="space-y-3">
+                        <div>
+                          <label className="block text-xs font-semibold text-slate-300 mb-1">
+                            What is Happening Right Now? <span className="text-red-400">*</span>
+                          </label>
+                          <textarea
+                            required
+                            rows={3}
+                            value={liveForm.currentActivity}
+                            onChange={(e) => setLiveForm({ ...liveForm, currentActivity: e.target.value })}
+                            placeholder="Describe what you are witnessing..."
+                            className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-slate-200"
+                          />
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <div>
+                            <label className="block text-xs font-semibold text-slate-300 mb-1">
+                              Exact Location / Cross Streets <span className="text-red-400">*</span>
+                            </label>
+                            <input
+                              type="text"
+                              required
+                              value={liveForm.exactLocation}
+                              onChange={(e) => setLiveForm({ ...liveForm, exactLocation: e.target.value })}
+                              placeholder="e.g. 4th St & Oak Ave"
+                              className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-slate-200"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-xs font-semibold text-slate-300 mb-1">Direction of Travel / Heading</label>
+                            <input
+                              type="text"
+                              value={liveForm.directionOfTravel}
+                              onChange={(e) => setLiveForm({ ...liveForm, directionOfTravel: e.target.value })}
+                              placeholder="e.g. Heading North on foot"
+                              className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-slate-200"
+                            />
+                          </div>
+                        </div>
+
+                        <button
+                          type="submit"
+                          className="w-full bg-red-600 hover:bg-red-500 text-white font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-lg shadow-red-950"
+                        >
+                          <i data-lucide="shield-alert" className="w-4 h-4"></i> Submit Live Priority Report
+                        </button>
+                      </form>
+                    </div>
+                  </div>
+                )}
+
+                {/* VIEW: SUCCESS CONFIRMATION */}
+                {currentView === 'success' && (
+                  <div className="py-6 text-center space-y-4">
+                    <div className="w-12 h-12 bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 rounded-full flex items-center justify-center mx-auto">
+                      <i data-lucide="check-circle" className="w-8 h-8"></i>
+                    </div>
+
+                    <div className="space-y-1">
+                      <h2 className="text-xl font-extrabold text-slate-100">Report Transmitted</h2>
+                      <p className="text-xs text-slate-400">Your information has been securely forwarded.</p>
+                    </div>
+
+                    <div className="bg-slate-900 border border-slate-800 p-4 rounded-2xl space-y-2 max-w-sm mx-auto">
+                      <span className="text-[10px] text-slate-400 uppercase font-semibold">Your Unique Reference ID</span>
+                      <div className="bg-slate-950 border border-slate-800 p-3 rounded-xl flex items-center justify-between">
+                        <span className="text-xl font-mono font-bold text-cyan-400">{submittedTipId}</span>
+                        <button
+                          onClick={() => { navigator.clipboard.writeText(submittedTipId); alert("Code copied."); }}
+                          className="bg-slate-800 text-xs text-slate-300 px-2.5 py-1 rounded"
+                        >
+                          Copy
+                        </button>
+                      </div>
+                      <p className="text-[11px] text-amber-300/80 bg-amber-500/10 p-2 rounded text-left">
+                        ⚠️ Save this Reference ID to track updates in the future.
+                      </p>
+                    </div>
+
+                    <div className="flex gap-2 justify-center pt-2">
+                      <button onClick={() => setCurrentView('status-check')} className="bg-slate-800 text-xs px-4 py-2 rounded-xl">Track Status</button>
+                      <button onClick={() => setCurrentView('home')} className="bg-cyan-600 text-slate-950 font-bold text-xs px-4 py-2 rounded-xl">Home</button>
+                    </div>
+                  </div>
+                )}
+
+                {/* VIEW: TRACK STATUS */}
+                {currentView === 'status-check' && (
+                  <div className="space-y-4 text-left max-w-md mx-auto py-2">
+                    <div className="text-center space-y-1">
+                      <h2 className="text-xl font-bold text-slate-100 flex items-center justify-center gap-1.5">
+                        <i data-lucide="search" className="w-5 h-5 text-cyan-400"></i> Check Report Status
+                      </h2>
+                      <p className="text-xs text-slate-400">Enter your Reference Code (<code className="text-cyan-300">TT-XXXXX</code> or <code className="text-red-300">LIVE-XXXXX</code>)</p>
+                    </div>
+
+                    <form onSubmit={handleLookupTip} className="bg-slate-900 border border-slate-800 p-4 rounded-2xl space-y-3">
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={lookupId}
+                          onChange={(e) => setLookupId(e.target.value)}
+                          placeholder="e.g. TT-9X2Y4"
+                          className="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs font-mono text-slate-100"
+                        />
+                        <button type="submit" className="bg-cyan-600 text-slate-950 font-bold px-4 py-2 rounded-xl text-xs">Lookup</button>
+                      </div>
+
+                      {lookupError && <div className="p-2.5 bg-red-500/10 text-red-400 text-xs rounded-lg">{lookupError}</div>}
+                    </form>
+
+                    {foundTip && (
+                      <div className="bg-slate-900 border border-cyan-500/40 rounded-2xl p-4 space-y-3">
+                        <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                          <span className="font-mono font-bold text-cyan-400 text-sm">{foundTip.tipCode}</span>
+                          <span className="bg-slate-800 text-slate-300 text-[10px] px-2.5 py-0.5 rounded-full font-bold">
+                            {foundTip.isSpam ? 'Flagged / Closed' : foundTip.status}
+                          </span>
+                        </div>
+
+                        <div className="bg-slate-950 p-3 rounded-xl border border-slate-800 text-xs space-y-1">
+                          <span className="text-[10px] text-slate-500 font-semibold block">Public Note:</span>
+                          <p className="text-slate-300 italic">
+                            {foundTip.isSpam ? "This report has been reviewed and closed by triage personnel." : (foundTip.internalNotes || "Logged into review queue.")}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* VIEW: ADMIN LOGIN */}
+                {currentView === 'admin-login' && (
+                  <div className="max-w-xs mx-auto py-8 text-left space-y-4">
+                    <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl space-y-4 shadow-xl text-center">
+                      <i data-lucide="key" className="w-7 h-7 text-cyan-400 mx-auto"></i>
+                      <h2 className="text-lg font-bold text-slate-100">Law Enforcement Portal</h2>
+
+                      <form onSubmit={handleAdminLogin} className="space-y-3">
+                        <input
+                          type="password"
+                          value={adminPin}
+                          onChange={(e) => setAdminPin(e.target.value)}
+                          placeholder="Enter Access PIN"
+                          className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-slate-100"
+                        />
+                        <p className="text-[10px] text-slate-500">Demo Code: <code className="text-cyan-400 font-mono">ADMIN2026</code></p>
+
+                        {adminAuthError && <div className="p-2 bg-red-500/10 text-red-400 text-[11px] rounded">{adminAuthError}</div>}
+
+                        <button type="submit" className="w-full bg-cyan-600 text-slate-950 font-bold p-2.5 rounded-xl text-xs">
+                          Authenticate Portal
+                        </button>
+                      </form>
+                    </div>
+                  </div>
+                )}
+
+                {/* VIEW: ADMIN DASHBOARD */}
+                {currentView === 'admin-dashboard' && isAdminAuthenticated && (
+                  <div className="space-y-4 text-left">
+                    <div className="bg-slate-900 border border-slate-800 p-3 rounded-xl flex justify-between items-center">
+                      <div>
+                        <span className="text-[10px] font-bold text-cyan-400 uppercase">Authorized Console</span>
+                        <h2 className="text-sm font-bold text-slate-100">Tip Triage Queue</h2>
+                      </div>
+                      <button onClick={() => { setIsAdminAuthenticated(false); setCurrentView('home'); }} className="text-[11px] text-red-400 bg-red-500/10 px-2 py-1 rounded">
+                        Exit
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 bg-slate-900/60 p-3 rounded-xl border border-slate-800">
+                      <input
+                        type="text"
+                        placeholder="Search tips..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-slate-200"
+                      />
+                      <select
+                        value={filterStatus}
+                        onChange={(e) => setFilterStatus(e.target.value)}
+                        className="bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-amber-300 font-medium"
+                      >
+                        <option value="active">Active Reports Only</option>
+                        <option value="all">All Submissions</option>
+                        <option value="spam">⚠️ Flagged Spam</option>
+                      </select>
+                    </div>
+
+                    <div className="space-y-3">
+                      {filteredTips.length === 0 ? (
+                        <div className="p-6 text-center text-slate-500 text-xs bg-slate-900 rounded-xl border border-slate-800">
+                          No tip submissions in this queue. Submit a tip from the Home page to test!
+                        </div>
+                      ) : (
+                        filteredTips.map(tip => (
+                          <div
+                            key={tip.id}
+                            onClick={() => setSelectedTip(tip)}
+                            className={`p-3 rounded-xl border cursor-pointer text-left space-y-1.5 transition ${
+                              selectedTip?.id === tip.id ? 'bg-cyan-950/40 border-cyan-500' : 'bg-slate-900 border-slate-800'
+                            }`}
+                          >
+                            <div className="flex items-center justify-between">
+                              <span className="font-mono font-bold text-xs text-cyan-400">{tip.tipCode}</span>
+                              <div className="flex gap-1">
+                                {tip.isSpam && <span className="bg-red-950 text-red-400 text-[9px] px-1 rounded font-bold">SPAM</span>}
+                                {tip.isLive && <span className="bg-red-500/20 text-red-400 text-[9px] px-1 rounded font-bold animate-pulse">LIVE</span>}
+                              </div>
+                            </div>
+                            <p className="text-xs text-slate-300 line-clamp-1">{tip.whatHappened}</p>
+                          </div>
+                        ))
+                      )}
+                    </div>
+
+                    {selectedTip && (
+                      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-3 text-xs">
+                        <div className="flex justify-between items-center border-b border-slate-800 pb-2">
+                          <span className="font-mono font-bold text-cyan-400">{selectedTip.tipCode}</span>
+                          <div className="flex gap-1">
+                            <button
+                              onClick={() => handleUpdateStatus(selectedTip.id, selectedTip.status, !selectedTip.isSpam)}
+                              className="text-[10px] bg-red-500/10 text-red-400 px-2 py-0.5 rounded border border-red-500/20"
+                            >
+                              {selectedTip.isSpam ? 'Unflag Spam' : 'Flag as Spam'}
+                            </button>
+                            <button
+                              onClick={() => setShowDeleteConfirm(true)}
+                              className="text-[10px] bg-red-600 text-white px-2 py-0.5 rounded font-bold"
+                            >
+                              Purge
+                            </button>
+                          </div>
+                        </div>
+
+                        <p className="bg-slate-950 p-2.5 rounded-xl border border-slate-800 text-slate-200">{selectedTip.whatHappened}</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+              </main>
+
+              {/* EMERGENCY MODAL */}
+              {showEmergencyModal && (
+                <div className="fixed inset-0 bg-slate-950/80 backdrop-blur z-50 flex items-center justify-center p-4">
+                  <div className="bg-slate-900 border border-red-500/50 rounded-2xl max-w-sm w-full p-5 space-y-4 text-left">
+                    <div className="flex items-center space-x-2 text-red-400">
+                      <i data-lucide="alert-octagon" className="w-6 h-6 shrink-0"></i>
+                      <h3 className="font-bold text-slate-100 text-sm">Immediate Danger Check</h3>
+                    </div>
+
+                    <p className="text-xs text-slate-300 bg-red-500/10 p-3 rounded-xl border border-red-500/20">
+                      <strong>WARNING:</strong> This web portal is NOT for real-time emergency police dispatch. If anyone is in active danger, dial <span className="font-bold underline text-white">911</span>.
+                    </p>
+
+                    <div className="space-y-2 pt-1">
+                      <a href="tel:911" className="w-full bg-red-600 text-white font-bold p-2.5 rounded-xl flex items-center justify-center gap-1.5 text-xs">
+                        <i data-lucide="phone-call" className="w-3.5 h-3.5"></i> Call 911 Now
+                      </a>
+                      <button
+                        onClick={() => { setShowEmergencyModal(false); setCurrentView('live-report'); }}
+                        className="w-full bg-slate-800 text-slate-300 font-medium p-2.5 rounded-xl text-xs"
+                      >
+                        I am safe & wish to report anonymously
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* PURGE MODAL */}
+              {showDeleteConfirm && (
+                <div className="fixed inset-0 bg-slate-950/80 backdrop-blur z-50 flex items-center justify-center p-4">
+                  <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-xs w-full p-5 space-y-3 text-left">
+                    <h3 className="font-bold text-slate-100 text-sm text-red-400">Confirm Record Deletion</h3>
+                    <p className="text-xs text-slate-400">Permanently purge submission <span className="font-mono text-cyan-400">{selectedTip?.tipCode}</span>?</p>
+                    <div className="flex justify-end gap-2 pt-2">
+                      <button onClick={() => setShowDeleteConfirm(false)} className="bg-slate-800 text-xs px-3 py-1.5 rounded">Cancel</button>
+                      <button onClick={handlePurgeRecord} className="bg-red-600 text-white font-bold text-xs px-3 py-1.5 rounded">Purge</button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* FOOTER */}
+              <footer className="border-t border-slate-900 bg-slate-950 py-3 text-center text-[10px] text-slate-600 mt-auto">
+                © 2026 Tip Tier Anonymous Safety Portal
+              </footer>
+
+            </div>
+          </div>
+
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>

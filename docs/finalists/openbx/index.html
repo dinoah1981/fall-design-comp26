@@ -1,0 +1,2513 @@
+<!DOCTYPE html> 
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Open Bx - For the Bronx, In the Bronx</title>
+    <!-- Leaflet Maps CSS & JS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <style>
+        :root {
+            --bg-main: #f4fbf8;             /* Light fresh mint tint */
+            --bg-card: #ffffff;             /* Pure white */
+            --bg-blue-light: #eaf5fa;        /* Soft ice blue */
+            --bg-green-light: #e8f7f0;       /* Soft mint green */
+            --bg-amber-light: #fff8e7;       /* Warm amber for grassroots badge */
+            
+            --wireframe-border: #cbdfe7;     /* Modern subtle blue-gray border */
+            --border-green: #b2e4cb;         /* Soft green border */
+            --border-amber: #f2d398;         /* Border for grassroots highlights */
+            
+            --text-main: #132a36;            /* Deep slate navy for high contrast */
+            --text-muted: #537080;           /* Soft muted teal-gray text */
+            --primary-accent: #216382;       /* Deep sky blue */
+            --green-accent: #1f8257;         /* Vibrant emerald green */
+            --green-hover: #176844;          /* Darker green hover state */
+            --amber-accent: #b46b00;         /* Amber tone for grassroots tags */
+            
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 18px;
+            --radius-pill: 9999px;
+
+            --shadow-sm: 0 2px 6px rgba(19, 42, 54, 0.04);
+            --shadow-md: 0 4px 16px rgba(19, 42, 54, 0.08);
+            --shadow-lg: 0 10px 25px rgba(19, 42, 54, 0.12);
+
+            --font-mono: "SF Mono", "Fira Code", "Courier New", monospace;
+            --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: var(--font-sans);
+            -webkit-font-smoothing: antialiased;
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* 0. Intro Splash Screen Overlay */
+        .splash-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(135deg, #e8f7f0 0%, #ffffff 50%, #eaf5fa 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            transition: opacity 0.6s ease, visibility 0.6s ease;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .splash-overlay.fade-out {
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        .splash-card {
+            background: var(--bg-card);
+            border: 2px solid var(--border-green);
+            padding: 36px 28px;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-lg);
+            max-width: 520px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .splash-logo-container {
+            width: 72px;
+            height: 72px;
+            background: var(--green-accent);
+            color: white;
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            font-weight: 900;
+            box-shadow: 0 4px 12px rgba(31, 130, 87, 0.3);
+        }
+
+        .splash-title {
+            font-size: 32px;
+            font-weight: 900;
+            color: var(--green-accent);
+            letter-spacing: -0.5px;
+        }
+
+        .splash-slogan {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--primary-accent);
+            font-style: italic;
+        }
+
+        .splash-desc {
+            font-size: 13.5px;
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
+
+        .btn-splash-continue {
+            background: var(--green-accent);
+            color: white;
+            border: none;
+            padding: 12px 28px;
+            font-size: 14px;
+            font-weight: 800;
+            border-radius: var(--radius-pill);
+            cursor: pointer;
+            box-shadow: var(--shadow-md);
+            transition: all 0.2s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 8px;
+        }
+
+        .btn-splash-continue:hover {
+            background: var(--green-hover);
+            transform: scale(1.03);
+        }
+
+        /* 1. Continuous Sliding Banner */
+        .wf-badge-container {
+            background: linear-gradient(90deg, #d3eef8, #d3f3e3, #d3eef8);
+            border-bottom: 1px solid var(--wireframe-border);
+            overflow: hidden;
+            white-space: nowrap;
+            position: relative;
+            padding: 7px 0;
+        }
+
+        .wf-badge-track {
+            display: inline-block;
+            white-space: nowrap;
+            animation: marquee 24s linear infinite;
+        }
+
+        .wf-badge-text {
+            display: inline-block;
+            font-size: 11px;
+            font-family: var(--font-mono);
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+            font-weight: 700;
+            color: var(--text-main);
+            padding-right: 60px;
+        }
+
+        @keyframes marquee {
+            0% { transform: translateX(0%); }
+            100% { transform: translateX(-50%); }
+        }
+
+        /* 2. Top Header */
+        header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--wireframe-border);
+            padding: 12px 24px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .brand-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-box {
+            width: 48px;
+            height: 48px;
+            background: var(--green-accent);
+            color: white;
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            font-weight: 900;
+            box-shadow: 0 2px 8px rgba(31, 130, 87, 0.3);
+        }
+
+        .app-title {
+            font-size: 22px;
+            font-weight: 900;
+            letter-spacing: -0.5px;
+            color: var(--green-accent);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .app-slogan {
+            font-size: 12px;
+            color: var(--primary-accent);
+            font-weight: 700;
+            font-style: italic;
+        }
+
+        .app-subtitle {
+            font-size: 11px;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        /* Nav & Controls */
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .wf-nav {
+            display: flex;
+            background: var(--bg-blue-light);
+            padding: 4px;
+            border-radius: var(--radius-pill);
+            border: 1px solid var(--wireframe-border);
+        }
+
+        .wf-nav-btn {
+            background: transparent;
+            border: none;
+            padding: 7px 16px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            color: var(--text-muted);
+            border-radius: var(--radius-pill);
+            transition: all 0.2s ease;
+        }
+
+        .wf-nav-btn.active {
+            background: var(--bg-card);
+            color: var(--primary-accent);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .lang-select {
+            border: 1px solid var(--wireframe-border);
+            padding: 8px 12px;
+            font-size: 12px;
+            font-weight: 600;
+            background: var(--bg-card);
+            color: var(--text-main);
+            cursor: pointer;
+            border-radius: var(--radius-md);
+            outline: none;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .ask-ai-btn {
+            background: var(--bg-green-light);
+            border: 1.5px solid var(--border-green);
+            color: var(--green-accent);
+            padding: 8px 14px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: var(--shadow-sm);
+            transition: background 0.2s ease;
+        }
+
+        .ask-ai-btn:hover {
+            background: #d6f2e4;
+        }
+
+        .admin-btn {
+            background: var(--bg-blue-light);
+            border: 1px solid var(--wireframe-border);
+            color: var(--primary-accent);
+            padding: 8px 12px;
+            font-size: 11px;
+            font-weight: 700;
+            cursor: pointer;
+            border-radius: var(--radius-md);
+            transition: background 0.2s ease;
+        }
+
+        .admin-btn:hover {
+            background: #d0e7f3;
+        }
+
+        /* Radar Bar */
+        .radar-bar {
+            background: var(--bg-green-light);
+            border-bottom: 1px solid var(--border-green);
+            padding: 8px 24px;
+            font-size: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-family: var(--font-mono);
+            color: var(--green-accent);
+            font-weight: 600;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .radar-display {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .radar-sweep {
+            width: 18px;
+            height: 18px;
+            border: 2px solid var(--green-accent);
+            border-radius: 50%;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .radar-sweep::before {
+            content: "";
+            width: 6px;
+            height: 6px;
+            background: var(--green-accent);
+            border-radius: 50%;
+        }
+
+        .radar-bar button {
+            background: var(--bg-card);
+            border: 1px solid var(--border-green);
+            color: var(--green-accent);
+            padding: 4px 12px;
+            border-radius: var(--radius-pill);
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: bold;
+        }
+
+        /* Hero Search */
+        .search-section {
+            background: linear-gradient(180deg, var(--bg-card) 0%, var(--bg-blue-light) 100%);
+            border-bottom: 1px solid var(--wireframe-border);
+            padding: 16px 24px;
+        }
+
+        .ai-input-box {
+            display: flex;
+            max-width: 960px;
+            margin: 0 auto;
+            gap: 10px;
+            background: var(--bg-card);
+            padding: 6px;
+            border-radius: var(--radius-lg);
+            border: 2px solid var(--wireframe-border);
+            box-shadow: var(--shadow-md);
+        }
+
+        .ai-input {
+            flex: 1;
+            padding: 10px 16px;
+            border: none;
+            font-size: 14px;
+            outline: none;
+            background: transparent;
+            color: var(--text-main);
+        }
+
+        .ai-submit-btn {
+            background: var(--green-accent);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            border-radius: var(--radius-md);
+            white-space: nowrap;
+            transition: background 0.2s ease;
+        }
+
+        .ai-submit-btn:hover {
+            background: var(--green-hover);
+        }
+
+        .sample-queries {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            max-width: 960px;
+            margin: 10px auto 0 auto;
+            overflow-x: auto;
+            padding-bottom: 4px;
+        }
+
+        .sample-tag-label {
+            font-size: 11px;
+            font-family: var(--font-mono);
+            color: var(--text-muted);
+            white-space: nowrap;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .sample-chip {
+            background: var(--bg-card);
+            border: 1px solid var(--border-green);
+            color: var(--text-main);
+            padding: 4px 10px;
+            font-size: 11px;
+            font-weight: 600;
+            border-radius: var(--radius-pill);
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.2s ease;
+        }
+
+        .sample-chip:hover {
+            background: var(--bg-green-light);
+            border-color: var(--green-accent);
+        }
+
+        .sample-chip.grassroots-chip {
+            background: var(--bg-amber-light);
+            border-color: var(--border-amber);
+            color: var(--amber-accent);
+        }
+
+        /* Workspace Grid Layout */
+        .workspace {
+            display: grid;
+            grid-template-columns: 320px 1fr 380px;
+            flex: 1;
+            height: calc(100vh - 250px);
+            min-height: 600px;
+            background: var(--bg-main);
+        }
+
+        @media (max-width: 1100px) {
+            .workspace {
+                grid-template-columns: 290px 1fr;
+                height: auto;
+            }
+            .detail-panel {
+                grid-column: 1 / -1;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .workspace {
+                display: flex;
+                flex-direction: column;
+                height: auto;
+            }
+            .map-container {
+                height: 380px;
+            }
+        }
+
+        /* Views */
+        .screen-view {
+            display: none;
+            flex: 1;
+            padding: 24px;
+            max-width: 1280px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .screen-view.active {
+            display: block;
+        }
+
+        .list-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 16px;
+            margin-top: 16px;
+        }
+
+        .card-item {
+            background: var(--bg-card);
+            border: 1px solid var(--wireframe-border);
+            border-radius: var(--radius-lg);
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            box-shadow: var(--shadow-sm);
+            transition: box-shadow 0.2s ease, transform 0.2s ease;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .card-item:hover {
+            box-shadow: var(--shadow-md);
+            transform: translateY(-2px);
+            border-color: var(--green-accent);
+        }
+
+        .card-item.is-grassroots {
+            border-color: var(--border-amber);
+            background: linear-gradient(180deg, #ffffff 0%, var(--bg-amber-light) 100%);
+        }
+
+        /* Column 1: Filters */
+        .filters-panel {
+            background: var(--bg-card);
+            border-right: 1px solid var(--wireframe-border);
+            padding: 16px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .panel-title {
+            font-size: 12px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--bg-green-light);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .reset-btn {
+            font-size: 11px;
+            font-family: var(--font-mono);
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--primary-accent);
+            font-weight: 700;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .filter-group-label {
+            font-size: 11px;
+            font-weight: 800;
+            text-transform: uppercase;
+            font-family: var(--font-mono);
+            color: var(--text-muted);
+        }
+
+        .cat-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+        }
+
+        .cat-btn {
+            border: 1px solid var(--wireframe-border);
+            background: var(--bg-card);
+            color: var(--text-main);
+            padding: 8px 6px;
+            font-size: 11px;
+            font-weight: 600;
+            text-align: center;
+            cursor: pointer;
+            border-radius: var(--radius-md);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 3px;
+            transition: all 0.15s ease;
+        }
+
+        .cat-btn:hover {
+            border-color: var(--primary-accent);
+            background: var(--bg-blue-light);
+        }
+
+        .cat-btn.active {
+            background: var(--primary-accent);
+            color: white;
+            border-color: var(--primary-accent);
+        }
+
+        .select-filter {
+            width: 100%;
+            padding: 8px 10px;
+            font-size: 12px;
+            border-radius: var(--radius-md);
+            border: 1.5px solid var(--wireframe-border);
+            background: var(--bg-card);
+            color: var(--text-main);
+            outline: none;
+            cursor: pointer;
+        }
+
+        .checkbox-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .wf-checkbox {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        .wf-checkbox input {
+            cursor: pointer;
+            accent-color: var(--green-accent);
+        }
+
+        .range-slider-container {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .range-slider-container input[type="range"] {
+            width: 100%;
+            accent-color: var(--green-accent);
+        }
+
+        .range-val {
+            font-size: 11px;
+            font-family: var(--font-mono);
+            font-weight: 700;
+            color: var(--primary-accent);
+        }
+
+        /* Column 2: Map Container */
+        .map-container {
+            position: relative;
+            background: #e6f3f8;
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid var(--wireframe-border);
+            overflow: hidden;
+            height: 100%;
+        }
+
+        #leafletMap {
+            flex: 1;
+            width: 100%;
+            height: 100%;
+            min-height: 400px;
+            z-index: 1;
+        }
+
+        .scanner-badge {
+            position: absolute;
+            top: 14px;
+            right: 14px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(8px);
+            border: 1px solid var(--border-green);
+            padding: 6px 12px;
+            border-radius: var(--radius-pill);
+            font-size: 10px;
+            font-family: var(--font-mono);
+            color: var(--green-accent);
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            z-index: 10;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .scan-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--green-accent);
+            border-radius: 50%;
+            animation: blink 1.2s infinite;
+        }
+
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.2; } }
+
+        /* Column 3: Resource Details */
+        .detail-panel {
+            background: var(--bg-card);
+            padding: 18px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .resource-card-header {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            border-bottom: 2px dashed var(--border-green);
+            padding-bottom: 12px;
+        }
+
+        .badge-row {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .res-type-badge {
+            align-self: flex-start;
+            background: var(--bg-green-light);
+            border: 1px solid var(--border-green);
+            color: var(--green-accent);
+            padding: 3px 8px;
+            font-size: 10px;
+            font-family: var(--font-mono);
+            font-weight: 800;
+            text-transform: uppercase;
+            border-radius: var(--radius-pill);
+        }
+
+        .grassroots-badge {
+            background: var(--bg-amber-light);
+            border: 1px solid var(--border-amber);
+            color: var(--amber-accent);
+            padding: 3px 8px;
+            font-size: 10px;
+            font-family: var(--font-mono);
+            font-weight: 800;
+            text-transform: uppercase;
+            border-radius: var(--radius-pill);
+        }
+
+        .res-title {
+            font-size: 17px;
+            font-weight: 800;
+            line-height: 1.25;
+            color: var(--text-main);
+        }
+
+        .res-distance {
+            font-size: 12px;
+            font-family: var(--font-mono);
+            color: var(--primary-accent);
+            font-weight: 600;
+        }
+
+        .ai-summary-box {
+            background: var(--bg-blue-light);
+            border: 1.5px dashed var(--wireframe-border);
+            border-radius: var(--radius-md);
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .ai-badge {
+            font-size: 10px;
+            font-family: var(--font-mono);
+            font-weight: 800;
+            text-transform: uppercase;
+            color: var(--primary-accent);
+        }
+
+        .ai-summary-text {
+            font-size: 12px;
+            line-height: 1.45;
+        }
+
+        .info-block {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .info-block-title {
+            font-size: 11px;
+            font-weight: 800;
+            text-transform: uppercase;
+            font-family: var(--font-mono);
+            color: var(--text-muted);
+            border-bottom: 1px solid var(--wireframe-border);
+            padding-bottom: 4px;
+        }
+
+        .hours-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11px;
+            font-family: var(--font-mono);
+        }
+
+        .hours-table td {
+            padding: 4px 0;
+            border-bottom: 1px dotted var(--wireframe-border);
+        }
+
+        .hours-table td:last-child {
+            text-align: right;
+            font-weight: 700;
+        }
+
+        .tag-cloud {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .req-chip {
+            background: var(--bg-blue-light);
+            border: 1px solid var(--wireframe-border);
+            padding: 3px 8px;
+            font-size: 11px;
+            border-radius: var(--radius-sm);
+        }
+
+        .action-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 6px;
+        }
+
+        .btn-primary-wf {
+            background: var(--green-accent);
+            color: white;
+            border: none;
+            padding: 10px;
+            font-size: 12px;
+            font-weight: 800;
+            text-align: center;
+            cursor: pointer;
+            border-radius: var(--radius-md);
+            text-transform: uppercase;
+            transition: background 0.2s ease;
+        }
+
+        .btn-primary-wf:hover {
+            background: var(--green-hover);
+        }
+
+        .btn-secondary-wf {
+            background: var(--bg-card);
+            color: var(--primary-accent);
+            border: 1.5px solid var(--wireframe-border);
+            padding: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            text-align: center;
+            cursor: pointer;
+            border-radius: var(--radius-md);
+            transition: background 0.2s ease;
+        }
+
+        .btn-secondary-wf:hover {
+            background: var(--bg-blue-light);
+        }
+
+        /* Modals */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(19, 42, 54, 0.45);
+            backdrop-filter: blur(4px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+        }
+
+        .modal-overlay.active { display: flex; }
+
+        .wf-modal {
+            background: var(--bg-card);
+            border: 1px solid var(--wireframe-border);
+            width: 90%;
+            max-width: 520px;
+            padding: 20px;
+            border-radius: var(--radius-lg);
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            box-shadow: var(--shadow-lg);
+            max-height: 85vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid var(--bg-green-light);
+            padding-bottom: 8px;
+        }
+
+        .modal-title { font-size: 14px; font-weight: 800; text-transform: uppercase; }
+
+        .close-modal { background: none; border: none; font-size: 20px; font-weight: bold; cursor: pointer; color: var(--text-muted); }
+
+        .wf-form-group { display: flex; flex-direction: column; gap: 6px; }
+
+        .wf-form-group label {
+            font-size: 11px;
+            font-family: var(--font-mono);
+            font-weight: 700;
+            color: var(--primary-accent);
+            text-transform: uppercase;
+        }
+
+        .wf-form-group input, .wf-form-group textarea, .wf-form-group select {
+            border: 1.5px solid var(--wireframe-border);
+            padding: 8px;
+            font-size: 13px;
+            border-radius: var(--radius-md);
+            background: var(--bg-card);
+            outline: none;
+        }
+
+        .admin-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11px;
+            font-family: var(--font-mono);
+            margin-top: 8px;
+        }
+
+        .admin-table th, .admin-table td {
+            border: 1px solid var(--wireframe-border);
+            padding: 8px;
+            text-align: left;
+        }
+
+        .admin-table th { background: var(--bg-blue-light); }
+
+        /* Toast */
+        .toast-notification {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: var(--text-main);
+            color: #ffffff;
+            padding: 12px 20px;
+            border-radius: var(--radius-md);
+            font-size: 13px;
+            font-weight: 600;
+            box-shadow: var(--shadow-lg);
+            z-index: 3000;
+            display: none;
+            align-items: center;
+            gap: 10px;
+            border-left: 4px solid var(--green-accent);
+        }
+
+        /* Footer */
+        footer {
+            background: var(--bg-card);
+            border-top: 1px solid var(--wireframe-border);
+            padding: 12px 24px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            font-size: 12px;
+            font-family: var(--font-mono);
+        }
+
+        .emergency-banner {
+            background: var(--bg-green-light);
+            border: 1px solid var(--border-green);
+            color: var(--green-accent);
+            padding: 4px 12px;
+            border-radius: var(--radius-pill);
+            font-weight: 800;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 0. SPLASH INTRO SCREEN -->
+    <div class="splash-overlay" id="splashScreen">
+        <div class="splash-card">
+            <div class="splash-logo-container">BX</div>
+            <div class="splash-title">Open Bx</div>
+            <div class="splash-slogan">"For the Bronx, In the Bronx"</div>
+            <p class="splash-desc">
+                Welcome to Open Bx — featuring over 30 verified resources including neighborhood church pantries, mutual aid groups, harm reduction hubs, community fridges, job training, and local support centers throughout the Bronx.
+            </p>
+            <button class="btn-splash-continue" onclick="dismissSplash()">Explore Bronx Resources</button>
+        </div>
+    </div>
+
+    <!-- 1. CONTINUOUS SLIDING BANNER -->
+    <div class="wf-badge-container">
+        <div class="wf-badge-track">
+            <span class="wf-badge-text">Bronx Grassroots Accessibility &nbsp;•&nbsp; Grassroots & Community Favorites Included &nbsp;•&nbsp; Verified Local Resources</span>
+            <span class="wf-badge-text">Bronx Grassroots Accessibility &nbsp;•&nbsp; Grassroots & Community Favorites Included &nbsp;•&nbsp; Verified Local Resources</span>
+        </div>
+    </div>
+
+    <!-- Header -->
+    <header>
+        <div class="brand-container">
+            <div class="logo-box" title="Open Bx Bronx Community Logo">BX</div>
+            <div>
+                <div class="app-title">
+                    Open Bx
+                    <span style="font-size: 11px; background: var(--bg-blue-light); color: var(--primary-accent); padding: 2px 8px; border-radius: var(--radius-pill); border: 1px solid var(--wireframe-border);">📍 Bronx, NY</span>
+                </div>
+                <div class="app-slogan" id="txtSlogan">"For the Bronx, In the Bronx"</div>
+                <div class="app-subtitle" id="txtSubtitle">Community Resource & Grassroots Finder</div>
+            </div>
+        </div>
+
+        <div class="header-controls">
+            <div class="wf-nav">
+                <button class="wf-nav-btn active" id="navMap" onclick="switchScreen('map')">Map View</button>
+                <button class="wf-nav-btn" id="navList" onclick="switchScreen('list')">List View (<span id="totalCount">30</span>)</button>
+                <button class="wf-nav-btn" id="navSaved" onclick="switchScreen('saved')">Saved (<span id="savedCount">1</span>)</button>
+            </div>
+
+            <select class="lang-select" id="languageSelect" onchange="changeLanguage(this.value)">
+                <option value="en">🌐 English (US)</option>
+                <option value="es">🌐 Español (Spanish)</option>
+                <option value="vi">🌐 Tiếng Việt (Vietnamese)</option>
+                <option value="zh">🌐 中文 (Chinese)</option>
+                <option value="ar">🌐 العربية (Arabic)</option>
+            </select>
+
+            <button class="ask-ai-btn" id="btnSubmitQuestion" onclick="openModal('questionModal')">
+                ❓ Ask Question
+            </button>
+
+            <button class="admin-btn" onclick="openAdminModal()">🔒 Admin Access</button>
+        </div>
+    </header>
+
+    <!-- Radar & GPS Location Status -->
+    <div class="radar-bar">
+        <div class="radar-display">
+            <div class="radar-sweep"></div>
+            <span id="locationText">Radar Active: 30 verified Bronx locations indexed</span>
+        </div>
+        <button onclick="requestUserLocation()" id="btnDetectGPS">🎯 Detect Device GPS</button>
+    </div>
+
+    <!-- Hero Search -->
+    <section class="search-section">
+        <div class="ai-input-box">
+            <input type="text" id="aiQueryInput" class="ai-input" placeholder="Search: e.g. 'Community Fridge', 'La Morada', 'St. Ann Corner', 'Mott Haven', 'Tenant rights'" onkeyup="if(event.key === 'Enter') processAIQuery()">
+            <button class="ai-submit-btn" id="btnAISearch" onclick="processAIQuery()">[ Search ]</button>
+        </div>
+        <div class="sample-queries">
+            <span class="sample-tag-label" id="lblShortcuts">Shortcuts:</span>
+            <span class="sample-chip grassroots-chip" onclick="applySampleQuery('Grassroots')">⭐ Grassroots / Local</span>
+            <span class="sample-chip" onclick="applySampleQuery('La Morada Kitchen')">"🥘 La Morada"</span>
+            <span class="sample-chip" onclick="applySampleQuery('Boom!Health')">"🩹 Boom!Health Harm Reduction"</span>
+            <span class="sample-chip" onclick="applySampleQuery('Davidson Community Center')">"🏠 Davidson Center"</span>
+            <span class="sample-chip" onclick="applySampleQuery('Casita Maria')">"🎨 Casita Maria Arts"</span>
+            <span class="sample-chip" onclick="applySampleQuery('Community Fridge')">"🥦 Community Fridges"</span>
+            <span class="sample-chip" onclick="applySampleQuery('Northwest Bronx Clergy')">"✊ Tenant Rights"</span>
+        </div>
+    </section>
+
+    <!-- SCREEN 1: MAP WORKSPACE -->
+    <main class="workspace" id="screenMapWorkspace">
+        <aside class="filters-panel">
+            <div class="panel-title">
+                <span id="lblFilterTitle">Filter Resources</span>
+                <button class="reset-btn" id="btnReset" onclick="resetFilters()">Reset All</button>
+            </div>
+
+            <div class="filter-group">
+                <span class="filter-group-label" id="lblCategory">Resource Category</span>
+                <div class="cat-grid">
+                    <button class="cat-btn active" onclick="toggleCategory(this, 'all')"><span>🌐</span> <span id="catLabel_all">All Needs</span></button>
+                    <button class="cat-btn" onclick="toggleCategory(this, 'food')"><span>🍞</span> <span id="catLabel_food">Food Pantry</span></button>
+                    <button class="cat-btn" onclick="toggleCategory(this, 'health')"><span>🩺</span> <span id="catLabel_health">Healthcare</span></button>
+                    <button class="cat-btn" onclick="toggleCategory(this, 'rehab')"><span>🌱</span> <span id="catLabel_rehab">Rehab/Care</span></button>
+                    <button class="cat-btn" onclick="toggleCategory(this, 'education')"><span>📚</span> <span id="catLabel_education">Education</span></button>
+                    <button class="cat-btn" onclick="toggleCategory(this, 'jobs')"><span>💼</span> <span id="catLabel_jobs">Employment</span></button>
+                    <button class="cat-btn" onclick="toggleCategory(this, 'clothing')"><span>👕</span> <span id="catLabel_clothing">Clothing</span></button>
+                    <button class="cat-btn" onclick="toggleCategory(this, 'community')"><span>🤝</span> <span id="catLabel_community">Community</span></button>
+                </div>
+            </div>
+
+            <div class="filter-group">
+                <span class="filter-group-label">Neighborhood / Area</span>
+                <select class="select-filter" id="neighborhoodSelect" onchange="filterLocations()">
+                    <option value="all">All Bronx Neighborhoods</option>
+                    <option value="Mott Haven">Mott Haven / Port Morris</option>
+                    <option value="Hunts Point">Hunts Point / Longwood</option>
+                    <option value="Fordham">Fordham / Belmont / Kingsbridge</option>
+                    <option value="Highbridge">Highbridge / Concourse</option>
+                    <option value="Morrisania">Morrisania / Melrose</option>
+                    <option value="Tremont">East Tremont / West Farms</option>
+                    <option value="Soundview">Soundview / Castle Hill</option>
+                    <option value="Norwood">Norwood / Bedford Park</option>
+                    <option value="Parkchester">Parkchester / Pelham</option>
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <span class="filter-group-label" id="lblRequirements">Requirements & Access</span>
+                <div class="checkbox-list">
+                    <label class="wf-checkbox"><input type="checkbox" id="chkGrassrootsOnly" onchange="filterLocations()"><span style="color: var(--amber-accent); font-weight:700;">⭐ Grassroots / Local Favorites Only</span></label>
+                    <label class="wf-checkbox"><input type="checkbox" id="chkNoID" onchange="filterLocations()"><span id="lblNoID">No Photo ID Required</span></label>
+                    <label class="wf-checkbox"><input type="checkbox" id="chkNoProofIncome" onchange="filterLocations()"><span id="lblNoIncome">No Proof of Income Needed</span></label>
+                    <label class="wf-checkbox"><input type="checkbox" id="chkWalkIn" onchange="filterLocations()"><span id="lblWalkIn">Walk-ins Allowed</span></label>
+                    <label class="wf-checkbox"><input type="checkbox" id="chkSpanish" onchange="filterLocations()"><span id="lblSpanish">Multilingual Staff On-Site</span></label>
+                    <label class="wf-checkbox"><input type="checkbox" id="chkTransit" onchange="filterLocations()"><span id="lblTransit">Near Public Transit</span></label>
+                </div>
+            </div>
+
+            <div class="filter-group">
+                <span class="filter-group-label" id="lblDistance">Maximum Distance</span>
+                <div class="range-slider-container">
+                    <input type="range" id="distanceRange" min="1" max="25" value="15" oninput="updateDistanceLabel(this.value)">
+                    <div class="range-val" id="distanceVal">15 miles radius</div>
+                </div>
+            </div>
+        </aside>
+
+        <section class="map-container">
+            <div class="scanner-badge">
+                <div class="scan-dot"></div>
+                <span id="lblAIScanner">AI Auto-Scanner Active • 30 Centers</span>
+            </div>
+
+            <div id="leafletMap"></div>
+        </section>
+
+        <aside class="detail-panel" id="detailPanel"></aside>
+    </main>
+
+    <!-- SCREEN 2: LIST VIEW -->
+    <section class="screen-view" id="screenListView">
+        <h2 style="font-size: 20px; font-weight: 800;" id="lblListHeader">📋 All Bronx Verified & Grassroots Resources</h2>
+        <p style="font-size: 13px; color: var(--text-muted);" id="lblListSub">Browse all available food, medical, recovery, education, job, and neighborhood programs.</p>
+        <div class="list-grid" id="fullCardListContainer"></div>
+    </section>
+
+    <!-- SCREEN 3: SAVED VIEW -->
+    <section class="screen-view" id="screenSavedView">
+        <h2 style="font-size: 20px; font-weight: 800;" id="lblSavedHeader">⭐ Saved Centers & Programs</h2>
+        <p style="font-size: 13px; color: var(--text-muted);" id="lblSavedSub">Access bookmarked Bronx centers offline or share them with family.</p>
+        <div class="list-grid" id="savedCardListContainer"></div>
+    </section>
+
+    <!-- Modal 1: Question Form -->
+    <div class="modal-overlay" id="questionModal">
+        <div class="wf-modal">
+            <div class="modal-header">
+                <div class="modal-title" id="lblModalTitle">[ Ask A Question / Receive Response ]</div>
+                <button class="close-modal" onclick="closeModal('questionModal')">✕</button>
+            </div>
+
+            <p style="font-size: 13px; line-height: 1.45; color: var(--text-muted);" id="lblModalDesc">
+                Need extra guidance? Submit your question and optional contact number. Our Bronx community navigators will follow up with you.
+            </p>
+
+            <div class="wf-form-group">
+                <label id="lblFormLang">Preferred Language</label>
+                <select id="questionLang">
+                    <option value="English">English</option>
+                    <option value="Spanish">Español</option>
+                    <option value="Vietnamese">Tiếng Việt</option>
+                    <option value="Chinese">中文</option>
+                    <option value="Arabic">العربية</option>
+                </select>
+            </div>
+
+            <div class="wf-form-group">
+                <label id="lblFormQuestion">Your Question or Resource Request</label>
+                <textarea id="questionTextInput" rows="4" placeholder="Type what support or program you are looking for..." style="resize: vertical;"></textarea>
+            </div>
+
+            <div class="wf-form-group">
+                <label id="lblFormPhone">Mobile Phone Number or Email</label>
+                <input type="text" id="questionPhoneInput" placeholder="(718) 000-0000">
+            </div>
+
+            <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 10px;">
+                <button class="btn-secondary-wf" onclick="closeModal('questionModal')">Cancel</button>
+                <button class="btn-primary-wf" onclick="submitUserQuestion()">Submit Request</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal 2: Admin Password Portal -->
+    <div class="modal-overlay" id="adminAuthModal">
+        <div class="wf-modal">
+            <div class="modal-header">
+                <div class="modal-title">🔒 Admin Access Portal</div>
+                <button class="close-modal" onclick="closeModal('adminAuthModal')">✕</button>
+            </div>
+
+            <div class="wf-form-group">
+                <label>Enter Admin Password</label>
+                <input type="password" id="adminPasswordInput" placeholder="Password required..." onkeyup="if(event.key === 'Enter') verifyAdminPassword()">
+            </div>
+
+            <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 10px;">
+                <button class="btn-secondary-wf" onclick="closeModal('adminAuthModal')">Cancel</button>
+                <button class="btn-primary-wf" onclick="verifyAdminPassword()">Unlock Portal</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal 3: Admin Questions Dashboard -->
+    <div class="modal-overlay" id="adminDashboardModal">
+        <div class="wf-modal" style="max-width: 680px;">
+            <div class="modal-header">
+                <div class="modal-title">📋 Admin Question Log & Requests</div>
+                <button class="close-modal" onclick="closeModal('adminDashboardModal')">✕</button>
+            </div>
+
+            <p style="font-size: 12px; color: var(--text-muted);">
+                Viewing all user questions, languages, and contact information.
+            </p>
+
+            <div id="adminTableContainer" style="max-height: 300px; overflow-y: auto;">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>Language</th>
+                            <th>Question</th>
+                            <th>Contact</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="adminTableBody"></tbody>
+                </table>
+            </div>
+
+            <div style="display: flex; gap: 10px; justify-content: space-between; margin-top: 10px; flex-wrap: wrap;">
+                <button class="btn-secondary-wf" onclick="clearAllAdminQuestions()" style="color: red; border-color: red;">Clear All Logged Requests</button>
+                <button class="btn-primary-wf" onclick="closeModal('adminDashboardModal')">Close Panel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="toast-notification" id="toastMessage">
+        <span id="toastText">Notification message</span>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-info">
+            <div>📞 NYC 311 / 211 Community Help Hotline</div>
+            <div id="lblFooterLocation">📍 Open Bx: Verified & Grassroots Centers in The Bronx, NY</div>
+        </div>
+
+        <div class="emergency-banner">
+            🚨 Emergency Hotline: 911 (Medical) | 988 (Crisis & Mental Health)
+        </div>
+    </footer>
+
+    <script>
+        const translations = {
+            en: {
+                slogan: '"For the Bronx, In the Bronx"',
+                subtitle: 'Community Resource & Grassroots Finder',
+                navMap: 'Map View',
+                navList: 'List View',
+                askBtn: '❓ Ask Question',
+                shortcuts: 'Shortcuts:',
+                filterTitle: 'Filter Resources',
+                category: 'Resource Category',
+                reqs: 'Requirements & Access',
+                noID: 'No Photo ID Required',
+                noIncome: 'No Proof of Income Needed',
+                walkIn: 'Walk-ins Allowed',
+                spanish: 'Multilingual Staff On-Site',
+                transit: 'Near Public Transit',
+                distance: 'Maximum Distance',
+                scanner: 'AI Auto-Scanner Active • 30 Centers',
+                listHeader: '📋 All Bronx Verified & Grassroots Resources',
+                listSub: 'Browse all available food, medical, recovery, education, job, and neighborhood programs.',
+                savedHeader: '⭐ Saved Centers & Programs',
+                savedSub: 'Access bookmarked Bronx centers offline or share them with family.',
+                getDirections: '🗺️ Get Transit Directions',
+                submitToCenter: '💬 Contact / Ask Question',
+                servicesProvided: 'Services Provided',
+                whatYouNeed: 'Requirements & Access',
+                hoursTitle: 'Operating Hours',
+                categories: {
+                    all: 'All Needs',
+                    food: 'Food Pantry',
+                    health: 'Healthcare',
+                    rehab: 'Rehab/Care',
+                    education: 'Education',
+                    jobs: 'Employment',
+                    clothing: 'Clothing',
+                    community: 'Community'
+                }
+            },
+            es: {
+                slogan: '"Para el Bronx, En el Bronx"',
+                subtitle: 'Buscador de Recursos Comunitarios y Locales',
+                navMap: 'Vista de Mapa',
+                navList: 'Vista de Lista',
+                askBtn: '❓ Hacer Pregunta',
+                shortcuts: 'Atajos:',
+                filterTitle: 'Filtrar Recursos',
+                category: 'Categoría de Recursos',
+                reqs: 'Requisitos y Acceso',
+                noID: 'Sin Identificación con Foto',
+                noIncome: 'Sin Comprobante de Ingresos',
+                walkIn: 'Se Permiten Entradas Sin Cita',
+                spanish: 'Personal Multilingüe en Sitio',
+                transit: 'Cerca del Transporte Público',
+                distance: 'Distancia Máxima',
+                scanner: 'Escáner de IA Activo • 30 Centros',
+                listHeader: '📋 Todos los Recursos del Bronx',
+                listSub: 'Explore programas de alimentos, médicos, de recuperación y comunitarios.',
+                savedHeader: '⭐ Centros Guardados',
+                savedSub: 'Acceda a los centros del Bronx guardados en línea o compártalos.',
+                getDirections: '🗺️ Obtener Direcciones de Tránsito',
+                submitToCenter: '💬 Contactar / Hacer Pregunta',
+                servicesProvided: 'Servicios Ofrecidos',
+                whatYouNeed: 'Requisitos y Acceso',
+                hoursTitle: 'Horarios de Atención',
+                categories: {
+                    all: 'Todas las Necesidades',
+                    food: 'Despensa de Comida',
+                    health: 'Atención Médica',
+                    rehab: 'Rehabilitación',
+                    education: 'Educación',
+                    jobs: 'Empleo',
+                    clothing: 'Ropa',
+                    community: 'Comunidad'
+                }
+            },
+            vi: {
+                slogan: '"Vì Bronx, Tại Bronx"',
+                subtitle: 'Công cụ tìm kiếm tài nguyên cộng đồng',
+                navMap: 'Bản đồ',
+                navList: 'Danh sách',
+                askBtn: '❓ Đặt câu hỏi',
+                shortcuts: 'Phím tắt:',
+                filterTitle: 'Lọc tài nguyên',
+                category: 'Danh mục tài nguyên',
+                reqs: 'Yêu cầu & Truy cập',
+                noID: 'Không cần giấy tờ có ảnh',
+                noIncome: 'Không cần chứng minh thu nhập',
+                walkIn: 'Chấp nhận đến trực tiếp',
+                spanish: 'Có nhân viên đa ngôn ngữ',
+                transit: 'Gần giao thông công cộng',
+                distance: 'Khoảng cách tối đa',
+                scanner: 'Máy quét AI hoạt động • 30 Trung tâm',
+                listHeader: '📋 Tất cả tài nguyên tại Bronx',
+                listSub: 'Xem tất cả các chương trình thực phẩm, y tế, phục hồi và việc làm.',
+                savedHeader: '⭐ Trung tâm đã lưu',
+                savedSub: 'Truy cập các địa điểm Bronx đã lưu ngoại tuyến.',
+                getDirections: '🗺️ Chỉ đường đi lại',
+                submitToCenter: '💬 Liên hệ / Đặt câu hỏi',
+                servicesProvided: 'Dịch vụ cung cấp',
+                whatYouNeed: 'Yêu cầu & Truy cập',
+                hoursTitle: 'Giờ làm việc',
+                categories: {
+                    all: 'Tất cả nhu cầu',
+                    food: 'Kho thực phẩm',
+                    health: 'Chăm sóc y tế',
+                    rehab: 'Cai nghiện/Phục hồi',
+                    education: 'Giáo dục',
+                    jobs: 'Việc làm',
+                    clothing: 'Quần áo',
+                    community: 'Cộng đồng'
+                }
+            },
+            zh: {
+                slogan: '"为了布朗克斯，在布朗克斯"',
+                subtitle: '社区资源与基层服务搜索器',
+                navMap: '地图视图',
+                navList: '列表视图',
+                askBtn: '❓ 提问',
+                shortcuts: '快捷搜索:',
+                filterTitle: '筛选资源',
+                category: '资源类别',
+                reqs: '要求与准入',
+                noID: '无需带照片的身份证件',
+                noIncome: '无需收入证明',
+                walkIn: '允许直接前往',
+                spanish: '现场多语言工作人员',
+                transit: '靠近公共交通',
+                distance: '最大距离',
+                scanner: 'AI 扫描仪活跃 • 30 个中心',
+                listHeader: '📋 所有经核实的布朗克斯资源',
+                listSub: '浏览所有可用的食品、医疗、康复和社区项目。',
+                savedHeader: '⭐ 已保存的中心与项目',
+                savedSub: '离线访问已标记的布朗克斯中心。',
+                getDirections: '🗺️ 获取交通路线',
+                submitToCenter: '💬 联系 / 提出问题',
+                servicesProvided: '提供服务',
+                whatYouNeed: '要求与准入',
+                hoursTitle: '营业时间',
+                categories: {
+                    all: '所有需求',
+                    food: '食品分发',
+                    health: '医疗保健',
+                    rehab: '康复护理',
+                    education: '教育培训',
+                    jobs: '就业求职',
+                    clothing: '衣物援助',
+                    community: '社区服务'
+                }
+            },
+            ar: {
+                slogan: '"من أجل برونكس، في برونكس"',
+                subtitle: 'مستكشف الموارد والخدمات المجتمعية',
+                navMap: 'عرض الخريطة',
+                navList: 'عرض القائمة',
+                askBtn: '❓ طرح سؤال',
+                shortcuts: 'اختصارات:',
+                filterTitle: 'تصفية الموارد',
+                category: 'فئة الموارد',
+                reqs: 'المتطلبات والإمكانية',
+                noID: 'لا تتطلب هویة مصورة',
+                noIncome: 'لا يتطلب إثبات دخل',
+                walkIn: 'يُسمح بالدخول المباشر',
+                spanish: 'موظفون يتحدثون لغات متعددة',
+                transit: 'قريب من وسائل النقل العامة',
+                distance: 'الحد الأقصى للمسافة',
+                scanner: 'ماسح الذكاء الاصطناعي نشط • 30 مركزًا',
+                listHeader: '📋 جميع الموارد المعتمدة في برونكس',
+                listSub: 'تصفح جميع برامج الغذاء، الرعاية الصحية، التعافي والتوظيف.',
+                savedHeader: '⭐ المراكز المحفوظة',
+                savedSub: 'الوصول إلى مراكز برونكس المحفوظة بدون إنترنت.',
+                getDirections: '🗺️ الحصول على الاتجاهات',
+                submitToCenter: '💬 التواصل / طرح سؤال',
+                servicesProvided: 'الخدمات المقدمة',
+                whatYouNeed: 'المتطلبات والإمكانية',
+                hoursTitle: 'ساعات العمل',
+                categories: {
+                    all: 'جميع الاحتياجات',
+                    food: 'بنك الطعام',
+                    health: 'الرعاية الصحية',
+                    rehab: 'التعافي',
+                    education: 'التعليم',
+                    jobs: 'الوظائف',
+                    clothing: 'الملابس',
+                    community: 'المجتمع'
+                }
+            }
+        };
+
+        let userCoords = { lat: 40.8500, lng: -73.8900 }; // Central Bronx
+        let selectedCategory = "all";
+        let maxDistanceMiles = 15;
+        let savedCenterIds = ["bx_food_1", "bx_grass_1"];
+        let currentLang = "en";
+        let activeSelectedResourceId = "bx_food_1";
+
+        let leafletMap = null;
+        let markersGroup = null;
+
+        let userQuestionsList = [
+            {
+                timestamp: "09/01 10:15 AM",
+                lang: "Spanish",
+                question: "Necesito comida de emergencia para mi familia cerca de Mott Haven.",
+                phone: "(718) 555-0199"
+            },
+            {
+                timestamp: "09/02 02:30 PM",
+                lang: "English",
+                question: "Looking for local harm reduction and community pantry in South Bronx.",
+                phone: "(347) 555-0842"
+            }
+        ];
+
+        // EXPANDED DATASET: 30 Detailed Resources including Grassroots & Neighborhood Favorites
+        const resources = [
+            // --- FOOD PANTRY & MEALS ---
+            {
+                id: "bx_food_1",
+                name: "POTS (Part of the Solution) Food Pantry",
+                category: "food",
+                neighborhood: "Fordham",
+                isGrassroots: false,
+                address: "2759 Webster Ave, Bronx, NY 10458",
+                phone: "(718) 220-4892",
+                lat: 40.8655,
+                lng: -73.8902,
+                desc: "Comprehensive emergency food assistance offering a hot soup kitchen, client-choice food pantry, legal aid, and shower facilities.",
+                services: ["Hot Meals Daily", "Emergency Grocery Pantry", "Legal Assistance", "Shower & Mail Services"],
+                hours: { "Mon - Fri": "8:30 AM - 3:30 PM", "Saturday": "9:00 AM - 12:00 PM" },
+                requirements: { noID: true, noIncome: true, walkIn: true, spanish: true, transit: true }
+            },
+            {
+                id: "bx_grass_1",
+                name: "La Morada Mutual Aid Kitchen & Pantry",
+                category: "food",
+                neighborhood: "Mott Haven",
+                isGrassroots: true,
+                address: "308 Willis Ave, Bronx, NY 10454",
+                phone: "(718) 292-0235",
+                lat: 40.8108,
+                lng: -73.9221,
+                desc: "Grassroots Oaxacan restaurant & community mutual aid hub distributing hundreds of free hot meals and emergency groceries weekly.",
+                services: ["Free Hot Meals", "Mutual Aid Pantry Bags", "Immigrant Rights Organizing", "No Questions Asked Food"],
+                hours: { "Tue - Sat": "11:00 AM - 4:00 PM", "Sun - Mon": "Closed" },
+                requirements: { noID: true, noIncome: true, walkIn: true, spanish: true, transit: true }
+            },
+            {
+                id: "bx_food_2",
+                name: "Davidson Community Center Pantry",
+                category: "food",
+                neighborhood: "Tremont",
+                isGrassroots: true,
+                address: "2038 Davidson Ave, Bronx, NY 10453",
+                phone: "(718) 731-6360",
+                lat: 40.8528,
+                lng: -73.9089,
+                desc: "Lesser-known local community center providing weekly fresh produce distributions, youth enrichment, and emergency bread/dairy.",
+                services: ["Weekly Produce Distribution", "Youth Program", "Senior Grocery Delivery"],
+                hours: { "Tuesday & Thursday": "9:30 AM - 1:30 PM" },
+                requirements: { noID: true, noIncome: true, walkIn: true, spanish: true, transit: true }
+            },
+            {
+                id: "bx_food_3",
+                name: "Mott Haven Community Fridge & Free Pantry",
+                category: "food",
+                neighborhood: "Mott Haven",
+                isGrassroots: true,
+                address: "141 St Ann's Ave, Bronx, NY 10454",
+                phone: "N/A (Grassroots)",
+                lat: 40.8068,
+                lng: -73.9182,
+                desc: "24/7 outdoor community refrigerator stocked by neighbors for neighbors. Free fresh produce, pre-packaged meals, and cold drinks.",
+                services: ["24/7 Open Fridge Access", "Free Fresh Vegetables & Fruits", "No ID or Check-In Needed"],
+                hours: { "Mon - Sun": "Open 24/7" },
+                requirements: { noID: true, noIncome: true, walkIn: true, spanish: true, transit: true }
+            },
+            {
+                id: "bx_food_4",
+                name: "Bright Temple AME Church Food Pantry",
+                category: "food",
+                neighborhood: "Hunts Point",
+                isGrassroots: true,
+                address: "812 Faile St, Bronx, NY 10474",
+                phone: "(718) 328-1650",
+                lat: 40.8171,
+                lng: -73.8865,
+                desc: "Longstanding neighborhood church pantry providing fresh poultry, pantry staples, and canned goods to South Bronx residents.",
+                services: ["Poultry & Grocery Bags", "Senior Fast-Track Line", "Community Outreach"],
+                hours: { "Wednesday": "9:00 AM - 12:00 PM" },
+                requirements: { noID: true, noIncome: true, walkIn: true, spanish: true, transit: true }
+            },
+            {
+                id: "bx_food_5",
+                name: "Kingsbridge Food Center at Church of Mediator",
+                category: "food",
+                neighborhood: "Fordham",
+                isGrassroots: true,
+                address: "260 W 231st St, Bronx, NY 10463",
+                phone: "(718) 548-3323",
+                lat: 40.8795,
+                lng: -73.9062,
+                desc: "Neighborhood community pantry serving Northwest Bronx families with fresh meats, vegetables, and baby diapers.",
+                services: ["Free Grocery Pantry", "Diaper Distribution", "Holiday Food Packs"],
+                hours: { "Saturday": "9:00 AM - 11:30 AM" },
+                requirements: { noID: true, noIncome: true, walkIn: true, spanish: true, transit: true }
+            },
+            {
+                id: "bx_food_6",
+                name: "Abundant Life Tabernacle Pantry",
+                category: "food",
+                neighborhood: "Soundview",
+                isGrassroots: true,
+                address: "1680 Soundview Ave, Bronx, NY 10472",
+                phone: "(718) 542-8380",
+                lat: 40.8322,
+                lng: -73.8715,
+                desc: "Dedicated Soundview parish distribution center providing fresh greens, bread, and non-perishables.",
+                services: ["Walk-in Grocery Bags", "Senior Assistance"],
+                hours: { "Friday": "10:00 AM - 1:00 PM" },
+                requirements: { noID: true, noIncome: true, walkIn: true, spanish: true, transit: true }
+            },
+
+            // --- HEALTHCARE & CLINICS ---
+            {
+                id: "bx_health_1",
+                name: "NYC Health + Hospitals / Lincoln Center",
+                category: "health",
+                neighborhood: "Mott Haven",
+                isGrassroots: false,
+                address: "234 E 149th St, Bronx, NY 10451",
+                phone: "(718) 579-5000",
+                lat: 40.8172,
+                lng: -73.9245,
+                desc: "Full-service public hospital and trauma center offering outpatient clinics, pediatrics, prenatal care, and emergency room services.",
+                services: ["24/7 Emergency Room", "Pediatrics & Prenatal Care", "Sliding-Scale Health Clinic"],
+                hours: { "Emergency Room": "Open 24/7", "Outpatient Clinics": "Mon - Fri: 8:00 AM - 5:00 PM" },
+                requirements: { noID: true, noIncome: true, walkIn: true, spanish: true, transit: true }
+            },
+            {
+                id: "bx_health_2",
+                name: "Union Community Health Center (Grand Concourse)",
+                category: "health",
+                neighborhood: "Fordham",
+                isGrassroots: true,
+                address: "2021 Grand Concourse, Bronx, NY 10453",
+                phone: "(718) 220-2020",
+                lat: 40.8522,
+                lng: -73.9038,
+                desc: "Community health clinic providing affordable primary care, dental, optometry, and physical therapy for uninsured families.",
+                services: ["Primary Medical & Dental", "Low-Cost Vision & Eye Exams", "Pediatric Immunizations"],
+                hours: { "Mon - Fri": "8:00 AM - 6:00 PM", "Saturday": "8:30 AM - 4:00 PM" },
+                requirements: { noID: true, noIncome: true, walkIn: true, spanish: true, transit: true }
+            },
+            {
+                id: "bx_health_3",
+                name: "Urban Horizons Family Health Center",
+                category: "health",
+                neighborhood: "Morrisania",
+                isGrassroots: true,
+                address: "50 E 168th St, Bronx, NY 10452",
+                phone: "(718) 293-3900",
+                lat: 40.8371,
+                lng: -73.9189,
+                desc: "Neighborhood community health center offering sliding-fee scale medical visits, diabetes prevention, and mental wellness.",
+                services: ["Family Medicine", "Preventative Screening", "Mental Health Counseling"],
+                hours: { "Mon - Fri": "8:30 AM - 5:00 PM" },
+                requirements: { noID: true, noIncome: true, walkIn: true, spanish: true, transit: true }
+            },
+            {
+                id: "bx_health_4",
+                name: "Urban Health Plan - Plaza del Castillo",
+                category: "health",
+                neighborhood: "Hunts Point",
+                isGrassroots: false,
+                address: "1065 Southern Blvd, Bronx, NY 10459",
+                phone: "(718) 589-2440",
+                lat: 40.8252,
+                lng: -73.8924,
+                desc: "Community health network delivering accessible primary, pediatric, and chronic illness care regardless of status.",
+                services: ["Family Medicine", "Pediatrics", "Women's Health", "Asthma Care"],
+                hours: { "Mon - Fri": "7:30 AM - 6:00 PM", "Saturday": "8:00 AM - 3:00 PM" },
+                requirements: { noID: true, noIncome: true, walkIn: true, spanish: true, transit: true }
+            },
+
+            // --- REHAB, HARM REDUCTION & CARE ---
+            {
+                id: "bx_rehab_1",
+                name: "Boom!Health Harm Reduction Center",
+                category: "rehab",
+                neighborhood: "Mott Haven",
+                isGrassroots: true,
+                address: "3144 Third Ave, Bronx, NY 10451",
+                phone: "(718) 292-7718",
+                lat: 40.8231,
+                lng: -73.9112,
+                desc: "Grassroots harm reduction hub offering syringe access, Narcan distribution, peer counseling, hot showers, and healthcare referrals.",
+                services: ["Free Narcan / Naloxone Kits", "Syringe Access & Disposal", "Peer Counseling & Hot Meals", "Shower Facilities"],
+                hours: { "Mon - Fri": "9:00 AM - 5:00 PM" },
+                requirements: { noID: true, noIncome: true, walkIn: true, spanish: true, transit: true }
+            },
+            {
+                id: "bx_rehab_2",
+                name: "St. Ann's Corner Harm Reduction Institute (SACRHI)",
+                category: "rehab",
+                neighborhood: "Mott Haven",
+                isGrassroots: true,
+                address: "886 Westchester Ave, Bronx, NY 10459",
+                phone: "(718) 585-5544",
+                lat: 40.8211,
+                lng: -73.8998,
+                desc: "Community-driven recovery and harm reduction facility providing health kits, overdose prevention training, and street outreach.",
+                services: ["Overdose Prevention Training", "Street Outreach & Supplies", "Bilingual Support Groups"],
+                hours: { "Mon - Fri": "8:30 AM - 4:30 PM" },
+                requirements: { noID: true, noIncome: true, walkIn: true, spanish: true, transit: true }
+            },
+            {
+                id: "bx_rehab_3",
+                name: "Samaritan Daytop Village Recovery Center",
+                category: "rehab",
+                neighborhood: "Highbridge",
+                isGrassroots: false,
+                address: "2050 Grand Concourse, Bronx, NY 10457",
+                phone: "(718) 294-1111",
+                lat: 40.8524,
+                lng: -73.9022,
+                desc: "Outpatient substance use treatment center providing medication-assisted treatment (MAT), peer counseling, and mental health therapy.",
+                services: ["Medication-Assisted Treatment (MAT)", "Outpatient Recovery Counseling", "Peer Support Groups"],
+                hours: { "Mon - Fri": "7:00 AM - 4:30 PM", "Saturday": "8:00 AM - 12:00 PM" },
+                requirements: { noID: true, noIncome: true, walkIn: true, spanish: true, transit: true }
+            },
+            {
+                id: "bx_rehab_4",
+                name: "VIP Community Services Wellness Center",
+                category: "rehab",
+                neighborhood: "Tremont",
+                isGrassroots: false,
+                address: "716 Fairmount Pl, Bronx, NY 10460",
+                phone: "(718) 583-5150",
+                lat: 40.8431,
+                lng: -73.8899,
+                desc: "Holistic addiction recovery and behavioral health center offering detox referral, residential care, and outpatient group therapy.",
+                services: ["Substance Use Assessment", "Methadone & MAT", "Crisis Stabilization"],
+                hours: { "Mon - Fri": "6:30 AM - 5:00 PM" },
+                requirements: { noID: true, noIncome: true, walkIn: true, spanish: true, transit: true }
+            },
+
+            // --- EDUCATION & LITERACY ---
+            {
+                id: "bx_edu_1",
+                name: "Mosholu Montefiore Community Center (MMCC)",
+                category: "education",
+                neighborhood: "Norwood",
+                isGrassroots: true,
+                address: "3450 Dekalb Ave, Bronx, NY 10467",
+                phone: "(718) 882-4000",
+                lat: 40.8805,
+                lng: -73.8821,
+                desc: "Vibrant neighborhood hub providing adult ESOL classes, GED test preparation, free after-school tutoring, and youth athletics.",
+                services: ["Free Adult ESOL & GED", "Youth After-School Tutoring", "Senior Computer Workshops"],
+                hours: { "Mon - Fri": "8:00 AM - 8:00 PM", "Saturday": "9:00 AM - 3:00 PM" },
+                requirements: { noID: true, noIncome: true, walkIn: true, spanish: true, transit: true }
+            },
+            {
+                id: "bx_edu_2",
+                name: "Casita Maria Center for Arts & Education",
+                category: "education",
+                neighborhood: "Hunts Point",
+                isGrassroots: true,
+                address: "928 Simpson St, Bronx, NY 10459",
+                phone: "(718) 589-2230",
+                lat: 40.8222,
+                lng: -73.8929,
+                desc: "Historic South Bronx arts and educational sanctuary empowering youth through creative arts workshops, literacy tutoring, and culture.",
+                services: ["Youth Creative Writing & Literacy", "Music & Visual Arts Workshops", "College Prep Mentorship"],
+                hours: { "Mon - Fri": "9:00 AM - 6:00 PM" },
+                requirements: { noID: true, noIncome: true, walkIn: true, spanish: true, transit: true }
+            },
+            {
+                id: "bx_edu_3",
+                name: "Hostos Community College Adult Learning Center",
+                category: "education",
+                neighborhood: "Mott Haven",
+                isGrassroots: false,
+                address: "564 Walton Ave, Bronx, NY 10451",
+                phone: "(718) 518-6840",
+                lat: 40.8179,
+                lng: -73.9272,
+                desc: "Free adult education classes offering ESOL, GED/HSE exam prep, and college readiness guidance.",
+                services: ["Free ESOL Language Classes", "GED / HSE Prep", "College Pathways Counseling"],
+                hours: { "Mon - Thu": "9:00 AM - 8:00 PM", "Friday": "9:00 AM - 4:00 PM" },
+                requirements: { noID: true, noIncome: true, walkIn: true, spanish: true, transit: true }
+            },
+            {
+                id: "bx_edu_4",
+                name: "Mercy Center Literacy & Family Learning",
+                category: "education",
+                neighborhood: "Mott Haven",
+                isGrassroots: true,
+                address: "377 E 145th St, Bronx, NY 10454",
+                phone: "(718) 993-2789",
+                lat: 40.8142,
+                lng: -73.9211,
+                desc: "Grassroots women-centered organization offering English classes, computer literacy, workforce readiness, and family support.",
+                services: ["ESOL & English Classes", "Women's Computer Literacy", "Citizenship Prep"],
+                hours: { "Mon - Fri": "9:00 AM - 5:00 PM" },
+                requirements: { noID: true, noIncome: true, walkIn: true, spanish: true, transit: true }
+            },
+
+            // --- EMPLOYMENT & WORKFORCE TRAINING ---
+            {
+                id: "bx_job_1",
+                name: "Sustainable South Bronx (SSBx) / The Hope Program",
+                category: "jobs",
+                neighborhood: "Hunts Point",
+                isGrassroots: true,
+                address: "1360 Garrison Ave, Bronx, NY 10474",
+                phone: "(718) 617-2028",
+                lat: 40.8189,
+                lng: -73.8861,
+                desc: "Innovative green-jobs training program preparing Bronx residents for careers in solar installation, green construction, and urban forestry.",
+                services: ["Free Solar & Green Construction Training", "OSHA Certifications", "Job Placement Assistance"],
+                hours: { "Mon - Fri": "8:30 AM - 4:30 PM" },
+                requirements: { noID: false, noIncome: true, walkIn: true, spanish: true, transit: true }
+            },
+            {
+                id: "bx_job_2",
+                name: "Green Worker Cooperatives",
+                category: "jobs",
+                neighborhood: "Morrisania",
+                isGrassroots: true,
+                address: "1231 Lafayette Ave, Bronx, NY 10474",
+                phone: "(718) 617-7323",
+                lat: 40.8160,
+                lng: -73.8891,
+                desc: "Grassroots business incubator helping South Bronx worker-owners launch worker-owned green cooperatives and small local businesses.",
+                services: ["Worker-Coop Academy", "Business Mentorship", "Seed Funding Access"],
+                hours: { "Mon - Fri": "10:00 AM - 5:00 PM" },
+                requirements: { noID: true, noIncome: true, walkIn: true, spanish: true, transit: true }
+            },
+            {
+                id: "bx_job_3",
+                name: "BronxWorks Workforce Development Center",
+                category: "jobs",
+                neighborhood: "Mott Haven",
+                isGrassroots: false,
+                address: "630 Jackson Ave, Bronx, NY 10455",
+                phone: "(718) 292-1200",
+                lat: 40.8149,
+                lng: -73.9102,
+                desc: "Comprehensive job assistance offering resume development, interview preparation, vocational certificates, and job placement.",
+                services: ["Resume & Interview Workshops", "Direct Job Placement", "Security & Driving Certifications"],
+                hours: { "Mon - Fri": "9:00 AM - 5:00 PM" },
+                requirements: { noID: false, noIncome: true, walkIn: true, spanish: true, transit: true }
+            },
+            {
+                id: "bx_job_4",
+                name: "Phipps Neighborhoods Career Network Center",
+                category: "jobs",
+                neighborhood: "Tremont",
+                isGrassroots: true,
+                address: "1071 East Tremont Ave, Bronx, NY 10460",
+                phone: "(718) 328-1122",
+                lat: 40.8402,
+                lng: -73.8821,
+                desc: "Community career hub offering young adults hands-on healthcare, culinary, and customer service job training.",
+                services: ["Medical Assistant Training", "Customer Service Certifications", "Youth Career Coaching"],
+                hours: { "Mon - Fri": "9:00 AM - 5:00 PM" },
+                requirements: { noID: false, noIncome: true, walkIn: true, spanish: true, transit: true }
+            },
+
+            // --- CLOTHING & ESSENTIAL GOODS ---
+            {
+                id: "bx_cloth_1",
+                name: "St. Ann's Church Clothes Closet",
+                category: "clothing",
+                neighborhood: "Mott Haven",
+                isGrassroots: true,
+                address: "295 St Ann's Ave, Bronx, NY 10454",
+                phone: "(718) 585-5632",
+                lat: 40.8105,
+                lng: -73.9175,
+                desc: "Parish outreach program providing free gently-used clothing for adults and children, work shoes, and baby garments.",
+                services: ["Free Adult & Children Clothing", "Infant Clothes & Blankets", "Work Apparel"],
+                hours: { "Wednesday": "9:30 AM - 1:00 PM", "Saturday": "10:00 AM - 12:30 PM" },
+                requirements: { noID: true, noIncome: true, walkIn: true, spanish: true, transit: true }
+            },
+            {
+                id: "bx_cloth_2",
+                name: "Fordham Mutual Aid Free Coat & Clothing Drive",
+                category: "clothing",
+                neighborhood: "Fordham",
+                isGrassroots: true,
+                address: "250 E Kingsbridge Rd, Bronx, NY 10458",
+                phone: "N/A (Grassroots)",
+                lat: 40.8628,
+                lng: -73.8962,
+                desc: "Volunteer-run community swap providing seasonal coats, shoes, and children's school clothes with no questions asked.",
+                services: ["Free Winter Coats & Sweaters", "School Uniforms & Shoes", "No ID Needed"],
+                hours: { "Saturday": "10:00 AM - 2:00 PM" },
+                requirements: { noID: true, noIncome: true, walkIn: true, spanish: true, transit: true }
+            },
+            {
+                id: "bx_cloth_3",
+                name: "The Salvation Army Bronx Citadel Center",
+                category: "clothing",
+                neighborhood: "Morrisania",
+                isGrassroots: false,
+                address: "425 E 159th St, Bronx, NY 10451",
+                phone: "(718) 665-8472",
+                lat: 40.8228,
+                lng: -73.9152,
+                desc: "Community center offering emergency clothing closet distributions, winter coat drives, and essential household items.",
+                services: ["Free Emergency Clothing", "Winter Coat Drives", "Household Essentials"],
+                hours: { "Tuesday & Thursday": "10:00 AM - 2:00 PM" },
+                requirements: { noID: true, noIncome: true, walkIn: true, spanish: true, transit: true }
+            },
+
+            // --- COMMUNITY SUPPORT & ADVOCACY ---
+            {
+                id: "bx_comm_1",
+                name: "Northwest Bronx Community & Clergy Coalition (NWBCCC)",
+                category: "community",
+                neighborhood: "Fordham",
+                isGrassroots: true,
+                address: "103 E 196th St, Bronx, NY 10468",
+                phone: "(718) 584-0515",
+                lat: 40.8688,
+                lng: -73.8938,
+                desc: "Grassroots organization advocating for tenant rights, affordable housing protection, environmental justice, and youth empowerment.",
+                services: ["Tenant Defense & Rent Stabilization", "Eviction Rights Workshops", "Youth Community Organizing"],
+                hours: { "Mon - Fri": "9:00 AM - 5:00 PM" },
+                requirements: { noID: true, noIncome: true, walkIn: true, spanish: true, transit: true }
+            },
+            {
+                id: "bx_comm_2",
+                name: "Mothers on the Move (MOM)",
+                category: "community",
+                neighborhood: "Hunts Point",
+                isGrassroots: true,
+                address: "928 Intervale Ave, Bronx, NY 10459",
+                phone: "(718) 842-2757",
+                lat: 40.8221,
+                lng: -73.8965,
+                desc: "Social justice grassroots organization led by South Bronx mothers fighting for clean air, public school funding, and tenant rights.",
+                services: ["Parent & School Advocacy", "Environmental Justice Campaigns", "Tenant Organizing"],
+                hours: { "Mon - Fri": "10:00 AM - 5:00 PM" },
+                requirements: { noID: true, noIncome: true, walkIn: true, spanish: true, transit: true }
+            },
+            {
+                id: "bx_comm_3",
+                name: "Nos Quedamos / We Stay Community Land Trust",
+                category: "community",
+                neighborhood: "Morrisania",
+                isGrassroots: true,
+                address: "754 Melrose Ave, Bronx, NY 10451",
+                phone: "(718) 585-2323",
+                lat: 40.8202,
+                lng: -73.9168,
+                desc: "Grassroots South Bronx development coalition protecting long-term residents against displacement and building green community housing.",
+                services: ["Housing Stability Counseling", "Community Land Trust Outreach", "Local Worker Advocacy"],
+                hours: { "Mon - Fri": "9:00 AM - 5:00 PM" },
+                requirements: { noID: true, noIncome: true, walkIn: true, spanish: true, transit: true }
+            },
+            {
+                id: "bx_comm_4",
+                name: "Kingsbridge Heights Community Center (KHCC)",
+                category: "community",
+                neighborhood: "Fordham",
+                isGrassroots: false,
+                address: "3101 Kingsbridge Terrace, Bronx, NY 10463",
+                phone: "(718) 884-0700",
+                lat: 40.8782,
+                lng: -73.8985,
+                desc: "Multifaceted community center serving all ages with early childhood education, youth leadership, food garden programs, and crisis intervention.",
+                services: ["Head Start / Daycare", "Youth & Teen After-School", "Community Garden & Pantry"],
+                hours: { "Mon - Fri": "8:00 AM - 7:00 PM", "Saturday": "9:00 AM - 3:00 PM" },
+                requirements: { noID: true, noIncome: true, walkIn: true, spanish: true, transit: true }
+            },
+            {
+                id: "bx_comm_5",
+                name: "The Bronx Defenders Community Justice Center",
+                category: "community",
+                neighborhood: "Morrisania",
+                isGrassroots: false,
+                address: "360 E 161st St, Bronx, NY 10451",
+                phone: "(718) 838-7878",
+                lat: 40.8249,
+                lng: -73.9161,
+                desc: "Holistic defense and community advocacy group offering legal representation, housing defense, immigration legal aid, and social work.",
+                services: ["Tenant Rights & Eviction Defense", "Immigration Legal Help", "Social Work & Reentry Support"],
+                hours: { "Mon - Fri": "9:00 AM - 5:00 PM" },
+                requirements: { noID: true, noIncome: true, walkIn: true, spanish: true, transit: true }
+            }
+        ];
+
+        window.onload = function() {
+            initLeafletMap();
+            renderResources();
+            renderDetailPanel(resources[0].id);
+            document.getElementById('totalCount').innerText = resources.length;
+        };
+
+        function initLeafletMap() {
+            // Center map on Central Bronx
+            leafletMap = L.map('leafletMap').setView([40.8480, -73.8950], 12);
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '&copy; OpenStreetMap contributors'
+            }).addTo(leafletMap);
+
+            markersGroup = L.layerGroup().addTo(leafletMap);
+        }
+
+        function dismissSplash() {
+            const splash = document.getElementById('splashScreen');
+            splash.classList.add('fade-out');
+            setTimeout(() => {
+                splash.style.display = 'none';
+            }, 600);
+        }
+
+        function switchScreen(screenName) {
+            document.querySelectorAll('.wf-nav-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.screen-view').forEach(sc => sc.classList.remove('active'));
+
+            if (screenName === 'map') {
+                document.getElementById('navMap').classList.add('active');
+                document.getElementById('screenMapWorkspace').style.display = 'grid';
+                document.getElementById('screenListView').classList.remove('active');
+                document.getElementById('screenSavedView').classList.remove('active');
+                if (leafletMap) setTimeout(() => leafletMap.invalidateSize(), 200);
+            } else if (screenName === 'list') {
+                document.getElementById('navList').classList.add('active');
+                document.getElementById('screenMapWorkspace').style.display = 'none';
+                document.getElementById('screenListView').classList.add('active');
+                document.getElementById('screenSavedView').classList.remove('active');
+                renderFullListView();
+            } else if (screenName === 'saved') {
+                document.getElementById('navSaved').classList.add('active');
+                document.getElementById('screenMapWorkspace').style.display = 'none';
+                document.getElementById('screenListView').classList.remove('active');
+                document.getElementById('screenSavedView').classList.add('active');
+                renderSavedView();
+            }
+        }
+
+        function toggleCategory(btn, cat) {
+            document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            selectedCategory = cat;
+            filterLocations();
+        }
+
+        function filterLocations() {
+            const searchVal = document.getElementById('aiQueryInput').value.toLowerCase().trim();
+            const selectedNeigh = document.getElementById('neighborhoodSelect').value;
+            const chkGrassrootsOnly = document.getElementById('chkGrassrootsOnly').checked;
+            const chkNoID = document.getElementById('chkNoID').checked;
+            const chkNoIncome = document.getElementById('chkNoProofIncome').checked;
+            const chkWalkIn = document.getElementById('chkWalkIn').checked;
+            const chkSpanish = document.getElementById('chkSpanish').checked;
+            const chkTransit = document.getElementById('chkTransit').checked;
+
+            const filtered = resources.filter(res => {
+                // Category filter
+                if (selectedCategory !== 'all' && res.category !== selectedCategory) return false;
+
+                // Neighborhood dropdown filter
+                if (selectedNeigh !== 'all' && !res.neighborhood.includes(selectedNeigh)) return false;
+
+                // Grassroots filter
+                if (chkGrassrootsOnly && !res.isGrassroots) return false;
+
+                // Keyword search
+                if (searchVal) {
+                    if (searchVal === 'grassroots' || searchVal === 'local') {
+                        if (!res.isGrassroots) return false;
+                    } else {
+                        const matchName = res.name.toLowerCase().includes(searchVal);
+                        const matchDesc = res.desc.toLowerCase().includes(searchVal);
+                        const matchAddr = res.address.toLowerCase().includes(searchVal);
+                        const matchNeigh = res.neighborhood.toLowerCase().includes(searchVal);
+                        const matchCat = res.category.toLowerCase().includes(searchVal);
+                        if (!matchName && !matchDesc && !matchAddr && !matchNeigh && !matchCat) return false;
+                    }
+                }
+
+                // Checkbox requirements
+                if (chkNoID && !res.requirements.noID) return false;
+                if (chkNoIncome && !res.requirements.noIncome) return false;
+                if (chkWalkIn && !res.requirements.walkIn) return false;
+                if (chkSpanish && !res.requirements.spanish) return false;
+                if (chkTransit && !res.requirements.transit) return false;
+
+                // Distance calculation
+                const dist = calculateDistanceMiles(userCoords.lat, userCoords.lng, res.lat, res.lng);
+                if (dist > maxDistanceMiles) return false;
+
+                return true;
+            });
+
+            renderMapMarkers(filtered);
+            renderFullListView(filtered);
+
+            if (filtered.length > 0) {
+                renderDetailPanel(filtered[0].id);
+            } else {
+                document.getElementById('detailPanel').innerHTML = `
+                    <div style="text-align: center; padding: 24px; color: var(--text-muted);">
+                        <p style="font-weight: bold; margin-bottom: 8px;">No Bronx centers found</p>
+                        <p style="font-size: 12px;">Try broadening your search terms or expanding distance radius.</p>
+                    </div>
+                `;
+            }
+        }
+
+        function renderMapMarkers(resList = resources) {
+            if (!markersGroup) return;
+            markersGroup.clearLayers();
+
+            resList.forEach(res => {
+                const marker = L.marker([res.lat, res.lng]);
+                marker.bindPopup(`
+                    <div style="font-family: sans-serif; padding: 4px;">
+                        ${res.isGrassroots ? '<span style="font-size:10px; font-weight:bold; color:#b46b00; background:#fff8e7; padding:2px 4px; border-radius:4px;">⭐ Grassroots / Local</span><br>' : ''}
+                        <strong style="font-size: 13px; color: #132a36;">${res.name}</strong><br>
+                        <span style="font-size: 11px; color: #1f8257; font-weight: bold; text-transform: uppercase;">${res.category} • ${res.neighborhood}</span><br>
+                        <span style="font-size: 11px; color: #537080;">${res.address}</span><br>
+                        <a href="javascript:void(0)" onclick="selectResourceFromMap('${res.id}')" style="display:inline-block; margin-top:6px; font-size:11px; color:#216382; font-weight:bold;">View Center Info →</a>
+                    </div>
+                `);
+                markersGroup.addLayer(marker);
+            });
+
+            if (resList.length > 0) {
+                const group = new L.featureGroup(markersGroup.getLayers());
+                leafletMap.fitBounds(group.getBounds().pad(0.15));
+            }
+        }
+
+        function selectResourceFromMap(id) {
+            renderDetailPanel(id);
+            const res = resources.find(r => r.id === id);
+            if (res) {
+                leafletMap.flyTo([res.lat, res.lng], 15);
+            }
+        }
+
+        function renderDetailPanel(id) {
+            activeSelectedResourceId = id;
+            const res = resources.find(r => r.id === id) || resources[0];
+            const isSaved = savedCenterIds.includes(res.id);
+            const dist = calculateDistanceMiles(userCoords.lat, userCoords.lng, res.lat, res.lng).toFixed(1);
+            const t = translations[currentLang] || translations.en;
+
+            let hoursRows = "";
+            for (let [day, time] of Object.entries(res.hours)) {
+                hoursRows += `<tr><td>${day}</td><td>${time}</td></tr>`;
+            }
+
+            let serviceChips = res.services.map(s => `<span class="req-chip">✔ ${s}</span>`).join("");
+
+            document.getElementById('detailPanel').innerHTML = `
+                <div class="resource-card-header">
+                    <div class="badge-row">
+                        <span class="res-type-badge">${res.category.toUpperCase()} • ${res.neighborhood}</span>
+                        ${res.isGrassroots ? '<span class="grassroots-badge">⭐ Grassroots / Local Favorite</span>' : ''}
+                    </div>
+                    <div class="res-title">${res.name}</div>
+                    <div class="res-distance">📍 ${res.address} (${dist} miles away)</div>
+                </div>
+
+                <div class="ai-summary-box">
+                    <div class="ai-badge">🤖 Open Bx Verified Summary</div>
+                    <div class="ai-summary-text">${res.desc}</div>
+                </div>
+
+                <div class="info-block">
+                    <div class="info-block-title">${t.servicesProvided}</div>
+                    <div class="tag-cloud">${serviceChips}</div>
+                </div>
+
+                <div class="info-block">
+                    <div class="info-block-title">${t.whatYouNeed}</div>
+                    <div class="tag-cloud">
+                        ${res.requirements.noID ? '<span class="req-chip">🆔 No Photo ID Required</span>' : ''}
+                        ${res.requirements.noIncome ? '<span class="req-chip">💵 No Proof of Income</span>' : ''}
+                        ${res.requirements.walkIn ? '<span class="req-chip">🚶 Walk-ins Welcome</span>' : ''}
+                        ${res.requirements.spanish ? '<span class="req-chip">🗣️ Spanish / Multilingual</span>' : ''}
+                        ${res.requirements.transit ? '<span class="req-chip">🚆 Near Subway/Bus</span>' : ''}
+                    </div>
+                </div>
+
+                <div class="info-block">
+                    <div class="info-block-title">${t.hoursTitle}</div>
+                    <table class="hours-table">
+                        <tbody>${hoursRows}</tbody>
+                    </table>
+                </div>
+
+                <div class="action-buttons">
+                    <button class="btn-primary-wf" onclick="openDirections('${res.address}')">${t.getDirections}</button>
+                    <button class="btn-secondary-wf" onclick="toggleSaveCenter('${res.id}')">
+                        ${isSaved ? '★ Saved to Bookmark' : '☆ Bookmark Center'}
+                    </button>
+                    <button class="btn-secondary-wf" onclick="openModal('questionModal')">📞 Direct Contact: ${res.phone}</button>
+                </div>
+            `;
+        }
+
+        function renderFullListView(resList = null) {
+            const listToRender = resList || resources;
+            const container = document.getElementById('fullCardListContainer');
+            container.innerHTML = "";
+
+            if (listToRender.length === 0) {
+                container.innerHTML = `<p style="grid-column: 1/-1; color: var(--text-muted); text-align: center; padding: 20px;">No matching resources available.</p>`;
+                return;
+            }
+
+            listToRender.forEach(res => {
+                const isSaved = savedCenterIds.includes(res.id);
+                const card = document.createElement('div');
+                card.className = `card-item ${res.isGrassroots ? 'is-grassroots' : ''}`;
+                card.onclick = () => {
+                    switchScreen('map');
+                    selectResourceFromMap(res.id);
+                };
+
+                card.innerHTML = `
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <span class="res-type-badge">${res.category.toUpperCase()}</span>
+                        <div style="display:flex; gap:4px; align-items:center;">
+                            ${res.isGrassroots ? '<span class="grassroots-badge">⭐ Grassroots</span>' : ''}
+                            <small style="color: var(--text-muted); font-family: var(--font-mono);">${res.neighborhood}</small>
+                        </div>
+                    </div>
+                    <strong style="font-size: 15px;">${res.name}</strong>
+                    <div style="font-size: 12px; color: var(--text-muted);">📍 ${res.address}</div>
+                    <p style="font-size: 12px; line-height: 1.4;">${res.desc}</p>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-top: auto; font-size:12px; font-weight:bold; color:var(--primary-accent);">
+                        <span>📞 ${res.phone}</span>
+                        <span onclick="event.stopPropagation(); toggleSaveCenter('${res.id}')" style="cursor:pointer; color:${isSaved ? 'orange' : 'gray'};">
+                            ${isSaved ? '★ Saved' : '☆ Save'}
+                        </span>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function renderSavedView() {
+            const savedList = resources.filter(res => savedCenterIds.includes(res.id));
+            const container = document.getElementById('savedCardListContainer');
+            container.innerHTML = "";
+
+            if (savedList.length === 0) {
+                container.innerHTML = `
+                    <div style="grid-column: 1/-1; text-align: center; padding: 40px; background: white; border-radius: 12px; border: 1px solid var(--wireframe-border);">
+                        <p style="font-weight: bold; color: var(--text-muted);">No saved centers yet.</p>
+                        <p style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">Click 'Bookmark Center' on any resource to keep it here for quick reference.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            savedList.forEach(res => {
+                const card = document.createElement('div');
+                card.className = `card-item ${res.isGrassroots ? 'is-grassroots' : ''}`;
+                card.onclick = () => {
+                    switchScreen('map');
+                    selectResourceFromMap(res.id);
+                };
+
+                card.innerHTML = `
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <span class="res-type-badge">${res.category.toUpperCase()}</span>
+                        <span style="color: orange; font-size: 16px;">★</span>
+                    </div>
+                    <strong style="font-size: 15px;">${res.name}</strong>
+                    <div style="font-size: 12px; color: var(--text-muted);">📍 ${res.address}</div>
+                    <p style="font-size: 12px; line-height: 1.4;">${res.desc}</p>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-top: auto; font-size:12px; font-weight:bold; color:var(--primary-accent);">
+                        <span>📞 ${res.phone}</span>
+                        <button class="btn-secondary-wf" onclick="event.stopPropagation(); toggleSaveCenter('${res.id}')" style="padding: 2px 8px; font-size: 10px;">Remove</button>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function toggleSaveCenter(id) {
+            if (savedCenterIds.includes(id)) {
+                savedCenterIds = savedCenterIds.filter(i => i !== id);
+                showToast("Removed center from saved list.");
+            } else {
+                savedCenterIds.push(id);
+                showToast("Saved center to bookmarks!");
+            }
+            document.getElementById('savedCount').innerText = savedCenterIds.length;
+
+            if (document.getElementById('screenSavedView').classList.contains('active')) {
+                renderSavedView();
+            } else {
+                renderDetailPanel(activeSelectedResourceId);
+            }
+        }
+
+        function calculateDistanceMiles(lat1, lon1, lat2, lon2) {
+            const R = 3958.8; // Miles
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            return R * c;
+        }
+
+        function updateDistanceLabel(val) {
+            maxDistanceMiles = parseInt(val);
+            document.getElementById('distanceVal').innerText = `${val} miles radius`;
+            filterLocations();
+        }
+
+        function resetFilters() {
+            document.getElementById('aiQueryInput').value = "";
+            document.getElementById('neighborhoodSelect').value = "all";
+            document.getElementById('chkGrassrootsOnly').checked = false;
+            document.getElementById('chkNoID').checked = false;
+            document.getElementById('chkNoProofIncome').checked = false;
+            document.getElementById('chkWalkIn').checked = false;
+            document.getElementById('chkSpanish').checked = false;
+            document.getElementById('chkTransit').checked = false;
+            document.getElementById('distanceRange').value = 15;
+            maxDistanceMiles = 15;
+            document.getElementById('distanceVal').innerText = "15 miles radius";
+
+            document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+            document.querySelector('.cat-btn').classList.add('active');
+            selectedCategory = "all";
+
+            filterLocations();
+            showToast("Filters reset to default.");
+        }
+
+        function processAIQuery() {
+            filterLocations();
+        }
+
+        function applySampleQuery(q) {
+            if (q === 'Grassroots') {
+                document.getElementById('chkGrassrootsOnly').checked = true;
+                document.getElementById('aiQueryInput').value = "";
+            } else {
+                document.getElementById('aiQueryInput').value = q;
+            }
+            processAIQuery();
+        }
+
+        function requestUserLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (pos) => {
+                        userCoords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+                        document.getElementById('locationText').innerText = `GPS Active: Lat ${userCoords.lat.toFixed(4)}, Lng ${userCoords.lng.toFixed(4)}`;
+                        leafletMap.setView([userCoords.lat, userCoords.lng], 13);
+                        showToast("Location updated with your GPS position.");
+                        filterLocations();
+                    },
+                    () => {
+                        showToast("Unable to fetch exact location. Defaulting to Fordham Center, Bronx.");
+                    }
+                );
+            } else {
+                showToast("Geolocation is not supported by your browser.");
+            }
+        }
+
+        function openDirections(addr) {
+            const url = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(addr)}`;
+            window.open(url, '_blank');
+        }
+
+        function changeLanguage(langKey) {
+            currentLang = langKey;
+            const t = translations[langKey] || translations.en;
+
+            document.getElementById('txtSlogan').innerText = t.slogan;
+            document.getElementById('txtSubtitle').innerText = t.subtitle;
+            document.getElementById('navMap').innerText = t.navMap;
+            document.getElementById('navList').innerText = t.navList;
+            document.getElementById('btnSubmitQuestion').innerText = t.askBtn;
+            document.getElementById('lblShortcuts').innerText = t.shortcuts;
+            document.getElementById('lblFilterTitle').innerText = t.filterTitle;
+            document.getElementById('lblCategory').innerText = t.category;
+            document.getElementById('lblRequirements').innerText = t.reqs;
+            document.getElementById('lblNoID').innerText = t.noID;
+            document.getElementById('lblNoIncome').innerText = t.noIncome;
+            document.getElementById('lblWalkIn').innerText = t.walkIn;
+            document.getElementById('lblSpanish').innerText = t.spanish;
+            document.getElementById('lblTransit').innerText = t.transit;
+            document.getElementById('lblDistance').innerText = t.distance;
+            document.getElementById('lblAIScanner').innerText = t.scanner;
+            document.getElementById('lblListHeader').innerText = t.listHeader;
+            document.getElementById('lblListSub').innerText = t.listSub;
+            document.getElementById('lblSavedHeader').innerText = t.savedHeader;
+            document.getElementById('lblSavedSub').innerText = t.savedSub;
+
+            for (let [cat, label] of Object.entries(t.categories)) {
+                const el = document.getElementById(`catLabel_${cat}`);
+                if (el) el.innerText = label;
+            }
+
+            renderDetailPanel(activeSelectedResourceId);
+        }
+
+        /* Modals & Admin Logic */
+        function openModal(id) {
+            document.getElementById(id).classList.add('active');
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('active');
+        }
+
+        function submitUserQuestion() {
+            const lang = document.getElementById('questionLang').value;
+            const text = document.getElementById('questionTextInput').value.trim();
+            const phone = document.getElementById('questionPhoneInput').value.trim();
+
+            if (!text) {
+                showToast("Please enter your question before submitting.");
+                return;
+            }
+
+            const now = new Date();
+            const timeStr = `${(now.getMonth()+1).toString().padStart(2,'0')}/${now.getDate().toString().padStart(2,'0')} ${now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
+
+            userQuestionsList.unshift({
+                timestamp: timeStr,
+                lang: lang,
+                question: text,
+                phone: phone || "N/A"
+            });
+
+            document.getElementById('questionTextInput').value = "";
+            document.getElementById('questionPhoneInput').value = "";
+            closeModal('questionModal');
+            showToast("Your question was submitted successfully! A Bronx coordinator will follow up.");
+        }
+
+        function openAdminModal() {
+            openModal('adminAuthModal');
+        }
+
+        function verifyAdminPassword() {
+            const pass = document.getElementById('adminPasswordInput').value;
+            if (pass === "admin" || pass === "bronx" || pass === "1234" || pass === "447walesave") {
+                closeModal('adminAuthModal');
+                document.getElementById('adminPasswordInput').value = "";
+                renderAdminDashboardTable();
+                openModal('adminDashboardModal');
+            } else {
+                showToast("Incorrect Admin Password.");
+            }
+        }
+
+        function renderAdminDashboardTable() {
+            const tbody = document.getElementById('adminTableBody');
+            tbody.innerHTML = "";
+
+            if (userQuestionsList.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:12px; color:var(--text-muted);">No user requests logged.</td></tr>`;
+                return;
+            }
+
+            userQuestionsList.forEach((q, idx) => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${q.timestamp}</td>
+                    <td><span style="background:var(--bg-blue-light); padding:2px 6px; border-radius:4px;">${q.lang}</span></td>
+                    <td>${q.question}</td>
+                    <td><strong>${q.phone}</strong></td>
+                    <td><button onclick="deleteAdminEntry(${idx})" style="color:red; background:none; border:none; cursor:pointer; font-weight:bold;">✕ Delete</button></td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function deleteAdminEntry(idx) {
+            userQuestionsList.splice(idx, 1);
+            renderAdminDashboardTable();
+            showToast("Entry deleted.");
+        }
+
+        function clearAllAdminQuestions() {
+            userQuestionsList = [];
+            renderAdminDashboardTable();
+            showToast("All logged questions cleared.");
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toastMessage');
+            document.getElementById('toastText').innerText = msg;
+            toast.style.display = 'flex';
+            setTimeout(() => {
+                toast.style.display = 'none';
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

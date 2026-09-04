@@ -1,0 +1,1698 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Community Watch - The Bronx</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Leaflet CSS & JS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brandGreen: '#16a34a',
+            brandGreenDark: '#15803d',
+            brandGreenLight: '#dcfce7',
+            lightGrey: '#f3f4f6',
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Custom scrollbars */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #f1f1f1; }
+    ::-webkit-scrollbar-thumb { background: #16a34a; border-radius: 4px; }
+    
+    /* Marquee Animation for Breaking News */
+    .animate-marquee {
+      display: inline-block;
+      white-space: nowrap;
+      animation: marquee 25s linear infinite;
+    }
+    @keyframes marquee {
+      0% { transform: translateX(100%); }
+      100% { transform: translateX(-100%); }
+    }
+
+    .map-container {
+      height: 480px;
+      width: 100%;
+      border-radius: 0.75rem;
+      z-index: 1;
+    }
+
+    /* Custom Leaflet Dot Markers */
+    .custom-dot {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      border: 2px solid white;
+      box-shadow: 0 0 6px rgba(0,0,0,0.4);
+      cursor: pointer;
+    }
+    .dot-green { background-color: #22c55e; }
+    .dot-blue { background-color: #3b82f6; }
+    .dot-purple { background-color: #a855f7; }
+    .dot-orange { background-color: #f97316; }
+    .dot-red { background-color: #ef4444; }
+    .dot-yellow { background-color: #eab308; border: 3px solid #000; animation: pulse 1.5s infinite; }
+
+    @keyframes pulse {
+      0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(234, 179, 8, 0.7); }
+      70% { transform: scale(1.15); box-shadow: 0 0 0 10px rgba(234, 179, 8, 0); }
+      100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(234, 179, 8, 0); }
+    }
+  </style>
+</head>
+<body class="bg-lightGrey font-sans text-gray-800 min-h-screen flex flex-col">
+
+  <!-- PERMISSION MODAL -->
+  <div id="permissionModal" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl text-center">
+      <div class="w-16 h-16 bg-brandGreenLight text-brandGreen rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">
+        <i class="fa-solid fa-shield-halved"></i>
+      </div>
+      <h3 class="text-2xl font-bold text-gray-900 mb-2" data-i18n="perm_title">Allow Permissions</h3>
+      <p class="text-gray-600 text-sm mb-6" data-i18n="perm_desc">
+        Community Watch requires Location Services to show crimes/offenders near you in the Bronx, and Notification access to alert you of high-risk active emergencies.
+      </p>
+      <div class="flex flex-col gap-3">
+        <button onclick="acceptPermissions()" class="w-full py-3 bg-brandGreen hover:bg-brandGreenDark text-white font-semibold rounded-xl transition-all shadow-md" data-i18n="perm_allow">
+          <i class="fa-solid fa-check mr-2"></i> Allow Location & Notifications
+        </button>
+        <button onclick="closePermissions()" class="w-full py-2 text-gray-500 hover:text-gray-700 text-sm font-medium" data-i18n="perm_later">
+          Continue as Guest
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- HEADER / NAVBAR -->
+  <header class="bg-brandGreen text-white shadow-lg sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+      <!-- Title & Branding -->
+      <div class="flex items-center gap-3 cursor-pointer" onclick="navigateTo('home')">
+        <div class="bg-white text-brandGreen p-2 rounded-lg font-bold text-xl shadow">
+          <i class="fa-solid fa-shield-cat"></i>
+        </div>
+        <div>
+          <h1 class="text-xl md:text-2xl font-black tracking-tight" data-i18n="app_title">Community Watch</h1>
+          <p class="text-xs text-green-100 font-medium">Bronx Neighborhood Safety Network</p>
+        </div>
+      </div>
+
+      <!-- Controls Right -->
+      <div class="flex items-center gap-3">
+        <!-- Home Button -->
+        <button onclick="navigateTo('home')" class="bg-white/20 hover:bg-white/30 text-white px-3 py-1.5 rounded-lg text-sm font-semibold flex items-center gap-1 transition">
+          <i class="fa-solid fa-house"></i>
+          <span class="hidden sm:inline" data-i18n="nav_home">Home</span>
+        </button>
+
+        <!-- Language Selector -->
+        <div class="flex items-center gap-1 bg-white text-gray-800 px-3 py-1.5 rounded-lg text-sm font-medium shadow-sm">
+          <i class="fa-solid fa-globe text-brandGreen"></i>
+          <select id="languageSelect" onchange="changeLanguage(this.value)" class="bg-transparent focus:outline-none cursor-pointer font-semibold text-xs sm:text-sm">
+            <option value="en">English</option>
+            <option value="es">Español (Spanish)</option>
+            <option value="fr">Français (French)</option>
+            <option value="zh">中文 (Chinese)</option>
+            <option value="ar">العربية (Arabic)</option>
+            <option value="ru">Русский (Russian)</option>
+            <option value="bn">বাংলা (Bengali)</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN CONTENT CONTAINER -->
+  <main class="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6">
+
+    <!-- PAGE 0: HOME PAGE -->
+    <div id="page-home" class="page-content space-y-8">
+      
+      <!-- Welcome Hero -->
+      <div class="bg-white rounded-2xl p-6 md:p-8 shadow-sm border border-gray-200 text-center md:text-left flex flex-col md:flex-row items-center justify-between gap-6">
+        <div>
+          <span class="bg-green-100 text-brandGreenDark text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider" data-i18n="hero_badge">Live Bronx Alert System</span>
+          <h2 class="text-2xl md:text-4xl font-black text-gray-900 mt-2" data-i18n="hero_heading">Keeping the Bronx Safe & Connected</h2>
+          <p class="text-gray-600 mt-2 max-w-2xl text-sm md:text-base" data-i18n="hero_sub">
+            Real-time crime tracking, registered offender monitoring, and active emergency alerts for Bronx residents.
+          </p>
+        </div>
+        <div class="flex items-center gap-2">
+          <div class="text-right">
+            <p class="text-xs text-gray-500 font-semibold" data-i18n="user_loc">YOUR CURRENT LOCATION</p>
+            <p class="text-sm font-bold text-gray-800"><i class="fa-solid fa-location-dot text-red-500 mr-1"></i> Fordham, Bronx NY</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 5 MAIN CARDS + ABOUT US -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        
+        <!-- Card 1: Crime Map -->
+        <div onclick="navigateTo('crimeMap')" class="bg-white rounded-2xl overflow-hidden border border-gray-200 shadow-md hover:shadow-xl transition-all cursor-pointer group flex flex-col">
+          <!-- Custom SVG Visual Card -->
+          <div class="h-44 bg-slate-800 relative flex items-center justify-center p-4">
+            <svg class="w-full h-full" viewBox="0 0 300 150" fill="none">
+              <rect width="300" height="150" fill="#1e293b" />
+              <!-- Map grid lines -->
+              <path d="M0 30 H300 M0 75 H300 M0 120 H300 M50 0 V150 M150 0 V150 M250 0 V150" stroke="#334155" stroke-width="2" stroke-dasharray="4 4"/>
+              <path d="M20 140 Q 80 40, 280 20" stroke="#475569" stroke-width="8"/>
+              <!-- Requested Dots: Green, Blue, Purple, Orange, Red + 1 Yellow -->
+              <circle cx="50" cy="40" r="8" fill="#22c55e" class="animate-bounce" />
+              <circle cx="110" cy="90" r="8" fill="#3b82f6" />
+              <circle cx="180" cy="35" r="8" fill="#a855f7" />
+              <circle cx="230" cy="110" r="8" fill="#f97316" />
+              <circle cx="270" cy="50" r="8" fill="#ef4444" />
+              <circle cx="140" cy="75" r="10" fill="#eab308" stroke="#000" stroke-width="2"/>
+            </svg>
+            <span class="absolute top-3 left-3 bg-brandGreen text-white text-xs font-bold px-2.5 py-1 rounded-md shadow" data-i18n="badge_live">LIVE MAP</span>
+          </div>
+          <div class="p-5 flex-1 flex flex-col justify-between">
+            <div>
+              <h3 class="text-xl font-bold text-gray-900 group-hover:text-brandGreen transition-colors flex items-center justify-between" data-i18n="nav_crimemap">
+                Crime Map
+                <i class="fa-solid fa-arrow-right text-sm text-gray-400 group-hover:text-brandGreen group-hover:translate-x-1 transition-all"></i>
+              </h3>
+              <p class="text-xs text-gray-500 mt-2" data-i18n="desc_crimemap">
+                View assaults, robberies, homicides, and other active crime incidents updated within the last 24 hours.
+              </p>
+            </div>
+            <button class="mt-4 w-full py-2 bg-gray-100 group-hover:bg-brandGreen group-hover:text-white text-gray-700 font-semibold text-xs rounded-xl transition" data-i18n="btn_explore">
+              Open Crime Map
+            </button>
+          </div>
+        </div>
+
+        <!-- Card 2: Nearby Offenders -->
+        <div onclick="navigateTo('nearbyOffenders')" class="bg-white rounded-2xl overflow-hidden border border-gray-200 shadow-md hover:shadow-xl transition-all cursor-pointer group flex flex-col">
+          <!-- Custom SVG Visual Card -->
+          <div class="h-44 bg-slate-900 relative flex items-center justify-center p-4">
+            <svg class="w-full h-full" viewBox="0 0 300 150" fill="none">
+              <rect width="300" height="150" fill="#0f172a" />
+              <!-- Map outline mock -->
+              <circle cx="150" cy="75" r="60" stroke="#334155" stroke-width="2" stroke-dasharray="3 3"/>
+              <circle cx="150" cy="75" r="100" stroke="#1e293b" stroke-width="2"/>
+              <!-- Dots: Green, Red, Orange, Blue, Purple + Yellow -->
+              <circle cx="120" cy="45" r="8" fill="#22c55e" />
+              <circle cx="190" cy="60" r="8" fill="#ef4444" />
+              <circle cx="170" cy="115" r="8" fill="#f97316" />
+              <circle cx="90" cy="100" r="8" fill="#3b82f6" />
+              <circle cx="220" cy="80" r="8" fill="#a855f7" />
+              <circle cx="150" cy="75" r="10" fill="#eab308" stroke="#000" stroke-width="2" />
+            </svg>
+            <span class="absolute top-3 left-3 bg-red-600 text-white text-xs font-bold px-2.5 py-1 rounded-md shadow" data-i18n="badge_registry">REGISTRY</span>
+          </div>
+          <div class="p-5 flex-1 flex flex-col justify-between">
+            <div>
+              <h3 class="text-xl font-bold text-gray-900 group-hover:text-brandGreen transition-colors flex items-center justify-between" data-i18n="nav_offenders">
+                Nearby Offenders
+                <i class="fa-solid fa-arrow-right text-sm text-gray-400 group-hover:text-brandGreen group-hover:translate-x-1 transition-all"></i>
+              </h3>
+              <p class="text-xs text-gray-500 mt-2" data-i18n="desc_offenders">
+                Track registered criminals, sex offenders, robbers, and assaulters living in your vicinity.
+              </p>
+            </div>
+            <button class="mt-4 w-full py-2 bg-gray-100 group-hover:bg-brandGreen group-hover:text-white text-gray-700 font-semibold text-xs rounded-xl transition" data-i18n="btn_explore">
+              View Criminals
+            </button>
+          </div>
+        </div>
+
+        <!-- Card 3: Active Emergencies -->
+        <div onclick="navigateTo('activeEmergencies')" class="bg-white rounded-2xl overflow-hidden border border-gray-200 shadow-md hover:shadow-xl transition-all cursor-pointer group flex flex-col">
+          <!-- Custom SVG Visual Card with Red Background saying "SOS!" -->
+          <div class="h-44 bg-red-600 relative flex items-center justify-center p-4">
+            <svg class="w-full h-full" viewBox="0 0 300 150" fill="none">
+              <rect width="300" height="150" fill="#dc2626" />
+              <!-- Flashing warning lines -->
+              <polygon points="150,20 280,130 20,130" fill="#ef4444" stroke="#fef08a" stroke-width="4"/>
+              <text x="150" y="105" text-anchor="middle" fill="#ffffff" font-size="42" font-weight="900" font-family="sans-serif">SOS!</text>
+            </svg>
+            <span class="absolute top-3 left-3 bg-yellow-400 text-black text-xs font-black px-2.5 py-1 rounded-md shadow animate-pulse" data-i18n="badge_urgent">URGENT</span>
+          </div>
+          <div class="p-5 flex-1 flex flex-col justify-between">
+            <div>
+              <h3 class="text-xl font-bold text-gray-900 group-hover:text-brandGreen transition-colors flex items-center justify-between" data-i18n="nav_emergencies">
+                Active Emergencies
+                <i class="fa-solid fa-arrow-right text-sm text-gray-400 group-hover:text-brandGreen group-hover:translate-x-1 transition-all"></i>
+              </h3>
+              <p class="text-xs text-gray-500 mt-2" data-i18n="desc_emergencies">
+                Live news ticker, active police dispatches, and emergency broadcast reports in the Bronx.
+              </p>
+            </div>
+            <button class="mt-4 w-full py-2 bg-gray-100 group-hover:bg-brandGreen group-hover:text-white text-gray-700 font-semibold text-xs rounded-xl transition" data-i18n="btn_explore">
+              Check Emergencies
+            </button>
+          </div>
+        </div>
+
+        <!-- Card 4: Neighborhood Search -->
+        <div onclick="navigateTo('neighborhoodSearch')" class="bg-white rounded-2xl overflow-hidden border border-gray-200 shadow-md hover:shadow-xl transition-all cursor-pointer group flex flex-col">
+          <!-- Custom SVG Card showing a house around trees with a sign in front that says "Beware!" -->
+          <div class="h-44 bg-emerald-900 relative flex items-center justify-center p-4">
+            <svg class="w-full h-full" viewBox="0 0 300 150" fill="none">
+              <rect width="300" height="150" fill="#064e3b" />
+              <!-- Trees -->
+              <path d="M 30 120 L 50 60 L 70 120 Z" fill="#047857"/>
+              <path d="M 230 120 L 255 50 L 280 120 Z" fill="#047857"/>
+              <!-- House -->
+              <polygon points="150,30 200,70 100,70" fill="#b91c1c"/>
+              <rect x="110" y="70" width="80" height="50" fill="#fef3c7" />
+              <rect x="140" y="90" width="20" height="30" fill="#78350f" />
+              <!-- "Beware!" Sign in front -->
+              <rect x="125" y="105" width="50" height="25" fill="#facc15" stroke="#000" stroke-width="2" rx="2"/>
+              <line x1="150" y1="130" x2="150" y2="145" stroke="#78350f" stroke-width="4"/>
+              <text x="150" y="122" text-anchor="middle" fill="#000000" font-size="10" font-weight="bold" font-family="sans-serif">BEWARE!</text>
+            </svg>
+            <span class="absolute top-3 left-3 bg-blue-600 text-white text-xs font-bold px-2.5 py-1 rounded-md shadow" data-i18n="badge_search">SEARCH</span>
+          </div>
+          <div class="p-5 flex-1 flex flex-col justify-between">
+            <div>
+              <h3 class="text-xl font-bold text-gray-900 group-hover:text-brandGreen transition-colors flex items-center justify-between" data-i18n="nav_search">
+                Neighborhood Search
+                <i class="fa-solid fa-arrow-right text-sm text-gray-400 group-hover:text-brandGreen group-hover:translate-x-1 transition-all"></i>
+              </h3>
+              <p class="text-xs text-gray-500 mt-2" data-i18n="desc_search">
+                Type any specific Bronx address or block to view local crime & criminal maps centered on that target location.
+              </p>
+            </div>
+            <button class="mt-4 w-full py-2 bg-gray-100 group-hover:bg-brandGreen group-hover:text-white text-gray-700 font-semibold text-xs rounded-xl transition" data-i18n="btn_explore">
+              Search Address
+            </button>
+          </div>
+        </div>
+
+        <!-- Card 5: Report a Crime -->
+        <div onclick="navigateTo('reportCrime')" class="bg-white rounded-2xl overflow-hidden border border-gray-200 shadow-md hover:shadow-xl transition-all cursor-pointer group flex flex-col">
+          <div class="h-44 bg-amber-600 relative flex items-center justify-center p-4">
+            <div class="text-center text-white">
+              <i class="fa-solid fa-bullhorn text-5xl mb-2 text-yellow-200"></i>
+              <p class="text-xs font-bold tracking-widest uppercase" data-i18n="banner_report">Citizen Dispatch</p>
+            </div>
+          </div>
+          <div class="p-5 flex-1 flex flex-col justify-between">
+            <div>
+              <h3 class="text-xl font-bold text-gray-900 group-hover:text-brandGreen transition-colors flex items-center justify-between" data-i18n="nav_report">
+                Report a Crime
+                <i class="fa-solid fa-arrow-right text-sm text-gray-400 group-hover:text-brandGreen group-hover:translate-x-1 transition-all"></i>
+              </h3>
+              <p class="text-xs text-gray-500 mt-2" data-i18n="desc_report">
+                Submit an incident report in your area to notify neighbors and publish directly to the live Crime Map.
+              </p>
+            </div>
+            <button class="mt-4 w-full py-2 bg-gray-100 group-hover:bg-brandGreen group-hover:text-white text-gray-700 font-semibold text-xs rounded-xl transition" data-i18n="btn_explore">
+              File Report
+            </button>
+          </div>
+        </div>
+
+        <!-- Card 6: About Us -->
+        <div onclick="navigateTo('aboutUs')" class="bg-white rounded-2xl overflow-hidden border border-gray-200 shadow-md hover:shadow-xl transition-all cursor-pointer group flex flex-col">
+          <div class="h-44 bg-brandGreenDark relative flex items-center justify-center p-4">
+            <div class="text-center text-white">
+              <i class="fa-solid fa-users text-5xl mb-2 text-green-200"></i>
+              <p class="text-xs font-bold tracking-widest uppercase">Comp Sci High Project</p>
+            </div>
+          </div>
+          <div class="p-5 flex-1 flex flex-col justify-between">
+            <div>
+              <h3 class="text-xl font-bold text-gray-900 group-hover:text-brandGreen transition-colors flex items-center justify-between" data-i18n="nav_about">
+                About Us
+                <i class="fa-solid fa-arrow-right text-sm text-gray-400 group-hover:text-brandGreen group-hover:translate-x-1 transition-all"></i>
+              </h3>
+              <p class="text-xs text-gray-500 mt-2" data-i18n="desc_about">
+                Meet the four Comp Sci High students (Jamilet, Lovaya, Geanna, Ethel) who engineered Community Watch.
+              </p>
+            </div>
+            <button class="mt-4 w-full py-2 bg-gray-100 group-hover:bg-brandGreen group-hover:text-white text-gray-700 font-semibold text-xs rounded-xl transition" data-i18n="btn_explore">
+              Read Our Story
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- PAGE 1: CRIME MAP ("Crime Watch Near Me") -->
+    <div id="page-crimeMap" class="page-content space-y-6 hidden">
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
+        <div>
+          <h2 class="text-2xl md:text-3xl font-extrabold text-gray-900" data-i18n="title_crimemap">Crime Watch Near Me</h2>
+          <p class="text-xs md:text-sm text-gray-500 mt-1" data-i18n="sub_crimemap">
+            Showing all crimes reported within the last 24 hours in the Bronx. Refreshed daily.
+          </p>
+        </div>
+        <button onclick="navigateTo('home')" class="self-start md:self-auto px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-xl text-sm flex items-center gap-2">
+          <i class="fa-solid fa-chevron-left"></i> <span data-i18n="btn_back">Back to Home</span>
+        </button>
+      </div>
+
+      <!-- Map & Sidebar Controls Layout -->
+      <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        <!-- Sidebar Filter & Legend -->
+        <div class="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm space-y-6">
+          <h3 class="font-bold text-lg text-gray-900 flex items-center gap-2">
+            <i class="fa-solid fa-filter text-brandGreen"></i> <span data-i18n="filter_title">Filter & Notifications</span>
+          </h3>
+          <p class="text-xs text-gray-500" data-i18n="filter_desc">Select crime categories to show on map and trigger alerts:</p>
+          
+          <div class="space-y-3">
+            <label class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 cursor-pointer">
+              <input type="checkbox" checked onchange="toggleCrimeFilter('assault')" class="w-4 h-4 text-brandGreen rounded focus:ring-brandGreen">
+              <span class="w-3.5 h-3.5 rounded-full bg-green-500 inline-block"></span>
+              <span class="text-sm font-semibold text-gray-800" data-i18n="crime_assault">Assault</span>
+            </label>
+            <label class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 cursor-pointer">
+              <input type="checkbox" checked onchange="toggleCrimeFilter('kidnapping')" class="w-4 h-4 text-brandGreen rounded focus:ring-brandGreen">
+              <span class="w-3.5 h-3.5 rounded-full bg-blue-500 inline-block"></span>
+              <span class="text-sm font-semibold text-gray-800" data-i18n="crime_kidnapping">Kidnapping</span>
+            </label>
+            <label class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 cursor-pointer">
+              <input type="checkbox" checked onchange="toggleCrimeFilter('robbery')" class="w-4 h-4 text-brandGreen rounded focus:ring-brandGreen">
+              <span class="w-3.5 h-3.5 rounded-full bg-purple-500 inline-block"></span>
+              <span class="text-sm font-semibold text-gray-800" data-i18n="crime_robbery">Robbery</span>
+            </label>
+            <label class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 cursor-pointer">
+              <input type="checkbox" checked onchange="toggleCrimeFilter('murder')" class="w-4 h-4 text-brandGreen rounded focus:ring-brandGreen">
+              <span class="w-3.5 h-3.5 rounded-full bg-orange-500 inline-block"></span>
+              <span class="text-sm font-semibold text-gray-800" data-i18n="crime_murder">Murder</span>
+            </label>
+            <label class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 cursor-pointer">
+              <input type="checkbox" checked onchange="toggleCrimeFilter('rape')" class="w-4 h-4 text-brandGreen rounded focus:ring-brandGreen">
+              <span class="w-3.5 h-3.5 rounded-full bg-red-500 inline-block"></span>
+              <span class="text-sm font-semibold text-gray-800" data-i18n="crime_rape">Rape</span>
+            </label>
+          </div>
+
+          <div class="pt-4 border-t border-gray-200">
+            <div class="flex items-center gap-2">
+              <span class="w-4 h-4 rounded-full bg-yellow-400 border border-black inline-block"></span>
+              <span class="text-xs font-bold text-gray-700" data-i18n="your_location">Yellow Dot = Your Location</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Interactive Map Container -->
+        <div class="lg:col-span-3">
+          <div id="crimeMapContainer" class="map-container shadow-md border border-gray-300"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAGE 2: NEARBY OFFENDERS ("Criminals Near Me") -->
+    <div id="page-nearbyOffenders" class="page-content space-y-6 hidden">
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
+        <div>
+          <h2 class="text-2xl md:text-3xl font-extrabold text-gray-900" data-i18n="title_offenders">Criminals Near Me</h2>
+          <p class="text-xs md:text-sm text-gray-500 mt-1" data-i18n="sub_offenders">
+            Interactive Bronx map displaying local registered offenders, thieves, sex offenders, and assaulters.
+          </p>
+        </div>
+        <button onclick="navigateTo('home')" class="self-start md:self-auto px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-xl text-sm flex items-center gap-2">
+          <i class="fa-solid fa-chevron-left"></i> <span data-i18n="btn_back">Back to Home</span>
+        </button>
+      </div>
+
+      <!-- Map & Controls Layout -->
+      <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        <!-- Sidebar Filter -->
+        <div class="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm space-y-6">
+          <h3 class="font-bold text-lg text-gray-900 flex items-center gap-2">
+            <i class="fa-solid fa-user-shield text-brandGreen"></i> <span data-i18n="filter_offenders">Offender Filters</span>
+          </h3>
+          <p class="text-xs text-gray-500" data-i18n="filter_desc">Select offender types to show on map and alert settings:</p>
+          
+          <div class="space-y-3">
+            <label class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 cursor-pointer">
+              <input type="checkbox" checked onchange="toggleOffenderFilter('assaulter')" class="w-4 h-4 text-brandGreen rounded focus:ring-brandGreen">
+              <span class="w-3.5 h-3.5 rounded-full bg-green-500 inline-block"></span>
+              <span class="text-sm font-semibold text-gray-800" data-i18n="off_assaulter">Assaulters</span>
+            </label>
+            <label class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 cursor-pointer">
+              <input type="checkbox" checked onchange="toggleOffenderFilter('kidnapper')" class="w-4 h-4 text-brandGreen rounded focus:ring-brandGreen">
+              <span class="w-3.5 h-3.5 rounded-full bg-blue-500 inline-block"></span>
+              <span class="text-sm font-semibold text-gray-800" data-i18n="off_kidnapper">Kidnappers</span>
+            </label>
+            <label class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 cursor-pointer">
+              <input type="checkbox" checked onchange="toggleOffenderFilter('thief')" class="w-4 h-4 text-brandGreen rounded focus:ring-brandGreen">
+              <span class="w-3.5 h-3.5 rounded-full bg-purple-500 inline-block"></span>
+              <span class="text-sm font-semibold text-gray-800" data-i18n="off_thief">Thieves / Robbers</span>
+            </label>
+            <label class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 cursor-pointer">
+              <input type="checkbox" checked onchange="toggleOffenderFilter('murderer')" class="w-4 h-4 text-brandGreen rounded focus:ring-brandGreen">
+              <span class="w-3.5 h-3.5 rounded-full bg-orange-500 inline-block"></span>
+              <span class="text-sm font-semibold text-gray-800" data-i18n="off_murderer">Murderers</span>
+            </label>
+            <label class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 cursor-pointer">
+              <input type="checkbox" checked onchange="toggleOffenderFilter('sex_offender')" class="w-4 h-4 text-brandGreen rounded focus:ring-brandGreen">
+              <span class="w-3.5 h-3.5 rounded-full bg-red-500 inline-block"></span>
+              <span class="text-sm font-semibold text-gray-800" data-i18n="off_rapist">Sex Offenders / Rapists</span>
+            </label>
+          </div>
+
+          <div class="pt-4 border-t border-gray-200">
+            <div class="flex items-center gap-2">
+              <span class="w-4 h-4 rounded-full bg-yellow-400 border border-black inline-block"></span>
+              <span class="text-xs font-bold text-gray-700" data-i18n="your_location">Yellow Dot = Your Location</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Interactive Offender Map Container -->
+        <div class="lg:col-span-3">
+          <div id="offenderMapContainer" class="map-container shadow-md border border-gray-300"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAGE 3: ACTIVE EMERGENCIES -->
+    <div id="page-activeEmergencies" class="page-content space-y-6 hidden">
+      <!-- Top Breaking News Marquee -->
+      <div class="bg-red-600 text-white rounded-xl shadow-lg p-3 overflow-hidden flex items-center gap-3 border-2 border-red-700">
+        <span class="bg-black text-yellow-300 text-xs font-black px-3 py-1.5 rounded uppercase tracking-widest shrink-0" data-i18n="ticker_title">
+          <i class="fa-solid fa-triangle-exclamation text-red-500 mr-1 animate-ping"></i> BREAKING NEWS
+        </span>
+        <div class="overflow-hidden whitespace-nowrap w-full">
+          <div class="animate-marquee font-bold text-sm" id="newsMarquee">
+            🚨 ACTIVE POLICE DISPATCH: Armed Robbery on Fordham Rd & Grand Concourse | 🚨 TRAFFIC ALERT: Major accidents on Major Deegan Expwy near Bronx Zoo | 🚨 MISSING PERSON: Search in progress near Pelham Bay Park
+          </div>
+        </div>
+      </div>
+
+      <!-- Header -->
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
+        <div>
+          <h2 class="text-2xl md:text-3xl font-extrabold text-gray-900" data-i18n="nav_emergencies">Active Emergencies</h2>
+          <p class="text-xs md:text-sm text-gray-500 mt-1" data-i18n="sub_emergencies">
+            Recent emergency dispatches and citizen reports from the past week (ordered recent to oldest).
+          </p>
+        </div>
+        <button onclick="navigateTo('home')" class="self-start md:self-auto px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-xl text-sm flex items-center gap-2">
+          <i class="fa-solid fa-chevron-left"></i> <span data-i18n="btn_back">Back to Home</span>
+        </button>
+      </div>
+
+      <!-- Emergency Reports Scrollable List -->
+      <div class="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
+        <h3 class="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+          <i class="fa-solid fa-clock-rotate-left text-red-600"></i> <span data-i18n="reports_header">Weekly Incident Reports Log</span>
+        </h3>
+        
+        <div id="emergenciesList" class="space-y-4 max-h-[500px] overflow-y-auto pr-2">
+          <!-- Dynamic emergency reports will render here -->
+        </div>
+
+        <!-- Bottom Link to Report Page -->
+        <div class="mt-8 pt-6 border-t border-gray-200 bg-green-50 p-6 rounded-xl flex flex-col md:flex-row items-center justify-between gap-4 border border-green-200">
+          <div>
+            <h4 class="font-bold text-lg text-brandGreenDark" data-i18n="report_here_title">Report Here: Have an Active Emergency?</h4>
+            <p class="text-xs text-gray-600" data-i18n="report_here_desc">Submit a new incident report to immediately broadcast to the Bronx community map.</p>
+          </div>
+          <button onclick="navigateTo('reportCrime')" class="px-6 py-3 bg-brandGreen hover:bg-brandGreenDark text-white font-bold rounded-xl shadow-md transition shrink-0 flex items-center gap-2">
+            <i class="fa-solid fa-paper-plane"></i> <span data-i18n="btn_submit_report">Submit Emergency Report</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAGE 4: NEIGHBORHOOD SEARCH -->
+    <div id="page-neighborhoodSearch" class="page-content space-y-6 hidden">
+      <div class="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm space-y-4">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h2 class="text-2xl md:text-3xl font-extrabold text-gray-900" data-i18n="title_search">Neighborhood Search</h2>
+            <p class="text-xs md:text-sm text-gray-500 mt-1" data-i18n="sub_search">
+              Enter any address in the Bronx to center the map and view specific crimes and registered criminals at that location.
+            </p>
+          </div>
+          <button onclick="navigateTo('home')" class="self-start md:self-auto px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-xl text-sm flex items-center gap-2">
+            <i class="fa-solid fa-chevron-left"></i> <span data-i18n="btn_back">Back to Home</span>
+          </button>
+        </div>
+
+        <!-- Address Search Input -->
+        <div class="flex flex-col sm:flex-row gap-3 pt-2">
+          <div class="relative flex-1">
+            <i class="fa-solid fa-magnifying-glass absolute left-4 top-3.5 text-gray-400"></i>
+            <input type="text" id="addressInput" placeholder="e.g., 851 Grand Concourse, Bronx, NY or Pelham Bay" 
+                   class="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:ring-2 focus:ring-brandGreen focus:outline-none font-medium text-sm">
+          </div>
+          <button onclick="handleAddressSearch()" class="px-6 py-3 bg-brandGreen hover:bg-brandGreenDark text-white font-bold rounded-xl shadow transition shrink-0 flex items-center justify-center gap-2">
+            <i class="fa-solid fa-location-crosshairs"></i> <span data-i18n="btn_search_address">Search Address</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Map 1: Crimes at Searched Address -->
+      <div class="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm space-y-4">
+        <div class="flex items-center justify-between">
+          <h3 class="text-xl font-bold text-gray-900 flex items-center gap-2">
+            <i class="fa-solid fa-triangle-exclamation text-amber-500"></i>
+            <span data-i18n="search_crimes_title">Crimes Near Searched Address</span>
+          </h3>
+          <span class="text-xs font-semibold bg-gray-100 px-3 py-1 rounded-full text-gray-600" id="currentSearchAddrText">Location: Bronx Default</span>
+        </div>
+        <div id="searchCrimeMapContainer" class="map-container shadow-sm border border-gray-300"></div>
+      </div>
+
+      <!-- Map 2: Criminals at Searched Address (When scrolled down) -->
+      <div class="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm space-y-4">
+        <div class="flex items-center justify-between">
+          <h3 class="text-xl font-bold text-gray-900 flex items-center gap-2">
+            <i class="fa-solid fa-user-xmark text-red-600"></i>
+            <span data-i18n="search_offenders_title">Offenders Near Searched Address</span>
+          </h3>
+        </div>
+        <div id="searchOffenderMapContainer" class="map-container shadow-sm border border-gray-300"></div>
+      </div>
+    </div>
+
+    <!-- PAGE 5: REPORT A CRIME -->
+    <div id="page-reportCrime" class="page-content space-y-6 hidden">
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
+        <div>
+          <h2 class="text-2xl md:text-3xl font-extrabold text-gray-900" data-i18n="nav_report">Report a Crime in Your Area</h2>
+          <p class="text-xs md:text-sm text-gray-500 mt-1" data-i18n="sub_report">
+            Help keep the Bronx safe by submitting verified incident details directly to community watch.
+          </p>
+        </div>
+        <button onclick="navigateTo('home')" class="self-start md:self-auto px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-xl text-sm flex items-center gap-2">
+          <i class="fa-solid fa-chevron-left"></i> <span data-i18n="btn_back">Back to Home</span>
+        </button>
+      </div>
+
+      <div class="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 max-w-2xl mx-auto">
+        <form onsubmit="submitNewCrime(event)" class="space-y-4">
+          <div>
+            <label class="block text-xs font-bold uppercase text-gray-700 mb-1" data-i18n="lbl_crime_type">Crime Type</label>
+            <select id="reportCategory" required class="w-full p-3 bg-gray-50 border border-gray-300 rounded-xl focus:ring-2 focus:ring-brandGreen focus:outline-none font-medium">
+              <option value="assault">Assault (Green Dot)</option>
+              <option value="kidnapping">Kidnapping (Blue Dot)</option>
+              <option value="robbery">Robbery (Purple Dot)</option>
+              <option value="murder">Murder (Orange Dot)</option>
+              <option value="rape">Rape (Red Dot)</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold uppercase text-gray-700 mb-1" data-i18n="lbl_location">Bronx Address / Intersection</label>
+            <input type="text" id="reportAddress" placeholder="e.g. 161st St & Grand Concourse, Bronx" required 
+                   class="w-full p-3 bg-gray-50 border border-gray-300 rounded-xl focus:ring-2 focus:ring-brandGreen focus:outline-none font-medium">
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold uppercase text-gray-700 mb-1" data-i18n="lbl_description">Incident Description</label>
+            <textarea id="reportDesc" rows="4" placeholder="Provide clear details of what occurred..." required
+                      class="w-full p-3 bg-gray-50 border border-gray-300 rounded-xl focus:ring-2 focus:ring-brandGreen focus:outline-none font-medium"></textarea>
+          </div>
+
+          <button type="submit" class="w-full py-3.5 bg-brandGreen hover:bg-brandGreenDark text-white font-bold rounded-xl shadow-lg transition flex items-center justify-center gap-2">
+            <i class="fa-solid fa-paper-plane"></i> <span data-i18n="btn_post_report">Post to Crime Map & Active Emergencies</span>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- PAGE 6: ABOUT US -->
+    <div id="page-aboutUs" class="page-content space-y-6 hidden">
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
+        <div>
+          <h2 class="text-2xl md:text-3xl font-extrabold text-gray-900" data-i18n="nav_about">About Us</h2>
+          <p class="text-xs md:text-sm text-gray-500 mt-1">Empowering the Bronx through student innovation.</p>
+        </div>
+        <button onclick="navigateTo('home')" class="self-start md:self-auto px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-xl text-sm flex items-center gap-2">
+          <i class="fa-solid fa-chevron-left"></i> <span data-i18n="btn_back">Back to Home</span>
+        </button>
+      </div>
+
+      <div class="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 md:p-10 space-y-8">
+        <!-- Main Statement -->
+        <div class="bg-green-50 p-6 rounded-2xl border border-green-200 text-gray-800 space-y-4">
+          <h3 class="text-xl font-bold text-brandGreenDark">About us:</h3>
+          <p class="text-base leading-relaxed">
+            "We are four comp sci High students named Jamilet, Lovaya, Geanna and Ethel, who created a website called Community Watch. Our goals is to help people stay informed about what dangers are happening in their community and feel safer in their neighborhood."
+          </p>
+          <p class="text-base leading-relaxed">
+            "We designed Community Watch for a design competition but we hope it can become something that makes a real difference in the Bronx community. Our website is designed to help people stay aware, connected and prepared while encouraging everyone to look out for one another we believe that a safer community starts with an informed community."
+          </p>
+        </div>
+
+        <!-- Student Roles Section -->
+        <div>
+          <h3 class="text-2xl font-black text-gray-900 mb-6 text-center">Meet the Student Team</h3>
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <!-- Jamilet -->
+            <div class="bg-gray-50 p-6 rounded-2xl border border-gray-200 text-center hover:shadow-md transition">
+              <div class="w-16 h-16 bg-brandGreen text-white rounded-full flex items-center justify-center mx-auto text-2xl font-bold mb-3 shadow">
+                J
+              </div>
+              <h4 class="font-extrabold text-lg text-gray-900">Jamilet</h4>
+              <p class="text-xs font-bold text-brandGreenDark uppercase tracking-wider mt-1">Lead Engineer</p>
+            </div>
+
+            <!-- Ethel -->
+            <div class="bg-gray-50 p-6 rounded-2xl border border-gray-200 text-center hover:shadow-md transition">
+              <div class="w-16 h-16 bg-purple-600 text-white rounded-full flex items-center justify-center mx-auto text-2xl font-bold mb-3 shadow">
+                E
+              </div>
+              <h4 class="font-extrabold text-lg text-gray-900">Ethel</h4>
+              <p class="text-xs font-bold text-purple-700 uppercase tracking-wider mt-1">Pitch Leader</p>
+            </div>
+
+            <!-- Lovaya -->
+            <div class="bg-gray-50 p-6 rounded-2xl border border-gray-200 text-center hover:shadow-md transition">
+              <div class="w-16 h-16 bg-blue-600 text-white rounded-full flex items-center justify-center mx-auto text-2xl font-bold mb-3 shadow">
+                L
+              </div>
+              <h4 class="font-extrabold text-lg text-gray-900">Lovaya</h4>
+              <p class="text-xs font-bold text-blue-700 uppercase tracking-wider mt-1">Lead Designer</p>
+            </div>
+
+            <!-- Geanna -->
+            <div class="bg-gray-50 p-6 rounded-2xl border border-gray-200 text-center hover:shadow-md transition">
+              <div class="w-16 h-16 bg-amber-600 text-white rounded-full flex items-center justify-center mx-auto text-2xl font-bold mb-3 shadow">
+                G
+              </div>
+              <h4 class="font-extrabold text-lg text-gray-900">Geanna</h4>
+              <p class="text-xs font-bold text-amber-700 uppercase tracking-wider mt-1">Project Manager</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- MODAL FOR DOT DETAILS & COMMENTS (Pop up on marker click) -->
+  <div id="dotModal" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden shadow-2xl">
+      <!-- Modal Header -->
+      <div id="modalHeader" class="bg-brandGreen text-white p-4 flex items-center justify-between shrink-0">
+        <h3 id="modalTitle" class="text-xl font-bold">Item Details</h3>
+        <button onclick="closeDotModal()" class="text-white hover:text-gray-200 text-xl font-bold p-1">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- Modal Body (Scrollable) -->
+      <div class="p-6 overflow-y-auto space-y-6 flex-1">
+        <!-- Main Details Box -->
+        <div class="flex flex-col sm:flex-row gap-5 items-start">
+          <div id="modalImageContainer" class="w-full sm:w-44 h-44 bg-gray-100 rounded-xl overflow-hidden shrink-0 border border-gray-200 flex items-center justify-center">
+            <!-- Dynamic Image or SVG -->
+          </div>
+          <div class="space-y-2 flex-1">
+            <div id="modalBadge" class="inline-block px-3 py-1 rounded-full text-xs font-bold text-white bg-gray-600">Category</div>
+            <h4 id="modalSubHeading" class="text-lg font-bold text-gray-900">Name / Offense</h4>
+            <div id="modalTimeInfo" class="text-xs text-gray-500 font-medium">Time: Within 24h</div>
+            
+            <!-- Distance calculation display -->
+            <div class="bg-green-50 border border-green-200 p-3 rounded-xl mt-2">
+              <span class="text-xs text-brandGreenDark font-bold uppercase block" data-i18n="lbl_distance">Distance From You</span>
+              <p id="modalDistanceText" class="text-lg font-black text-brandGreenDark">0.4 miles / 2,112 feet</p>
+            </div>
+            
+            <p id="modalDescription" class="text-xs text-gray-600 pt-1">Description text...</p>
+          </div>
+        </div>
+
+        <!-- Community Comments Section -->
+        <div class="pt-4 border-t border-gray-200 space-y-4">
+          <div class="flex items-center justify-between">
+            <h4 class="font-extrabold text-lg text-gray-900 flex items-center gap-2">
+              <i class="fa-solid fa-comments text-brandGreen"></i>
+              <span data-i18n="comments_title">Community Comments</span>
+              <span id="commentCountBadge" class="bg-brandGreenLight text-brandGreenDark text-xs font-bold px-2 py-0.5 rounded-full">0</span>
+            </h4>
+          </div>
+
+          <!-- Add New Comment Box -->
+          <div class="bg-gray-50 p-3 rounded-xl border border-gray-200 space-y-2">
+            <input type="text" id="newCommentUser" placeholder="Your Name / Username" class="w-full p-2 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-brandGreen">
+            <textarea id="newCommentText" rows="2" placeholder="Share safety info or updates..." class="w-full p-2 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-brandGreen"></textarea>
+            <button onclick="postMainComment()" class="px-4 py-1.5 bg-brandGreen text-white font-bold text-xs rounded-lg hover:bg-brandGreenDark transition">
+              <i class="fa-solid fa-paper-plane mr-1"></i> Add Comment
+            </button>
+          </div>
+
+          <!-- Comments Thread List (At least 15-25 unique comments) -->
+          <div id="commentsContainer" class="space-y-3 max-h-72 overflow-y-auto pr-1">
+            <!-- Rendered comments with reply capability -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="bg-gray-900 text-gray-400 py-6 border-t border-gray-800 mt-auto">
+    <div class="max-w-7xl mx-auto px-4 text-center space-y-2">
+      <p class="text-sm font-semibold text-gray-300">
+        Community Watch &copy; 2026 - Bronx High School Design Project
+      </p>
+      <p class="text-xs text-gray-500">
+        Created by Jamilet (Lead Engineer), Ethel (Pitch Leader), Lovaya (Lead Designer), Geanna (Project Manager).
+      </p>
+    </div>
+  </footer>
+
+  <!-- JS LOGIC & APPLICATION ENGINE -->
+  <script>
+    // -------------------------------------------------------------
+    // GLOBAL STATE & USER LOCATION (Bronx Coordinates Default)
+    // -------------------------------------------------------------
+    const userLocation = {
+      lat: 40.8584,
+      lng: -73.8903,
+      address: "Fordham, Bronx, NY"
+    };
+
+    let activeItemForModal = null; // Stores dot currently viewed
+
+    // Filter states
+    const crimeFilters = { assault: true, kidnapping: true, robbery: true, murder: true, rape: true };
+    const offenderFilters = { assaulter: true, kidnapper: true, thief: true, murderer: true, sex_offender: true };
+
+    // Leaflet map instances
+    let crimeMap = null;
+    let offenderMap = null;
+    let searchCrimeMap = null;
+    let searchOffenderMap = null;
+
+    let crimeMarkersLayer = null;
+    let offenderMarkersLayer = null;
+    let searchCrimeLayer = null;
+    let searchOffenderLayer = null;
+
+    // -------------------------------------------------------------
+    // MULTI-LANGUAGE TRANSLATIONS DICTIONARY
+    // -------------------------------------------------------------
+    const translations = {
+      en: {
+        app_title: "Community Watch",
+        nav_home: "Home",
+        nav_crimemap: "Crime Map",
+        nav_offenders: "Nearby Offenders",
+        nav_emergencies: "Active Emergencies",
+        nav_search: "Neighborhood Search",
+        nav_report: "Report a Crime",
+        nav_about: "About Us",
+        hero_badge: "Live Bronx Alert System",
+        hero_heading: "Keeping the Bronx Safe & Connected",
+        hero_sub: "Real-time crime tracking, registered offender monitoring, and active emergency alerts for Bronx residents.",
+        user_loc: "YOUR CURRENT LOCATION",
+        desc_crimemap: "View assaults, robberies, homicides, and other active crime incidents updated within the last 24 hours.",
+        desc_offenders: "Track registered criminals, sex offenders, robbers, and assaulters living in your vicinity.",
+        desc_emergencies: "Live news ticker, active police dispatches, and emergency broadcast reports in the Bronx.",
+        desc_search: "Type any specific Bronx address or block to view local crime & criminal maps centered on that target location.",
+        desc_report: "Submit an incident report in your area to notify neighbors and publish directly to the live Crime Map.",
+        desc_about: "Meet the four Comp Sci High students (Jamilet, Lovaya, Geanna, Ethel) who engineered Community Watch.",
+        btn_explore: "Explore Section",
+        title_crimemap: "Crime Watch Near Me",
+        sub_crimemap: "Showing all crimes reported within the last 24 hours in the Bronx. Refreshed daily.",
+        title_offenders: "Criminals Near Me",
+        sub_offenders: "Interactive Bronx map displaying local registered offenders, thieves, sex offenders, and assaulters.",
+        title_search: "Neighborhood Search",
+        sub_search: "Enter any address in the Bronx to center the map and view specific crimes and registered criminals at that location.",
+        sub_report: "Help keep the Bronx safe by submitting verified incident details directly to community watch.",
+        filter_title: "Filter & Notifications",
+        filter_offenders: "Offender Filters",
+        filter_desc: "Select categories to show on map and trigger alerts:",
+        crime_assault: "Assault",
+        crime_kidnapping: "Kidnapping",
+        crime_robbery: "Robbery",
+        crime_murder: "Murder",
+        crime_rape: "Rape",
+        off_assaulter: "Assaulters",
+        off_kidnapper: "Kidnappers",
+        off_thief: "Thieves / Robbers",
+        off_murderer: "Murderers",
+        off_rapist: "Sex Offenders / Rapists",
+        your_location: "Yellow Dot = Your Location",
+        btn_back: "Back to Home",
+        badge_live: "LIVE MAP",
+        badge_registry: "REGISTRY",
+        badge_urgent: "URGENT",
+        badge_search: "SEARCH",
+        banner_report: "Citizen Dispatch",
+        ticker_title: "BREAKING NEWS",
+        lbl_distance: "Distance From You",
+        comments_title: "Community Comments",
+        perm_title: "Allow Permissions",
+        perm_desc: "Community Watch requires Location Services to show crimes/offenders near you in the Bronx, and Notification access to alert you of high-risk active emergencies.",
+        perm_allow: "Allow Location & Notifications",
+        perm_later: "Continue as Guest",
+        btn_search_address: "Search Address",
+        search_crimes_title: "Crimes Near Searched Address",
+        search_offenders_title: "Offenders Near Searched Address",
+        reports_header: "Weekly Incident Reports Log",
+        report_here_title: "Report Here: Have an Active Emergency?",
+        report_here_desc: "Submit a new incident report to immediately broadcast to the Bronx community map.",
+        btn_submit_report: "Submit Emergency Report",
+        lbl_crime_type: "Crime Type",
+        lbl_location: "Bronx Address / Intersection",
+        lbl_description: "Incident Description",
+        btn_post_report: "Post to Crime Map & Active Emergencies"
+      },
+      es: {
+        app_title: "Vigilancia Comunitaria",
+        nav_home: "Inicio",
+        nav_crimemap: "Mapa de Delitos",
+        nav_offenders: "Delincuentes Cercanos",
+        nav_emergencies: "Emergencias Activas",
+        nav_search: "Buscar Barrio",
+        nav_report: "Reportar Delito",
+        nav_about: "Nosotros",
+        hero_badge: "Alerta del Bronx en Vivo",
+        hero_heading: "Manteniendo el Bronx Seguro y Conectado",
+        hero_sub: "Rastreo de delitos en tiempo real y monitoreo de delincuentes registrados en el Bronx.",
+        user_loc: "TU UBICACIÓN ACTUAL",
+        desc_crimemap: "Ver agresiones, robos, homicidios y otros delitos en las últimas 24 horas.",
+        desc_offenders: "Rastree delincuentes registrados, ofensores sexuales y asaltantes en su área.",
+        desc_emergencies: "Noticias en vivo y reportes de emergencia en el Bronx.",
+        desc_search: "Escriba cualquier dirección del Bronx para ver mapas de delitos específicos.",
+        desc_report: "Envíe un reporte de incidente para notificar a sus vecinos.",
+        desc_about: "Conozca a las cuatro estudiantes de Comp Sci High (Jamilet, Lovaya, Geanna, Ethel).",
+        btn_explore: "Explorar Sección",
+        title_crimemap: "Vigilancia de Delitos Cerca de Mí",
+        sub_crimemap: "Mostrando delitos reportados en las últimas 24 horas en el Bronx.",
+        title_offenders: "Delincuentes Cerca de Mí",
+        sub_offenders: "Mapa interactivo del Bronx con delincuentes registrados.",
+        title_search: "Búsqueda por Vecindario",
+        sub_search: "Ingrese una dirección del Bronx para centrar el mapa.",
+        sub_report: "Ayude a mantener seguro el Bronx enviando detalles del incidente.",
+        filter_title: "Filtros y Notificaciones",
+        filter_offenders: "Filtro de Delincuentes",
+        filter_desc: "Seleccione categorías para mostrar en el mapa:",
+        crime_assault: "Agresión",
+        crime_kidnapping: "Secuestro",
+        crime_robbery: "Robo",
+        crime_murder: "Homicidio",
+        crime_rape: "Violación",
+        off_assaulter: "Agresores",
+        off_kidnapper: "Secuestradores",
+        off_thief: "Ladrones",
+        off_murderer: "Homicidas",
+        off_rapist: "Ofensores Sexuales",
+        your_location: "Punto Amarillo = Tu Ubicación",
+        btn_back: "Volver al Inicio",
+        badge_live: "EN VIVO",
+        badge_registry: "REGISTRO",
+        badge_urgent: "URGENTE",
+        badge_search: "BUSCAR",
+        banner_report: "Despacho Ciudadano",
+        ticker_title: "ÚLTIMA HORA",
+        lbl_distance: "Distancia Desde Ti",
+        comments_title: "Comentarios de la Comunidad",
+        perm_title: "Permitir Permisos",
+        perm_desc: "Vigilancia Comunitaria requiere servicios de ubicación y notificaciones.",
+        perm_allow: "Permitir Ubicación y Notificaciones",
+        perm_later: "Continuar como Invitado",
+        btn_search_address: "Buscar Dirección",
+        search_crimes_title: "Delitos Cerca de la Dirección Buscada",
+        search_offenders_title: "Delincuentes Cerca de la Dirección Buscada",
+        reports_header: "Registro Semanal de Reportes",
+        report_here_title: "¿Tiene una emergencia activa?",
+        report_here_desc: "Envíe un nuevo reporte para transmitirlo al mapa.",
+        btn_submit_report: "Enviar Reporte de Emergencia",
+        lbl_crime_type: "Tipo de Delito",
+        lbl_location: "Dirección en el Bronx",
+        lbl_description: "Descripción del Incidente",
+        btn_post_report: "Publicar en Mapa y Emergencias"
+      },
+      fr: {
+        app_title: "Surveillance Communautaire",
+        nav_home: "Accueil",
+        nav_crimemap: "Carte du Crime",
+        nav_offenders: "Criminels Proches",
+        nav_emergencies: "Urgences Actives",
+        nav_search: "Recherche Quartier",
+        nav_report: "Signaler un Crime",
+        nav_about: "À Propos",
+        hero_badge: "Système d'Alerte Bronx",
+        hero_heading: "Protéger le Bronx Ensemble",
+        hero_sub: "Suivi des crimes en temps réel et surveillance des délinquants dans le Bronx.",
+        user_loc: "VOTRE POSITION",
+        title_crimemap: "Surveillance près de chez moi",
+        title_offenders: "Criminels près de chez moi",
+        title_search: "Recherche de Quartier",
+        btn_back: "Retour",
+        your_location: "Point Jaune = Votre Position",
+        btn_search_address: "Chercher l'adresse",
+        comments_title: "Commentaires Communautaires",
+        lbl_distance: "Distance de vous"
+      },
+      zh: {
+        app_title: "社区警情通报",
+        nav_home: "首页",
+        nav_crimemap: "犯罪地图",
+        nav_offenders: "附近罪犯",
+        nav_emergencies: "实时紧急事件",
+        nav_search: "社区搜索",
+        nav_report: "举报犯罪",
+        nav_about: "关于我们",
+        hero_badge: "布朗克斯实时警报",
+        hero_heading: "保障布朗克斯安全与连通",
+        hero_sub: "实时犯罪跟踪，布朗克斯居民紧急警报。",
+        user_loc: "您的当前位置",
+        title_crimemap: "我附近的犯罪地图",
+        title_offenders: "附近的罪犯",
+        title_search: "社区搜索",
+        btn_back: "返回首页",
+        your_location: "黄点 = 您的位置",
+        btn_search_address: "搜索地址",
+        comments_title: "社区评论",
+        lbl_distance: "距离您的距离"
+      },
+      ar: {
+        app_title: "مراقبة المجتمع",
+        nav_home: "الرئيسية",
+        nav_crimemap: "خريطة الجريمة",
+        nav_offenders: "المجرمون القريبون",
+        nav_emergencies: "الطوارئ النشطة",
+        nav_search: "بحث الحي",
+        nav_report: "الإبلاغ عن جريمة",
+        nav_about: "معلومات عنا",
+        hero_badge: "نظام تنبيه البرونكس",
+        hero_heading: "الحفاظ على أمان البرونكس",
+        hero_sub: "تتبع الجرائم في الوقت الفعلي وتنبيهات الطوارئ.",
+        user_loc: "موقعك الحالي",
+        title_crimemap: "مراقبة الجريمة بالقرب مني",
+        title_offenders: "المجرمون بالقرب مني",
+        title_search: "بحث الحي",
+        btn_back: "العودة للرئيسية",
+        your_location: "النقطة الصفراء = موقعك",
+        btn_search_address: "بحث عن العنوان",
+        comments_title: "تعليقات المجتمع",
+        lbl_distance: "المسافة منك"
+      },
+      ru: {
+        app_title: "Общественный Дозор",
+        nav_home: "Главная",
+        nav_crimemap: "Карта Преступлений",
+        nav_offenders: "Преступники Рядом",
+        nav_emergencies: "Чрезвычайные Ситуации",
+        nav_search: "Поиск по Району",
+        nav_report: "Сообщить о Преступлении",
+        nav_about: "О Нас",
+        hero_badge: "Система Оповещения Бронкса",
+        hero_heading: "Безопасность Бронкса",
+        hero_sub: "Отслеживание преступлений в реальном времени и предупреждения.",
+        user_loc: "ВАШЕ МЕСТОПОЛОЖЕНИЕ",
+        title_crimemap: "Карта Преступлений Рядом",
+        title_offenders: "Преступники Рядом",
+        title_search: "Поиск Района",
+        btn_back: "На Главную",
+        your_location: "Желтая точка = Ваше положение",
+        btn_search_address: "Найти Адрес",
+        comments_title: "Комментарии Сообщества",
+        lbl_distance: "Расстояние до вас"
+      },
+      bn: {
+        app_title: "কমিউনিটি ওয়াচ",
+        nav_home: "হোম",
+        nav_crimemap: "অপরাধের মানচিত্র",
+        nav_offenders: "নিকটবর্তী অপরাধী",
+        nav_emergencies: "জরুরি সতর্কতা",
+        nav_search: "এলাকা অনুসন্ধান",
+        nav_report: "অপরাধ রিপোর্ট করুন",
+        nav_about: "আমাদের সম্পর্কে",
+        hero_badge: "ব্রঙ্কস লাইভ অ্যালার্ট",
+        hero_heading: "ব্রঙ্কসকে নিরাপদ ও সুরক্ষিত রাখা",
+        hero_sub: "রিয়েল-টাইম অপরাধ ট্র্যাকিং এবং জরুরী সতর্কতা।",
+        user_loc: "আপনার বর্তমান অবস্থান",
+        title_crimemap: "আমার কাছে অপরাধের মানচিত্র",
+        title_offenders: "আমার কাছে অপরাধীরা",
+        title_search: "এলাকা অনুসন্ধান",
+        btn_back: "হোমে ফিরে যান",
+        your_location: "হলুদ বিন্দু = আপনার অবস্থান",
+        btn_search_address: "ঠিকানা খুঁজুন",
+        comments_title: "কমিউনিটি মন্তব্য",
+        lbl_distance: "আপনার থেকে দূরত্ব"
+      }
+    };
+
+    let currentLang = 'en';
+
+    function changeLanguage(langCode) {
+      currentLang = langCode;
+      const dict = translations[langCode] || translations['en'];
+
+      document.querySelectorAll('[data-i18n]').forEach(elem => {
+        const key = elem.getAttribute('data-i18n');
+        if (dict[key]) {
+          elem.textContent = dict[key];
+        }
+      });
+    }
+
+    // -------------------------------------------------------------
+    // GENERATE RICH MOCK DATA (30+ CRIMINALS, 20+ CRIMES)
+    // -------------------------------------------------------------
+    const firstNames = ["Marcus", "Darnell", "Carlos", "Brandon", "Tyrone", "David", "Jose", "Anthony", "Malik", "Hector", "Jamal", "Victor", "Raymond", "Devon", "Xavier", "Derek", "Lamar", "Julio", "Emanuel", "Shawn", "Jessica", "Amanda", "Samantha", "Alexis", "Maria", "Tanya", "Kisha", "Vanessa", "Erica", "Jasmin"];
+    const lastNames = ["Rivera", "Jackson", "Rodriguez", "Washington", "Torres", "Williams", "Ortiz", "Davis", "Morales", "Harris", "Gomez", "Brown", "Perez", "Thomas", "Colon", "Sanchez", "Robinson", "Diaz", "Walker", "Cruz"];
+    
+    const crimeTypes = ["assault", "kidnapping", "robbery", "murder", "rape"];
+    const offenderTypes = ["assaulter", "kidnapper", "thief", "murderer", "sex_offender"];
+
+    const streetNames = [
+      "Grand Concourse", "Fordham Rd", "Pelham Pkwy", "161st St", "Tremont Ave", 
+      "Boston Rd", "Webster Ave", "White Plains Rd", "Southern Blvd", "Jerome Ave",
+      "Gun Hill Rd", "Melrose Ave", "Mott Ave", "Riverdale Ave", "Eastchester Rd"
+    ];
+
+    // Seeded Random Comments Pool
+    const sampleCommentTexts = [
+      "I live near here! Saw police lights around midnight.",
+      "Stay safe everyone! Lock your doors and windows.",
+      "Has anyone seen this person near the subway station?",
+      "Thanks Community Watch for updating this so quickly.",
+      "Spotted police searching the alley near the grocery store.",
+      "Is there any update from NYPD precinct 44?",
+      "Please stay indoors if you're walking home alone at night.",
+      "I walked past there 20 mins ago, area seems clear now.",
+      "Shared this with my family group chat immediately.",
+      "Comp Sci High students did an amazing job with this alert system!",
+      "Be careful around the bus stop at night.",
+      "Does anyone have security camera footage of this?",
+      "I'm keeping my kids inside for the rest of the day.",
+      "Always travel in groups in this area after sunset.",
+      "Saw two patrol cars at the corner earlier today.",
+      "Hopefully officers catch the suspect very soon.",
+      "Make sure to keep your valuables out of sight.",
+      "This neighborhood needs more streetlights installed.",
+      "Sending prayers to everyone involved.",
+      "Neighborhood watch group is conducting extra patrols tonight.",
+      "Glad this app alerts us right away!",
+      "Everyone stay vigilant on 161st street.",
+      "Check your ring doorbell cameras if you live on this block.",
+      "Report anything suspicious directly to 911!"
+    ];
+
+    function generateUniqueComments(count = 18) {
+      const comments = [];
+      for (let i = 0; i < count; i++) {
+        const user = firstNames[i % firstNames.length] + "_" + (10 + (i * 7) % 89);
+        const text = sampleCommentTexts[(i * 3 + count) % sampleCommentTexts.length];
+        const replies = [];
+        if (i % 3 === 0) {
+          replies.push({
+            user: "BronxNeighbor_" + (i + 1),
+            text: "Agreed! Thanks for heads up.",
+            time: "10m ago"
+          });
+        }
+        comments.push({
+          id: 'c_' + i + '_' + Math.random().toString(36).substr(2, 5),
+          user: user,
+          text: text,
+          time: (i + 1) * 12 + "m ago",
+          replies: replies
+        });
+      }
+      return comments;
+    }
+
+    // Generate 20+ Crimes in the Bronx
+    const crimeDatabase = [];
+    for (let i = 1; i <= 22; i++) {
+      const type = crimeTypes[i % crimeTypes.length];
+      const street = streetNames[i % streetNames.length];
+      const houseNum = 100 + i * 35;
+      const hoursAgo = (i % 23) + 1;
+      
+      // Random coordinates around Bronx (40.8100 to 40.8900, -73.9200 to -73.8300)
+      const lat = 40.8150 + (i * 0.0037) % 0.075;
+      const lng = -73.9150 + (i * 0.0041) % 0.080;
+
+      crimeDatabase.push({
+        id: 'crime_' + i,
+        category: type,
+        title: type.toUpperCase() + " INCIDENT",
+        location: houseNum + " " + street + ", Bronx, NY",
+        lat: lat,
+        lng: lng,
+        time: hoursAgo + " hours ago (Within 24h)",
+        description: `Active incident report filed at ${houseNum} ${street}. Police responded to scene. Citizen caution advised.`,
+        comments: generateUniqueComments(15 + (i % 8))
+      });
+    }
+
+    // Generate 30+ Registered Offenders in the Bronx
+    const offenderDatabase = [];
+    for (let i = 1; i <= 32; i++) {
+      const type = offenderTypes[i % offenderTypes.length];
+      const name = firstNames[i % firstNames.length] + " " + lastNames[i % lastNames.length];
+      const street = streetNames[(i + 4) % streetNames.length];
+      const houseNum = 200 + i * 28;
+
+      const lat = 40.8120 + (i * 0.0026) % 0.078;
+      const lng = -73.9180 + (i * 0.0033) % 0.082;
+
+      offenderDatabase.push({
+        id: 'offender_' + i,
+        category: type,
+        name: name,
+        typeLabel: type.replace('_', ' ').toUpperCase(),
+        location: houseNum + " " + street + ", Bronx, NY",
+        lat: lat,
+        lng: lng,
+        description: `Registered offender (${type.replace('_', ' ')}) residing at ${houseNum} ${street}. Compliant with local Bronx registry.`,
+        comments: generateUniqueComments(16 + (i % 7))
+      });
+    }
+
+    // Active Emergency Weekly Reports
+    const initialEmergencies = [
+      {
+        id: 'em_1',
+        title: "ARMED ROBBERY ALERT - FORDHAM RD",
+        date: "Today, 10:15 AM",
+        type: "robbery",
+        location: "Fordham Rd & Jerome Ave",
+        desc: "Police actively searching for suspect near subway entrance. Stay alert."
+      },
+      {
+        id: 'em_2',
+        title: "VEHICLE CARJACKING REPORT",
+        date: "Yesterday, 8:40 PM",
+        type: "robbery",
+        location: "161st St & River Ave",
+        desc: "Black sedan stolen at gunpoint. NYPD Precinct 44 investigating."
+      },
+      {
+        id: 'em_3',
+        title: "PHYSICAL ASSAULT NEAR PARK",
+        date: "2 days ago",
+        type: "assault",
+        location: "Pelham Bay Park Pavilion",
+        desc: "Disturbance reported near park trails. EMS responded on scene."
+      },
+      {
+        id: 'em_4',
+        title: "SUSPICIOUS ACTIVITY & BREAK-IN",
+        date: "4 days ago",
+        type: "robbery",
+        location: "Grand Concourse & 170th St",
+        desc: "Multiple apartment storage units broken into overnight."
+      }
+    ];
+
+    // -------------------------------------------------------------
+    // DISTANCE CALCULATOR (HAVERSINE FORMULA - MILES & FEET)
+    // -------------------------------------------------------------
+    function calculateDistance(lat1, lon1, lat2, lon2) {
+      const R = 3958.8; // Radius of Earth in miles
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLon = (lon2 - lon1) * Math.PI / 180;
+      const a = 
+        Math.sin(dLat/2) * Math.sin(dLat/2) +
+        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2) * Math.sin(dLon/2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      const miles = R * c;
+      const feet = Math.round(miles * 5280);
+      return {
+        miles: miles.toFixed(2),
+        feet: feet.toLocaleString()
+      };
+    }
+
+    // Helper for marker colors
+    function getDotColorClass(category) {
+      switch(category) {
+        case 'assault': case 'assaulter': return 'dot-green';
+        case 'kidnapping': case 'kidnapper': return 'dot-blue';
+        case 'robbery': case 'thief': return 'dot-purple';
+        case 'murder': case 'murderer': return 'dot-orange';
+        case 'rape': case 'sex_offender': return 'dot-red';
+        default: return 'dot-green';
+      }
+    }
+
+    function getBadgeBg(category) {
+      switch(category) {
+        case 'assault': case 'assaulter': return 'bg-green-600';
+        case 'kidnapping': case 'kidnapper': return 'bg-blue-600';
+        case 'robbery': case 'thief': return 'bg-purple-600';
+        case 'murder': case 'murderer': return 'bg-orange-600';
+        case 'rape': case 'sex_offender': return 'bg-red-600';
+        default: return 'bg-gray-600';
+      }
+    }
+
+    // -------------------------------------------------------------
+    // MAP INITIALIZATION ENGINE (LEAFLET)
+    // -------------------------------------------------------------
+    function initMaps() {
+      // 1. Crime Map
+      if (!crimeMap && document.getElementById('crimeMapContainer')) {
+        crimeMap = L.map('crimeMapContainer').setView([userLocation.lat, userLocation.lng], 13);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          maxZoom: 19,
+          attribution: '&copy; OpenStreetMap'
+        }).addTo(crimeMap);
+
+        crimeMarkersLayer = L.layerGroup().addTo(crimeMap);
+        renderCrimeMarkers(crimeMap, crimeMarkersLayer, crimeDatabase);
+      }
+
+      // 2. Offender Map
+      if (!offenderMap && document.getElementById('offenderMapContainer')) {
+        offenderMap = L.map('offenderMapContainer').setView([userLocation.lat, userLocation.lng], 13);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          maxZoom: 19,
+          attribution: '&copy; OpenStreetMap'
+        }).addTo(offenderMap);
+
+        offenderMarkersLayer = L.layerGroup().addTo(offenderMap);
+        renderOffenderMarkers(offenderMap, offenderMarkersLayer, offenderDatabase);
+      }
+
+      // 3. Search Crime Map
+      if (!searchCrimeMap && document.getElementById('searchCrimeMapContainer')) {
+        searchCrimeMap = L.map('searchCrimeMapContainer').setView([userLocation.lat, userLocation.lng], 14);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(searchCrimeMap);
+        searchCrimeLayer = L.layerGroup().addTo(searchCrimeMap);
+        renderCrimeMarkers(searchCrimeMap, searchCrimeLayer, crimeDatabase);
+      }
+
+      // 4. Search Offender Map
+      if (!searchOffenderMap && document.getElementById('searchOffenderMapContainer')) {
+        searchOffenderMap = L.map('searchOffenderMapContainer').setView([userLocation.lat, userLocation.lng], 14);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(searchOffenderMap);
+        searchOffenderLayer = L.layerGroup().addTo(searchOffenderMap);
+        renderOffenderMarkers(searchOffenderMap, searchOffenderLayer, offenderDatabase);
+      }
+    }
+
+    // Render User Location Pin (Yellow Dot)
+    function addUserPin(mapObj) {
+      const yellowIcon = L.divIcon({
+        className: 'custom-dot dot-yellow',
+        iconSize: [20, 20],
+        iconAnchor: [10, 10]
+      });
+      L.marker([userLocation.lat, userLocation.lng], { icon: yellowIcon })
+        .addTo(mapObj)
+        .bindPopup("<b>" + userLocation.address + "</b><br>Your Location");
+    }
+
+    // Render Crimes Markers
+    function renderCrimeMarkers(mapObj, layerGroup, items) {
+      layerGroup.clearLayers();
+      addUserPin(layerGroup);
+
+      items.forEach(item => {
+        if (!crimeFilters[item.category]) return;
+
+        const colorClass = getDotColorClass(item.category);
+        const customIcon = L.divIcon({
+          className: `custom-dot ${colorClass}`,
+          iconSize: [18, 18],
+          iconAnchor: [9, 9]
+        });
+
+        const marker = L.marker([item.lat, item.lng], { icon: customIcon });
+        marker.on('click', () => {
+          openDotModal(item, 'crime');
+        });
+        layerGroup.addLayer(marker);
+      });
+    }
+
+    // Render Offender Markers
+    function renderOffenderMarkers(mapObj, layerGroup, items) {
+      layerGroup.clearLayers();
+      addUserPin(layerGroup);
+
+      items.forEach(item => {
+        if (!offenderFilters[item.category]) return;
+
+        const colorClass = getDotColorClass(item.category);
+        const customIcon = L.divIcon({
+          className: `custom-dot ${colorClass}`,
+          iconSize: [18, 18],
+          iconAnchor: [9, 9]
+        });
+
+        const marker = L.marker([item.lat, item.lng], { icon: customIcon });
+        marker.on('click', () => {
+          openDotModal(item, 'offender');
+        });
+        layerGroup.addLayer(marker);
+      });
+    }
+
+    // Toggle Filters
+    function toggleCrimeFilter(cat) {
+      crimeFilters[cat] = !crimeFilters[cat];
+      if (crimeMap && crimeMarkersLayer) renderCrimeMarkers(crimeMap, crimeMarkersLayer, crimeDatabase);
+      if (searchCrimeMap && searchCrimeLayer) renderCrimeMarkers(searchCrimeMap, searchCrimeLayer, crimeDatabase);
+    }
+
+    function toggleOffenderFilter(cat) {
+      offenderFilters[cat] = !offenderFilters[cat];
+      if (offenderMap && offenderMarkersLayer) renderOffenderMarkers(offenderMap, offenderMarkersLayer, offenderDatabase);
+      if (searchOffenderMap && searchOffenderLayer) renderOffenderMarkers(searchOffenderMap, searchOffenderLayer, offenderDatabase);
+    }
+
+    // -------------------------------------------------------------
+    // MODAL & COMMUNITY COMMENTS ENGINE
+    // -------------------------------------------------------------
+    function openDotModal(item, type) {
+      activeItemForModal = item;
+      const modal = document.getElementById('dotModal');
+      const badge = document.getElementById('modalBadge');
+      const title = document.getElementById('modalTitle');
+      const sub = document.getElementById('modalSubHeading');
+      const timeInfo = document.getElementById('modalTimeInfo');
+      const desc = document.getElementById('modalDescription');
+      const distText = document.getElementById('modalDistanceText');
+      const imgContainer = document.getElementById('modalImageContainer');
+
+      // Calculate distance from user location
+      const dist = calculateDistance(userLocation.lat, userLocation.lng, item.lat, item.lng);
+      distText.textContent = `${dist.miles} miles / ${dist.feet} feet`;
+
+      badge.className = `inline-block px-3 py-1 rounded-full text-xs font-bold text-white ${getBadgeBg(item.category)}`;
+      badge.textContent = item.category.toUpperCase();
+
+      if (type === 'crime') {
+        title.textContent = "Crime Details";
+        sub.textContent = item.title + " - " + item.location;
+        timeInfo.textContent = "Reported: " + item.time;
+        desc.textContent = item.description;
+
+        // Custom SVG Crime Placeholder Graphic
+        imgContainer.innerHTML = `
+          <svg class="w-full h-full p-4 bg-slate-800 text-red-500" viewBox="0 0 100 100">
+            <circle cx="50" cy="50" r="40" fill="none" stroke="currentColor" stroke-width="6"/>
+            <path d="M50 25 V55 M50 68 V72" stroke="currentColor" stroke-width="8" stroke-linecap="round"/>
+          </svg>
+        `;
+      } else {
+        title.textContent = "Offender Profile";
+        sub.textContent = item.name + " (" + item.typeLabel + ")";
+        timeInfo.textContent = "Address: " + item.location;
+        desc.textContent = item.description;
+
+        // Mugshot / Avatar Graphic
+        imgContainer.innerHTML = `
+          <div class="flex flex-col items-center justify-center h-full w-full bg-slate-200 text-slate-600">
+            <i class="fa-solid fa-user-shield text-5xl"></i>
+            <span class="text-[10px] font-bold uppercase mt-2">Mugshot File</span>
+          </div>
+        `;
+      }
+
+      renderCommentsList();
+      modal.classList.remove('hidden');
+    }
+
+    function closeDotModal() {
+      document.getElementById('dotModal').classList.add('hidden');
+    }
+
+    function renderCommentsList() {
+      if (!activeItemForModal) return;
+      const container = document.getElementById('commentsContainer');
+      const badge = document.getElementById('commentCountBadge');
+      const comments = activeItemForModal.comments || [];
+
+      badge.textContent = comments.length;
+      container.innerHTML = '';
+
+      comments.forEach(c => {
+        const commentDiv = document.createElement('div');
+        commentDiv.className = 'bg-gray-50 p-3 rounded-xl border border-gray-200 space-y-2';
+
+        let repliesHtml = '';
+        if (c.replies && c.replies.length > 0) {
+          c.replies.forEach(r => {
+            repliesHtml += `
+              <div class="ml-4 mt-2 p-2 bg-white rounded-lg border border-gray-200 text-xs space-y-1">
+                <div class="flex justify-between font-bold text-gray-800">
+                  <span><i class="fa-solid fa-reply text-brandGreen mr-1"></i>${r.user}</span>
+                  <span class="text-[10px] text-gray-400 font-normal">${r.time || 'Just now'}</span>
+                </div>
+                <p class="text-gray-600">${r.text}</p>
+              </div>
+            `;
+          });
+        }
+
+        commentDiv.innerHTML = `
+          <div class="flex items-center justify-between">
+            <span class="font-bold text-xs text-gray-900"><i class="fa-solid fa-circle-user text-brandGreen mr-1"></i>${c.user}</span>
+            <span class="text-[10px] text-gray-400">${c.time}</span>
+          </div>
+          <p class="text-xs text-gray-700">${c.text}</p>
+          ${repliesHtml}
+          <!-- Reply Input -->
+          <div class="pt-1 flex gap-2">
+            <input type="text" id="reply_input_${c.id}" placeholder="Reply..." class="flex-1 p-1.5 text-xs bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-brandGreen">
+            <button onclick="addReply('${c.id}')" class="px-3 py-1 bg-gray-200 hover:bg-brandGreen hover:text-white text-gray-700 text-xs font-bold rounded-md transition">
+              Reply
+            </button>
+          </div>
+        `;
+        container.appendChild(commentDiv);
+      });
+    }
+
+    function postMainComment() {
+      const userVal = document.getElementById('newCommentUser').value.trim() || 'AnonymousNeighbor';
+      const textVal = document.getElementById('newCommentText').value.trim();
+
+      if (!textVal) return;
+
+      activeItemForModal.comments.unshift({
+        id: 'c_' + Date.now(),
+        user: userVal,
+        text: textVal,
+        time: 'Just now',
+        replies: []
+      });
+
+      document.getElementById('newCommentText').value = '';
+      renderCommentsList();
+    }
+
+    function addReply(commentId) {
+      const input = document.getElementById(`reply_input_${commentId}`);
+      if (!input) return;
+      const textVal = input.value.trim();
+      if (!textVal) return;
+
+      const parentComment = activeItemForModal.comments.find(c => c.id === commentId);
+      if (parentComment) {
+        if (!parentComment.replies) parentComment.replies = [];
+        parentComment.replies.push({
+          user: 'Resident_Bronx',
+          text: textVal,
+          time: 'Just now'
+        });
+      }
+
+      renderCommentsList();
+    }
+
+    // -------------------------------------------------------------
+    // PAGE 3: ACTIVE EMERGENCIES RENDERER
+    // -------------------------------------------------------------
+    function renderEmergenciesList() {
+      const container = document.getElementById('emergenciesList');
+      container.innerHTML = '';
+
+      initialEmergencies.forEach(em => {
+        const item = document.createElement('div');
+        item.className = 'p-4 rounded-xl border border-red-200 bg-red-50/50 flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-sm hover:border-red-400 transition';
+        item.innerHTML = `
+          <div class="space-y-1">
+            <div class="flex items-center gap-2">
+              <span class="bg-red-600 text-white text-[10px] font-black px-2 py-0.5 rounded uppercase">EMERGENCY</span>
+              <span class="text-xs font-bold text-gray-500">${em.date}</span>
+            </div>
+            <h4 class="font-bold text-base text-gray-900">${em.title}</h4>
+            <p class="text-xs text-gray-600">${em.desc}</p>
+            <p class="text-xs font-semibold text-red-700"><i class="fa-solid fa-location-dot mr-1"></i>${em.location}</p>
+          </div>
+          <button onclick="navigateTo('crimeMap')" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-lg transition self-start md:self-auto shrink-0">
+            View on Map
+          </button>
+        `;
+        container.appendChild(item);
+      });
+    }
+
+    // Submit New Crime (From Page 5)
+    function submitNewCrime(e) {
+      e.preventDefault();
+      const cat = document.getElementById('reportCategory').value;
+      const addr = document.getElementById('reportAddress').value;
+      const desc = document.getElementById('reportDesc').value;
+
+      // Create new crime marker object at slightly offset location
+      const newCrime = {
+        id: 'user_crime_' + Date.now(),
+        category: cat,
+        title: "REPORTED " + cat.toUpperCase(),
+        location: addr,
+        lat: userLocation.lat + (Math.random() * 0.02 - 0.01),
+        lng: userLocation.lng + (Math.random() * 0.02 - 0.01),
+        time: "Just Now",
+        description: desc,
+        comments: generateUniqueComments(15)
+      };
+
+      crimeDatabase.unshift(newCrime);
+
+      // Add to emergencies
+      initialEmergencies.unshift({
+        id: 'user_em_' + Date.now(),
+        title: "CITIZEN ALERT: " + cat.toUpperCase(),
+        date: "Just Now",
+        type: cat,
+        location: addr,
+        desc: desc
+      });
+
+      renderEmergenciesList();
+      alert("Report submitted successfully! It is now posted to the Live Crime Map and Active Emergencies.");
+      
+      // Reset Form & Navigate
+      document.getElementById('reportAddress').value = '';
+      document.getElementById('reportDesc').value = '';
+      navigateTo('crimeMap');
+    }
+
+    // -------------------------------------------------------------
+    // PAGE 4: NEIGHBORHOOD ADDRESS SEARCH LOGIC
+    // -------------------------------------------------------------
+    function handleAddressSearch() {
+      const query = document.getElementById('addressInput').value.trim();
+      if (!query) return;
+
+      document.getElementById('currentSearchAddrText').textContent = "Location: " + query;
+
+      // Generate localized specific target lat/lng based on string
+      const searchLat = 40.8200 + (query.length * 0.0035) % 0.06;
+      const searchLng = -73.9100 + (query.length * 0.0042) % 0.07;
+
+      if (searchCrimeMap) searchCrimeMap.setView([searchLat, searchLng], 15);
+      if (searchOffenderMap) searchOffenderMap.setView([searchLat, searchLng], 15);
+
+      // Re-seed unique crimes & offenders centered specifically near this address
+      const localCrimes = [];
+      for (let i = 1; i <= 15; i++) {
+        localCrimes.push({
+          id: 'search_c_' + i,
+          category: crimeTypes[i % crimeTypes.length],
+          title: crimeTypes[i % crimeTypes.length].toUpperCase() + " NEAR " + query.toUpperCase(),
+          location: query + " Block #" + i,
+          lat: searchLat + (Math.random() * 0.01 - 0.005),
+          lng: searchLng + (Math.random() * 0.01 - 0.005),
+          time: (i * 2) + " hours ago",
+          description: `Specific incident reported near ${query}. Verified by neighborhood watch dispatch.`,
+          comments: generateUniqueComments(16)
+        });
+      }
+
+      const localOffenders = [];
+      for (let i = 1; i <= 20; i++) {
+        localOffenders.push({
+          id: 'search_o_' + i,
+          category: offenderTypes[i % offenderTypes.length],
+          name: firstNames[i % firstNames.length] + " " + lastNames[i % lastNames.length],
+          typeLabel: offenderTypes[i % offenderTypes.length].replace('_', ' ').toUpperCase(),
+          location: query + " Suite " + (i * 10),
+          lat: searchLat + (Math.random() * 0.012 - 0.006),
+          lng: searchLng + (Math.random() * 0.012 - 0.006),
+          description: `Offender registered near ${query}. Listed on active Bronx database.`,
+          comments: generateUniqueComments(18)
+        });
+      }
+
+      renderCrimeMarkers(searchCrimeMap, searchCrimeLayer, localCrimes);
+      renderOffenderMarkers(searchOffenderMap, searchOffenderLayer, localOffenders);
+    }
+
+    // -------------------------------------------------------------
+    // SPA PAGE NAVIGATION ENGINE
+    // -------------------------------------------------------------
+    function navigateTo(pageId) {
+      // Hide all pages
+      document.querySelectorAll('.page-content').forEach(p => p.classList.add('hidden'));
+
+      // Show requested page
+      const target = document.getElementById('page-' + pageId);
+      if (target) {
+        target.classList.remove('hidden');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+
+      // Initialize or refresh Leaflet Maps depending on target view
+      setTimeout(() => {
+        initMaps();
+        if (pageId === 'crimeMap' && crimeMap) crimeMap.invalidateSize();
+        if (pageId === 'nearbyOffenders' && offenderMap) offenderMap.invalidateSize();
+        if (pageId === 'neighborhoodSearch') {
+          if (searchCrimeMap) searchCrimeMap.invalidateSize();
+          if (searchOffenderMap) searchOffenderMap.invalidateSize();
+        }
+      }, 150);
+    }
+
+    // -------------------------------------------------------------
+    // PERMISSION MODAL HANDLERS
+    // -------------------------------------------------------------
+    function acceptPermissions() {
+      if ("geolocation" in navigator) {
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            userLocation.lat = pos.coords.latitude;
+            userLocation.lng = pos.coords.longitude;
+            userLocation.address = "Verified GPS Coordinates";
+            closePermissions();
+          },
+          (err) => {
+            closePermissions();
+          }
+        );
+      } else {
+        closePermissions();
+      }
+    }
+
+    function closePermissions() {
+      document.getElementById('permissionModal').classList.add('hidden');
+    }
+
+    // -------------------------------------------------------------
+    // INITIALIZATION ON DOM READY
+    // -------------------------------------------------------------
+    window.onload = function() {
+      renderEmergenciesList();
+      // Default view is Home
+      navigateTo('home');
+    };
+  </script>
+</body>
+</html>

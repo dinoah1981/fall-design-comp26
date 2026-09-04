@@ -1,0 +1,1470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ICE OUT - NYC Civilian Safety Wireframe</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts for Bubble Letters Title & Clean UI -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Rubik+Bubbles&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Leaflet CSS & JS for Satellite Map -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        ice: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            400: '#38bdf8',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                            900: '#0c4a6e',
+                        },
+                        danger: '#ef4444',
+                        warning: '#f97316',
+                        safe: '#22c55e',
+                    },
+                    fontFamily: {
+                        bubble: ['"Rubik Bubbles"', 'cursive', 'sans-serif'],
+                        sans: ['"Inter"', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Custom scrollbars */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #0ea5e9;
+        }
+
+        /* Bubble text style - Light Theme Friendly Blue */
+        .bubble-title {
+            font-family: 'Rubik Bubbles', cursive;
+            background: linear-gradient(180deg, #38bdf8 0%, #0284c7 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0px 2px 4px rgba(2, 132, 199, 0.25));
+            letter-spacing: 1px;
+        }
+
+        /* Pulse animations for map safety zones */
+        @keyframes zone-pulse-red {
+            0% { fill-opacity: 0.35; stroke-width: 2; }
+            50% { fill-opacity: 0.65; stroke-width: 4; }
+            100% { fill-opacity: 0.35; stroke-width: 2; }
+        }
+        .pulse-red-zone {
+            animation: zone-pulse-red 2s infinite ease-in-out;
+        }
+
+        /* Touch target custom sizes for bottom bar buttons */
+        .thumb-btn {
+            width: 56px;
+            height: 56px;
+            min-width: 56px;
+            min-height: 56px;
+        }
+
+        /* Map styling adjustments */
+        .leaflet-container {
+            background-color: #e2e8f0 !important;
+            font-family: 'Inter', sans-serif;
+            border-radius: 1rem;
+        }
+        .leaflet-popup-content-wrapper {
+            background: #ffffff;
+            color: #0f172a;
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
+            padding: 4px;
+        }
+        .leaflet-popup-tip {
+            background: #ffffff;
+        }
+
+        /* Custom Map Pin Video Thumbnail Markers */
+        .custom-video-pin {
+            background: transparent;
+            border: none;
+        }
+        .video-pin-card {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .video-pin-card:hover {
+            transform: scale(1.1);
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans antialiased min-h-screen flex flex-col justify-between selection:bg-ice-500 selection:text-white">
+
+    <!-- ========================================================================= -->
+    <!-- ONBOARDING FLOW CONTAINER (SHOWN ON FIRST LAUNCH BEFORE MAIN HOME SCREEN) -->
+    <!-- ========================================================================= -->
+    
+    <!-- ONBOARDING STEP 1: LANGUAGE SELECTION & SEARCH -->
+    <div id="onboarding-step1" class="fixed inset-0 z-[60] bg-slate-50 flex flex-col justify-between p-4 sm:p-6 overflow-y-auto">
+        <div class="max-w-md w-full mx-auto my-auto space-y-6">
+            <!-- App Title in Bubble Letters -->
+            <div class="text-center space-y-1">
+                <h1 class="bubble-title text-4xl sm:text-5xl py-2">ICE OUT</h1>
+                <p class="text-xs text-slate-500 font-medium">NYC Community Safety Network • 5 Boroughs</p>
+            </div>
+
+            <div class="bg-white border border-slate-200 rounded-3xl p-5 shadow-xl space-y-4">
+                <div class="text-center space-y-1">
+                    <h2 class="text-lg font-bold text-slate-900 flex items-center justify-center gap-2">
+                        <i data-lucide="globe" class="w-5 h-5 text-ice-600"></i>
+                        Select Your Preferred Language
+                    </h2>
+                    <p class="text-xs text-slate-500">What language do you speak? Search and select below to customize the app.</p>
+                </div>
+
+                <!-- Search Input Bar -->
+                <div class="relative">
+                    <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5"></i>
+                    <input type="text" id="lang-search-input" onkeyup="filterLanguages()" placeholder="Search language... (e.g. English, Español, 中文)" class="w-full bg-slate-50 border border-slate-300 rounded-xl pl-10 pr-4 py-2.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-ice-500 focus:ring-1 focus:ring-ice-500 transition">
+                </div>
+
+                <!-- Scrollable Language Results List -->
+                <div id="language-list-container" class="max-h-60 overflow-y-auto space-y-2 pr-1">
+                    <!-- Javascript populates filtered language list -->
+                </div>
+            </div>
+        </div>
+
+        <p class="text-[10px] text-center text-slate-400 py-2">Private & Anonymous • No Registration Required</p>
+    </div>
+
+    <!-- ONBOARDING STEP 2: BE MINDFUL PRIVACY & SAFETY DISCLAIMER -->
+    <div id="onboarding-step2" class="fixed inset-0 z-[60] bg-slate-50 flex flex-col justify-between p-4 sm:p-6 overflow-y-auto hidden">
+        <div class="max-w-md w-full mx-auto my-auto space-y-6">
+            <!-- App Header -->
+            <div class="text-center">
+                <h1 class="bubble-title text-3xl py-1">ICE OUT</h1>
+            </div>
+
+            <div class="bg-white border-2 border-ice-500/40 rounded-3xl p-6 shadow-xl space-y-5 text-center relative overflow-hidden">
+                <!-- Glowing Blue Subtle Background -->
+                <div class="absolute -top-12 -left-12 w-32 h-32 bg-ice-500/10 rounded-full blur-2xl"></div>
+
+                <!-- Large Blue BE MINDFUL Title in Bubble Letters -->
+                <div class="space-y-1">
+                    <h2 class="bubble-title text-4xl sm:text-5xl uppercase py-1">BE MINDFUL</h2>
+                    <p class="text-xs uppercase font-extrabold text-ice-600 tracking-wider">Important Privacy & Safety Notice</p>
+                </div>
+
+                <!-- Requested Specific Introductory Disclaimer Message -->
+                <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200 text-xs sm:text-sm text-slate-700 leading-relaxed text-left space-y-2">
+                    <p class="font-medium text-slate-800">
+                        To clarify, we are not using the app to monitor your conversations, actions, or location. The app was not designed to be used as a tracking tool for your personal activities, but for your safety.
+                    </p>
+                </div>
+
+                <!-- Blue Agreement Button -->
+                <div class="pt-2 space-y-3">
+                    <button onclick="finishDisclaimerStep()" class="w-full py-4 rounded-2xl bg-gradient-to-r from-ice-500 to-ice-600 hover:from-ice-600 hover:to-ice-700 text-white font-extrabold text-sm uppercase tracking-wider shadow-lg shadow-ice-500/20 active:scale-95 transition flex items-center justify-center gap-2">
+                        <i data-lucide="check-circle-2" class="w-5 h-5"></i>
+                        <span>I Agree With Everything</span>
+                    </button>
+                    <p class="text-[10px] text-slate-400">By clicking agree, you acknowledge the privacy mission of ICE OUT.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ONBOARDING STEP 3: INFORMATIONAL BOXES (EXPLAINS HOW APP WORKS, RED HELP REMOVED) -->
+    <div id="onboarding-step3" class="fixed inset-0 z-[60] bg-slate-50 flex flex-col justify-between p-4 sm:p-6 overflow-y-auto hidden">
+        <div class="max-w-md w-full mx-auto my-auto space-y-4 py-2">
+            <div class="text-center space-y-0.5">
+                <h1 class="bubble-title text-2xl sm:text-3xl py-1">ICE OUT</h1>
+                <h2 class="text-base font-bold text-slate-900">How ICE OUT Protects You</h2>
+                <p class="text-[11px] text-slate-500">Review how each feature works, then tap Next to enter the home page.</p>
+            </div>
+
+            <!-- Compact Informational Explanation Cards Container -->
+            <div class="space-y-2.5 max-h-[42vh] sm:max-h-[46vh] overflow-y-auto pr-1">
+                
+                <!-- Box 1: Satellite Map & Zones -->
+                <div class="bg-white border border-slate-200 p-3 rounded-xl flex items-start gap-2.5 shadow-sm">
+                    <div class="p-2 bg-ice-50 text-ice-600 rounded-lg border border-ice-100 shrink-0">
+                        <i data-lucide="map" class="w-4 h-4"></i>
+                    </div>
+                    <div class="space-y-0.5 text-[11px]">
+                        <h3 class="font-bold text-slate-900 text-xs">1. NYC Satellite Live Map</h3>
+                        <p class="text-slate-600">Opens directly on launch. Displays real-time threat zones across all 5 NYC boroughs:</p>
+                        <ul class="text-[10px] text-slate-500 space-y-0.5 pt-0.5">
+                            <li>🔴 <strong class="text-red-500">Red:</strong> Unsafe / Most populated activity</li>
+                            <li>🟠 <strong class="text-orange-500">Orange:</strong> Caution / Slightly beware</li>
+                            <li>🟢 <strong class="text-emerald-600">Green:</strong> Verified safe / Clear to go</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Box 2: Civilian Video Pins -->
+                <div class="bg-white border border-slate-200 p-3 rounded-xl flex items-start gap-2.5 shadow-sm">
+                    <div class="p-2 bg-indigo-50 text-indigo-600 rounded-lg border border-indigo-100 shrink-0">
+                        <i data-lucide="play-square" class="w-4 h-4"></i>
+                    </div>
+                    <div class="space-y-0.5 text-[11px]">
+                        <h3 class="font-bold text-slate-900 text-xs">2. Civilian Uploaded Video Pins</h3>
+                        <p class="text-slate-600">Small video thumbnails appear pinned on map locations like the Citizen app. Tap any thumbnail to watch verified video reports uploaded by civilians.</p>
+                    </div>
+                </div>
+
+                <!-- Box 3: Record + Button -->
+                <div class="bg-white border border-slate-200 p-3 rounded-xl flex items-start gap-2.5 shadow-sm">
+                    <div class="p-2 bg-ice-50 text-ice-600 rounded-lg border border-ice-100 shrink-0">
+                        <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                    </div>
+                    <div class="space-y-0.5 text-[11px]">
+                        <h3 class="font-bold text-slate-900 text-xs">3. Record (+) Button (Bottom Left)</h3>
+                        <p class="text-slate-600">Record live video or upload files anonymously. All videos are automatically stripped of location EXIF metadata before posting.</p>
+                    </div>
+                </div>
+
+                <!-- Box 4: Anonymous Community Chat -->
+                <div class="bg-white border border-slate-200 p-3 rounded-xl flex items-start gap-2.5 shadow-sm">
+                    <div class="p-2 bg-amber-50 text-amber-600 rounded-lg border border-amber-100 shrink-0">
+                        <i data-lucide="message-square" class="w-4 h-4"></i>
+                    </div>
+                    <div class="space-y-0.5 text-[11px]">
+                        <h3 class="font-bold text-slate-900 text-xs">4. Anonymous Community Chat</h3>
+                        <p class="text-slate-600">Share neighborhood observations with 100% privacy. No usernames are shown. Timestamps show exactly when comments were made (e.g. "10 minutes ago", "Yesterday", or "Aug 28, 2026").</p>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- NEXT BUTTON TO ENTER HOME PAGE -->
+            <div class="pt-1">
+                <button onclick="finishOnboarding()" class="w-full py-3 rounded-xl bg-gradient-to-r from-ice-500 to-ice-600 hover:from-ice-600 hover:to-ice-700 text-white font-extrabold text-xs uppercase tracking-wider shadow-lg shadow-ice-500/20 active:scale-95 transition flex items-center justify-center gap-2">
+                    <span>Next — Go To Home Page</span>
+                    <i data-lucide="arrow-right" class="w-4 h-4 stroke-[2.5]"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ========================================================================= -->
+    <!-- MAIN APP INTERFACE (LIGHT THEME) -->
+    <!-- ========================================================================= -->
+
+    <!-- TOP HEADER -->
+    <header class="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200 px-4 py-3 shadow-sm">
+        <div class="max-w-7xl mx-auto flex items-center justify-between relative">
+            
+            <!-- LEFT: 3 lines menu + Label underneath -->
+            <div class="flex flex-col items-center justify-center">
+                <button id="menu-toggle-btn" onclick="openDrawer()" class="p-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition-all focus:outline-none focus:ring-2 focus:ring-ice-500 active:scale-95 flex flex-col items-center justify-center group" aria-label="Open Navigation Menu">
+                    <!-- 3 Lines Hamburger -->
+                    <div class="space-y-1 w-6">
+                        <span class="block w-6 h-0.5 bg-ice-600 group-hover:bg-ice-700 transition-all"></span>
+                        <span class="block w-6 h-0.5 bg-ice-600 group-hover:bg-ice-700 transition-all"></span>
+                        <span class="block w-6 h-0.5 bg-ice-600 group-hover:bg-ice-700 transition-all"></span>
+                    </div>
+                    <span class="text-[10px] uppercase tracking-wider font-semibold text-slate-600 mt-1">MENU</span>
+                </button>
+            </div>
+
+            <!-- MIDDLE: APP TITLE "ICE OUT" IN BUBBLE LETTERS -->
+            <div class="text-center cursor-pointer flex flex-col items-center" onclick="switchView('map')">
+                <h1 class="bubble-title text-3xl md:text-4xl leading-none select-none py-1">
+                    ICE OUT
+                </h1>
+                <div class="flex items-center gap-1 text-[11px] font-medium text-slate-500">
+                    <span class="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <span>NYC Community Watch • 5 Boroughs</span>
+                </div>
+            </div>
+
+            <!-- RIGHT: Quick Language Selector & NYC Active Alerts -->
+            <div class="flex items-center gap-2">
+                <button onclick="toggleModal('language-modal')" class="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-100 border border-slate-200 text-xs font-medium text-slate-700 hover:border-ice-400 transition">
+                    <i data-lucide="globe" class="w-3.5 h-3.5 text-ice-600"></i>
+                    <span id="current-lang-display">English</span>
+                    <i data-lucide="chevron-down" class="w-3 h-3 text-slate-400"></i>
+                </button>
+                <div class="text-right">
+                    <span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-red-100 border border-red-200 text-red-600 flex items-center gap-1">
+                        <span class="w-2 h-2 rounded-full bg-red-500 animate-ping"></span>
+                        3 Active Alerts
+                    </span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- SLIDE-OUT NAVIGATION MENU (DRAWER) -->
+    <div id="side-drawer" class="fixed inset-0 z-50 transform -translate-x-full transition-transform duration-300 ease-in-out pointer-events-none">
+        <!-- Backdrop -->
+        <div id="drawer-backdrop" onclick="closeDrawer()" class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm opacity-0 transition-opacity duration-300"></div>
+        
+        <!-- Drawer Panel -->
+        <nav class="relative w-80 max-w-[85vw] bg-white border-r border-slate-200 h-full flex flex-col shadow-2xl pointer-events-auto">
+            <!-- Drawer Header -->
+            <div class="p-5 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+                <div>
+                    <h2 class="bubble-title text-2xl">ICE OUT</h2>
+                    <p class="text-xs text-slate-500">Civilian Safety Network for NYC</p>
+                </div>
+                <!-- X Close Button for Drawer -->
+                <button id="close-drawer-btn" onclick="closeDrawer()" class="p-2 text-slate-400 hover:text-slate-800 rounded-lg hover:bg-slate-200" title="Close Menu">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                    <span class="sr-only">Close Menu</span>
+                </button>
+            </div>
+
+            <!-- Drawer Links -->
+            <div class="flex-1 overflow-y-auto py-4 px-3 space-y-1">
+                <a href="#" onclick="switchView('map'); closeDrawer(); return false;" class="flex items-center gap-3 px-4 py-3 rounded-xl bg-ice-50 text-ice-600 font-semibold border border-ice-100">
+                    <i data-lucide="home" class="w-5 h-5"></i>
+                    <span>Home</span>
+                </a>
+
+                <a href="#" onclick="switchView('feed'); closeDrawer(); return false;" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-700 hover:bg-slate-100 hover:text-slate-900 transition">
+                    <i data-lucide="layout-grid" class="w-5 h-5 text-indigo-500"></i>
+                    <span>Video Feed Grid (4x3)</span>
+                </a>
+                
+                <a href="#" onclick="toggleModal('language-modal'); closeDrawer(); return false;" class="flex items-center justify-between px-4 py-3 rounded-xl text-slate-700 hover:bg-slate-100 hover:text-slate-900 transition">
+                    <div class="flex items-center gap-3">
+                        <i data-lucide="languages" class="w-5 h-5 text-indigo-500"></i>
+                        <span>Language</span>
+                    </div>
+                    <span class="text-xs text-slate-500 font-medium" id="drawer-lang-tag">English</span>
+                </a>
+
+                <a href="#" onclick="switchView('map'); closeDrawer(); return false;" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-700 hover:bg-slate-100 hover:text-slate-900 transition">
+                    <i data-lucide="map-pin" class="w-5 h-5 text-emerald-500"></i>
+                    <span>Location & Boroughs</span>
+                </a>
+
+                <a href="#" onclick="toggleModal('resources-modal'); closeDrawer(); return false;" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-700 hover:bg-slate-100 hover:text-slate-900 transition">
+                    <i data-lucide="book-open" class="w-5 h-5 text-amber-500"></i>
+                    <span>Resources & Aid</span>
+                </a>
+
+                <a href="#" onclick="toggleModal('rights-modal'); closeDrawer(); return false;" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-700 hover:bg-slate-100 hover:text-slate-900 transition">
+                    <i data-lucide="shield-alert" class="w-5 h-5 text-red-500"></i>
+                    <span>Know Your Rights</span>
+                </a>
+
+                <a href="#" onclick="toggleModal('faq-modal'); closeDrawer(); return false;" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-700 hover:bg-slate-100 hover:text-slate-900 transition">
+                    <i data-lucide="help-circle" class="w-5 h-5 text-sky-500"></i>
+                    <span>Help / FAQ</span>
+                </a>
+
+                <a href="#" onclick="toggleModal('legal-modal'); closeDrawer(); return false;" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-700 hover:bg-slate-100 hover:text-slate-900 transition">
+                    <i data-lucide="phone-call" class="w-5 h-5 text-rose-500"></i>
+                    <span>Emergency Hotline</span>
+                </a>
+            </div>
+
+            <!-- Drawer Footer -->
+            <div class="p-4 border-t border-slate-200 bg-slate-50 text-xs text-slate-500 space-y-2">
+                <button onclick="restartOnboarding(); closeDrawer();" class="w-full py-1.5 rounded-lg bg-slate-200 hover:bg-slate-300 text-[11px] text-slate-700 mb-1">
+                    🔄 Re-open Welcome & Language Setup
+                </button>
+                <div class="flex items-center justify-between">
+                    <span>NYC Borough Coverage:</span>
+                    <span class="text-emerald-600 font-semibold">100% Active</span>
+                </div>
+                <div class="flex gap-1 text-[10px] text-slate-400">
+                    <span>Manhattan</span> • <span>Brooklyn</span> • <span>Queens</span> • <span>Bronx</span> • <span>Staten Isl.</span>
+                </div>
+            </div>
+        </nav>
+    </div>
+
+    <!-- MAIN CONTENT VIEW CONTAINER -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-5 relative pb-32">
+        
+        <!-- ================= VIEW 1: HOME SCREEN (COMPACT MAP WITH THUMBNAILS & LEGEND) ================= -->
+        <section id="view-map" class="space-y-4 relative">
+            <div class="bg-white border border-slate-200 rounded-2xl p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 shadow-sm relative pr-14">
+                <div>
+                    <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+                        <i data-lucide="satellite" class="w-5 h-5 text-ice-600"></i>
+                        NYC Live Incident Satellite Map
+                    </h2>
+                    <p class="text-xs text-slate-500">Civilian video thumbnails pinned across all 5 boroughs. Tap any thumbnail to watch live report.</p>
+                </div>
+
+                <!-- Zone Legend -->
+                <div class="flex items-center gap-3 bg-slate-50 px-3.5 py-2 rounded-xl border border-slate-200 text-xs">
+                    <div class="flex items-center gap-1.5">
+                        <span class="w-3 h-3 rounded-full bg-red-500 shadow-sm shadow-red-500/50"></span>
+                        <span class="text-red-700 font-semibold">Red: Unsafe</span>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                        <span class="w-3 h-3 rounded-full bg-orange-500 shadow-sm shadow-orange-500/50"></span>
+                        <span class="text-orange-700 font-semibold">Orange: Beware</span>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                        <span class="w-3 h-3 rounded-full bg-emerald-500 shadow-sm shadow-emerald-500/50"></span>
+                        <span class="text-emerald-700 font-semibold">Green: Clear</span>
+                    </div>
+                </div>
+
+                <!-- TOP RIGHT CLOSE "X" BUTTON TO GO BACK -->
+                <button onclick="goBack()" class="absolute top-3.5 right-3.5 p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900 transition shadow-sm flex items-center justify-center border border-slate-200 active:scale-90" title="Close Map view and return to previous screen">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                    <span class="sr-only">Close Map View</span>
+                </button>
+            </div>
+
+            <!-- Leaflet Map Container -->
+            <div class="relative w-full h-[48vh] sm:h-[52vh] min-h-[340px] max-h-[480px] rounded-2xl overflow-hidden border border-slate-200 shadow-lg z-0">
+                <div id="nyc-satellite-map" class="w-full h-full"></div>
+
+                <!-- Map Floating Control Overlay: Borough Quick Jump -->
+                <div class="absolute top-3 left-3 z-[1000] bg-white/95 backdrop-blur border border-slate-200 p-2 rounded-xl text-xs space-y-1 shadow-md max-w-[160px] hidden sm:block">
+                    <p class="text-[10px] uppercase font-bold text-slate-400 tracking-wider px-1">Jump to Borough:</p>
+                    <div class="flex flex-col gap-1">
+                        <button onclick="panMapTo(40.7484, -73.8857, 13)" class="px-2 py-1 text-left rounded hover:bg-slate-100 text-slate-700 font-medium transition">
+                            Queens
+                        </button>
+                        <button onclick="panMapTo(40.8090, -73.9220, 13)" class="px-2 py-1 text-left rounded hover:bg-slate-100 text-slate-700 font-medium transition">
+                            Bronx
+                        </button>
+                        <button onclick="panMapTo(40.6450, -74.0100, 13)" class="px-2 py-1 text-left rounded hover:bg-slate-100 text-slate-700 font-medium transition">
+                            Brooklyn
+                        </button>
+                        <button onclick="panMapTo(40.8500, -73.9350, 13)" class="px-2 py-1 text-left rounded hover:bg-slate-100 text-slate-700 font-medium transition">
+                            Manhattan
+                        </button>
+                        <button onclick="panMapTo(40.6400, -74.0750, 13)" class="px-2 py-1 text-left rounded hover:bg-slate-100 text-slate-700 font-medium transition">
+                            Staten Island
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Floating Anonymous Active Chat Snippet on Map -->
+                <div class="absolute bottom-3 left-3 right-3 sm:left-auto sm:right-3 z-[1000] bg-white/95 backdrop-blur-md border border-ice-200 p-2.5 rounded-xl shadow-lg max-w-sm">
+                    <div class="flex items-center justify-between border-b border-slate-100 pb-1.5 mb-1.5">
+                        <span class="text-xs font-bold text-ice-600 flex items-center gap-1.5">
+                            <i data-lucide="message-square" class="w-3.5 h-3.5"></i>
+                            Live Anonymous Broadcast
+                        </span>
+                        <button onclick="switchView('chat')" class="text-[10px] text-slate-500 hover:text-slate-800 underline">Open Chat</button>
+                    </div>
+                    <p class="text-xs text-slate-700">
+                        <span class="font-semibold text-amber-600">Anonymous • Queens</span> <span class="text-[10px] text-slate-400">• 10 minutes ago</span>: Video recorded on 82nd St shows clear passage currently. Stay safe everyone!
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= VIEW 2: VIDEO GRID FEED SCREEN (4x3 FEED) ================= -->
+        <section id="view-feed" class="hidden space-y-4">
+            
+            <!-- Safety Zone Status Bar Banner -->
+            <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4 relative pr-14 md:pr-4">
+                <div class="flex items-center gap-3">
+                    <div class="p-3 bg-slate-100 rounded-xl text-ice-600 border border-slate-200">
+                        <i data-lucide="activity" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-base font-bold text-slate-900 flex items-center gap-2">
+                            NYC Civilian Watch Grid
+                            <span class="bg-ice-50 text-ice-600 text-xs px-2 py-0.5 rounded border border-ice-200">Live Grid</span>
+                        </h2>
+                        <p class="text-xs text-slate-500">Civilian-uploaded videos organized across all 5 boroughs in a 4x3 view.</p>
+                    </div>
+                </div>
+
+                <!-- TOP RIGHT CLOSE "X" BUTTON TO GO BACK -->
+                <button onclick="goBack()" class="absolute top-3.5 right-3.5 p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900 transition shadow-sm flex items-center justify-center border border-slate-200 active:scale-90" title="Close Grid Feed and go back">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                    <span class="sr-only">Close Feed View</span>
+                </button>
+
+                <!-- Borough Filter Pills -->
+                <div class="flex items-center gap-1.5 overflow-x-auto w-full md:w-auto pb-1 md:pb-0 text-xs">
+                    <button onclick="filterFeed('all')" class="feed-filter-btn active px-3 py-1.5 rounded-lg bg-ice-600 text-white font-medium whitespace-nowrap shadow-sm">All Boroughs</button>
+                    <button onclick="filterFeed('queens')" class="feed-filter-btn px-3 py-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 font-medium whitespace-nowrap">Queens</button>
+                    <button onclick="filterFeed('bronx')" class="feed-filter-btn px-3 py-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 font-medium whitespace-nowrap">Bronx</button>
+                    <button onclick="filterFeed('brooklyn')" class="feed-filter-btn px-3 py-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 font-medium whitespace-nowrap">Brooklyn</button>
+                    <button onclick="filterFeed('manhattan')" class="feed-filter-btn px-3 py-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 font-medium whitespace-nowrap">Manhattan</button>
+                    <button onclick="filterFeed('staten')" class="feed-filter-btn px-3 py-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 font-medium whitespace-nowrap">Staten Island</button>
+                </div>
+            </div>
+
+            <!-- 4x3 VIDEO GRID (12 Civilian Video Cards Layout) -->
+            <div id="video-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <!-- Javascript populates 12 video cards -->
+            </div>
+        </section>
+
+        <!-- ================= VIEW 3: RECORD / + UPLOAD SCREEN ================= -->
+        <section id="view-record" class="hidden max-w-2xl mx-auto space-y-5 relative">
+            <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-xl text-center space-y-4 relative">
+                
+                <!-- TOP RIGHT CLOSE "X" BUTTON TO GO BACK -->
+                <button onclick="goBack()" class="absolute top-4 right-4 p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900 transition shadow-sm flex items-center justify-center border border-slate-200 active:scale-90" title="Close and return to previous screen">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                    <span class="sr-only">Close Record View</span>
+                </button>
+
+                <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-ice-50 text-ice-600 border border-ice-200 mb-1">
+                    <i data-lucide="video" class="w-8 h-8"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-slate-900 pr-6">Record & Upload Incident Video</h2>
+                <p class="text-xs text-slate-500 max-w-md mx-auto">
+                    Help keep your community informed and safe. All uploaded video files are automatically stripped of location metadata for your privacy.
+                </p>
+
+                <!-- Camera Viewfinder Mockup -->
+                <div class="relative bg-slate-900 rounded-2xl overflow-hidden border-2 border-dashed border-slate-300 h-64 flex flex-col items-center justify-center p-4 text-white">
+                    <div class="absolute top-3 left-3 flex items-center gap-2 bg-slate-800/80 px-3 py-1 rounded-full text-xs text-slate-200">
+                        <span class="w-2 h-2 rounded-full bg-red-500 animate-ping"></span>
+                        <span>Camera Viewfinder</span>
+                    </div>
+
+                    <div id="recording-indicator" class="hidden text-center space-y-2">
+                        <div class="text-3xl font-mono text-red-400 font-bold tracking-wider" id="record-timer">00:00</div>
+                        <p class="text-xs text-red-300">RECORDING IN PROGRESS...</p>
+                    </div>
+
+                    <div id="camera-placeholder" class="text-center space-y-3">
+                        <i data-lucide="camera" class="w-12 h-12 text-slate-400 mx-auto"></i>
+                        <p class="text-xs text-slate-300">Tap below to start recording live video or upload a file</p>
+                    </div>
+                </div>
+
+                <!-- Record Controls -->
+                <div class="flex flex-wrap items-center justify-center gap-3 pt-2">
+                    <button id="record-btn" onclick="toggleRecording()" class="px-6 py-3 rounded-full bg-ice-600 hover:bg-ice-500 text-white font-bold flex items-center gap-2 shadow-lg shadow-ice-600/20 active:scale-95 transition">
+                        <i data-lucide="circle-dot" class="w-5 h-5"></i>
+                        <span id="record-btn-text">Start Anonymous Recording</span>
+                    </button>
+                    <label class="px-5 py-3 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold cursor-pointer border border-slate-300 flex items-center gap-2">
+                        <i data-lucide="upload" class="w-4 h-4"></i>
+                        <span>Upload File</span>
+                        <input type="file" accept="video/*" class="hidden" onchange="handleFileUpload(event)">
+                    </label>
+                </div>
+
+                <!-- Upload Details Form -->
+                <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 text-left space-y-3 mt-4">
+                    <h3 class="text-sm font-semibold text-slate-800">Incident Details</h3>
+                    
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                        <div>
+                            <label class="block text-slate-500 mb-1">NYC Borough & Location</label>
+                            <select id="upload-borough" class="w-full bg-white border border-slate-300 rounded-lg p-2 text-slate-800">
+                                <option>Queens - Jackson Heights / Corona</option>
+                                <option>Bronx - Mott Haven / South Bronx</option>
+                                <option>Brooklyn - Sunset Park / Flatbush</option>
+                                <option>Manhattan - Washington Heights</option>
+                                <option>Staten Island - St. George</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-slate-500 mb-1">Threat Assessment Color Zone</label>
+                            <select id="upload-zone" class="w-full bg-white border border-slate-300 rounded-lg p-2 text-slate-800">
+                                <option value="red">🔴 Red - Unsafe / Most Populated Activity</option>
+                                <option value="orange">🟠 Orange - Slightly Beware / Caution</option>
+                                <option value="green">🟢 Green - Safe / Good to Go</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs text-slate-500 mb-1">Short Observation Description</label>
+                        <input type="text" id="upload-desc" placeholder="e.g. Activity observed near subway station entrance on 82nd St" class="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs text-slate-800 focus:outline-none focus:border-ice-500">
+                    </div>
+
+                    <button onclick="submitUpload()" class="w-full py-2.5 rounded-xl bg-ice-600 hover:bg-ice-500 text-white font-bold text-xs uppercase tracking-wider transition active:scale-98">
+                        Broadcast to Community Feed & Map
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= VIEW 4: COMMUNITY CHAT SCREEN (NO USERNAMES & UPDATED TIMESTAMPS) ================= -->
+        <section id="view-chat" class="hidden space-y-4 relative">
+            <div class="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-xl flex flex-col h-[65vh] relative">
+                
+                <!-- Chat Header -->
+                <div class="p-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between pr-14">
+                    <div class="flex items-center gap-3">
+                        <div class="p-2.5 bg-ice-50 text-ice-600 rounded-xl border border-ice-100">
+                            <i data-lucide="message-square" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <h2 class="text-base font-bold text-slate-900 flex items-center gap-2">
+                                ICE OUT Community Chat
+                                <span class="bg-emerald-50 text-emerald-600 text-[10px] px-2 py-0.5 rounded-full border border-emerald-200">100% Anonymous</span>
+                            </h2>
+                            <p class="text-xs text-slate-500">Live civilian updates timestamped for accuracy. Zero usernames shown.</p>
+                        </div>
+                    </div>
+
+                    <!-- Chat Borough Channel Selector -->
+                    <select id="chat-channel" onchange="switchChatChannel()" class="bg-white border border-slate-300 text-xs text-slate-700 rounded-lg px-3 py-1.5 hidden sm:block">
+                        <option value="all">🌐 All NYC Boroughs</option>
+                        <option value="queens">Queens Watch</option>
+                        <option value="bronx">Bronx Alerts</option>
+                        <option value="brooklyn">Brooklyn Shield</option>
+                        <option value="manhattan">Manhattan Updates</option>
+                        <option value="staten">Staten Island Hub</option>
+                    </select>
+                </div>
+
+                <!-- TOP RIGHT CLOSE "X" BUTTON TO GO BACK -->
+                <button onclick="goBack()" class="absolute top-3.5 right-3.5 p-2 rounded-xl bg-slate-200/80 hover:bg-slate-300 text-slate-600 hover:text-slate-900 transition shadow-sm flex items-center justify-center border border-slate-300 z-10 active:scale-90" title="Close Chat view and go back">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                    <span class="sr-only">Close Chat View</span>
+                </button>
+
+                <!-- Chat Messages Scroll Container -->
+                <div id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-50/50">
+                    <!-- Chat messages injected by JS -->
+                </div>
+
+                <!-- Chat Input Box -->
+                <div class="p-3 bg-white border-t border-slate-200 flex items-center gap-2">
+                    <button onclick="insertQuickTag('📍 Clear Area')" class="hidden sm:inline-block px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 text-[10px] text-slate-700">
+                        + Clear Tag
+                    </button>
+                    <button onclick="insertQuickTag('⚠️ Caution')" class="hidden sm:inline-block px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 text-[10px] text-slate-700">
+                        + Caution Tag
+                    </button>
+                    
+                    <input type="text" id="chat-input" placeholder="Share updates anonymously in your neighborhood..." class="flex-1 bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 text-xs text-slate-800 focus:outline-none focus:border-ice-500" onkeypress="if(event.key === 'Enter') sendChatMessage()">
+                    
+                    <button onclick="sendChatMessage()" class="p-2.5 rounded-xl bg-ice-600 hover:bg-ice-500 text-white font-semibold transition active:scale-95 shadow-sm">
+                        <i data-lucide="send" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- ================= BOTTOM NAVIGATION BAR (RECORD, CHAT, HOME ONLY) ================= -->
+    <!-- Contains + Record button, Chat symbol button, Home button -->
+    <nav class="fixed bottom-0 left-0 right-0 z-50 bg-white/98 backdrop-blur-xl border-t border-slate-200 px-6 py-3 shadow-xl">
+        <div class="max-w-md mx-auto flex items-center justify-around">
+            
+            <!-- 1. RECORD + BUTTON (Left Action) -->
+            <button onclick="switchView('record')" id="nav-btn-record" class="thumb-btn flex flex-col items-center justify-center rounded-full bg-ice-500 hover:bg-ice-600 text-white font-black shadow-lg shadow-ice-500/30 active:scale-90 transition group border-2 border-white" title="Record Civilian Video">
+                <i data-lucide="plus" class="w-7 h-7 stroke-[3] text-white"></i>
+                <span class="sr-only">Record Video</span>
+            </button>
+
+            <!-- 2. CHAT / MESSAGE BUBBLE (Center Action) -->
+            <button onclick="switchView('chat')" id="nav-btn-chat" class="thumb-btn flex flex-col items-center justify-center rounded-2xl bg-slate-100 text-slate-600 hover:text-ice-600 hover:bg-slate-200 active:scale-95 transition relative group" title="Community Chat">
+                <div class="relative">
+                    <i data-lucide="message-square-text" class="w-5 h-5 group-hover:scale-110 transition-transform"></i>
+                    <span class="absolute -top-1 -right-2 bg-ice-500 text-white font-extrabold text-[9px] px-1 rounded-full">4</span>
+                </div>
+                <span class="text-[9px] font-bold uppercase mt-0.5">CHAT</span>
+            </button>
+
+            <!-- 3. HOME BUTTON (Map View on Right Action) -->
+            <button onclick="switchView('map')" id="nav-btn-home" class="thumb-btn flex flex-col items-center justify-center rounded-2xl bg-slate-100 text-ice-600 hover:bg-slate-200 active:scale-95 transition group" title="Home Screen (Satellite Map)">
+                <i data-lucide="home" class="w-5 h-5 group-hover:scale-110 transition-transform"></i>
+                <span class="text-[9px] font-bold uppercase mt-0.5">HOME</span>
+            </button>
+
+        </div>
+    </nav>
+
+    <!-- MODAL 1: LANGUAGE SELECTION MODAL -->
+    <div id="language-modal" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-md flex items-center justify-center p-4 hidden">
+        <div class="bg-white border border-slate-200 rounded-2xl max-w-md w-full p-5 space-y-4 shadow-2xl relative">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                <h3 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+                    <i data-lucide="globe" class="w-5 h-5 text-ice-600"></i>
+                    Change Language
+                </h3>
+                <!-- Top Right X Close -->
+                <button onclick="toggleModal('language-modal')" class="text-slate-400 hover:text-slate-700 p-1 rounded-lg hover:bg-slate-100">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2 text-xs font-semibold max-h-60 overflow-y-auto">
+                <button onclick="selectAppLanguage('English')" class="p-3 rounded-xl bg-slate-50 border border-ice-300 text-slate-900 flex items-center justify-between hover:bg-slate-100">
+                    <span>English</span>
+                    <i data-lucide="check" class="w-4 h-4 text-ice-600"></i>
+                </button>
+                <button onclick="selectAppLanguage('Español')" class="p-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-700 hover:bg-slate-100 hover:text-slate-900 flex items-center justify-between">
+                    <span>Español</span>
+                </button>
+                <button onclick="selectAppLanguage('中文')" class="p-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-700 hover:bg-slate-100 hover:text-slate-900 flex items-center justify-between">
+                    <span>中文 (Chinese)</span>
+                </button>
+                <button onclick="selectAppLanguage('العربية')" class="p-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-700 hover:bg-slate-100 hover:text-slate-900 flex items-center justify-between">
+                    <span>العربية (Arabic)</span>
+                </button>
+                <button onclick="selectAppLanguage('Français')" class="p-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-700 hover:bg-slate-100 hover:text-slate-900 flex items-center justify-between">
+                    <span>Français</span>
+                </button>
+                <button onclick="selectAppLanguage('Kreyòl')" class="p-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-700 hover:bg-slate-100 hover:text-slate-900 flex items-center justify-between">
+                    <span>Kreyòl Ayisyen</span>
+                </button>
+                <button onclick="selectAppLanguage('বাংলা')" class="p-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-700 hover:bg-slate-100 hover:text-slate-900 flex items-center justify-between">
+                    <span>বাংলা (Bengali)</span>
+                </button>
+                <button onclick="selectAppLanguage('Русский')" class="p-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-700 hover:bg-slate-100 hover:text-slate-900 flex items-center justify-between">
+                    <span>Русский</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 2: KNOW YOUR RIGHTS -->
+    <div id="rights-modal" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-md flex items-center justify-center p-4 hidden">
+        <div class="bg-white border border-slate-200 rounded-2xl max-w-lg w-full p-5 space-y-4 shadow-2xl max-h-[85vh] overflow-y-auto relative">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                <h3 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+                    <i data-lucide="shield-check" class="w-5 h-5 text-red-500"></i>
+                    Know Your Rights in NYC
+                </h3>
+                <!-- Top Right X Close -->
+                <button onclick="toggleModal('rights-modal')" class="text-slate-400 hover:text-slate-700 p-1 rounded-lg hover:bg-slate-100">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <div class="space-y-3 text-xs text-slate-700">
+                <div class="bg-slate-50 p-3 rounded-xl border-l-4 border-red-500">
+                    <h4 class="font-bold text-slate-900 text-sm">1. You have the right to remain silent</h4>
+                    <p class="text-slate-600 mt-1">You do not have to answer questions about your citizenship or status. Say: "I am exercising my right to remain silent."</p>
+                </div>
+
+                <div class="bg-slate-50 p-3 rounded-xl border-l-4 border-amber-500">
+                    <h4 class="font-bold text-slate-900 text-sm">2. Do not open the door without a warrant</h4>
+                    <p class="text-slate-600 mt-1">Agents must show a judicial warrant signed by a judge with your exact name and address. Ask them to slide it under the door.</p>
+                </div>
+
+                <div class="bg-slate-50 p-3 rounded-xl border-l-4 border-ice-500">
+                    <h4 class="font-bold text-slate-900 text-sm">3. You have the right to record video</h4>
+                    <p class="text-slate-600 mt-1">In NYC public spaces, you have the right to record video provided you do not physically obstruct officers.</p>
+                </div>
+
+                <div class="bg-slate-50 p-3 rounded-xl border-l-4 border-emerald-500">
+                    <h4 class="font-bold text-slate-900 text-sm">4. Do not sign documents without legal counsel</h4>
+                    <p class="text-slate-600 mt-1">Never sign anything you do not understand. You have the right to consult an attorney.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 3: EMERGENCY LEGAL HELP -->
+    <div id="legal-modal" class="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-md flex items-center justify-center p-4 hidden">
+        <div class="bg-white border border-red-200 rounded-2xl max-w-md w-full p-5 space-y-4 shadow-2xl relative">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                <h3 class="text-lg font-bold text-red-600 flex items-center gap-2">
+                    <i data-lucide="siren" class="w-6 h-6 animate-pulse"></i>
+                    EMERGENCY ACTION & HOTLINES
+                </h3>
+                <!-- Top Right X Close -->
+                <button onclick="toggleModal('legal-modal')" class="text-slate-400 hover:text-slate-700 p-1 rounded-lg hover:bg-slate-100">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <p class="text-xs text-slate-600">
+                If you or someone in your borough requires immediate legal help, access these direct resources:
+            </p>
+
+            <div class="space-y-2 text-xs">
+                <a href="tel:18003540365" class="p-3 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold flex items-center justify-between shadow-md">
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="phone" class="w-4 h-4"></i>
+                        <span>New York Immigration Hotline</span>
+                    </div>
+                    <span>1-800-354-0365</span>
+                </a>
+
+                <a href="tel:18443631423" class="p-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-200 font-semibold flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="shield" class="w-4 h-4 text-ice-600"></i>
+                        <span>Immigrant Defense Project</span>
+                    </div>
+                    <span>1-844-363-1423</span>
+                </a>
+
+                <button onclick="sendEmergencySignal()" class="w-full p-3 rounded-xl bg-amber-50 text-amber-800 border border-amber-200 font-bold hover:bg-amber-100 text-left flex items-center justify-between">
+                    <span>Broadcast Community SOS Alert to Nearby Users</span>
+                    <i data-lucide="radio" class="w-4 h-4 text-amber-600"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 4: FAQ / HELP -->
+    <div id="faq-modal" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-md flex items-center justify-center p-4 hidden">
+        <div class="bg-white border border-slate-200 rounded-2xl max-w-md w-full p-5 space-y-4 shadow-2xl max-h-[80vh] overflow-y-auto relative">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                <h3 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+                    <i data-lucide="help-circle" class="w-5 h-5 text-sky-500"></i>
+                    Help & FAQ
+                </h3>
+                <!-- Top Right X Close -->
+                <button onclick="toggleModal('faq-modal')" class="text-slate-400 hover:text-slate-700 p-1 rounded-lg hover:bg-slate-100">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <div class="space-y-3 text-xs text-slate-700">
+                <div>
+                    <h4 class="font-bold text-slate-900">How do the satellite map color zones work?</h4>
+                    <p class="text-slate-600 mt-0.5"><strong class="text-red-500">Red:</strong> High activity / most populated reported area.<br><strong class="text-orange-500">Orange:</strong> Caution area / beware.<br><strong class="text-emerald-600">Green:</strong> Verified safe / clear to go.</p>
+                </div>
+
+                <div>
+                    <h4 class="font-bold text-slate-900">Is my identity safe when uploading videos?</h4>
+                    <p class="text-slate-600 mt-0.5">Yes. Videos are stripped of location metadata and IP addresses are not logged.</p>
+                </div>
+
+                <div>
+                    <h4 class="font-bold text-slate-900">Who is ICE OUT for?</h4>
+                    <p class="text-slate-600 mt-0.5">Built for everyone in NYC, with a focus on informing and keeping immigrant residents safe across Queens, Brooklyn, Bronx, Manhattan, and Staten Island.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 5: RESOURCES & AID -->
+    <div id="resources-modal" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-md flex items-center justify-center p-4 hidden">
+        <div class="bg-white border border-slate-200 rounded-2xl max-w-md w-full p-5 space-y-4 shadow-2xl relative">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                <h3 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+                    <i data-lucide="book-open" class="w-5 h-5 text-amber-500"></i>
+                    NYC Immigrant Resources
+                </h3>
+                <!-- Top Right X Close -->
+                <button onclick="toggleModal('resources-modal')" class="text-slate-400 hover:text-slate-700 p-1 rounded-lg hover:bg-slate-100">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <div class="space-y-2 text-xs">
+                <div class="p-3 bg-slate-50 rounded-xl border border-slate-200">
+                    <h4 class="font-bold text-ice-600">NYC Care - Free & Low-Cost Healthcare</h4>
+                    <p class="text-slate-600 mt-0.5">Guaranteed healthcare service for all New Yorkers regardless of legal status.</p>
+                </div>
+                <div class="p-3 bg-slate-50 rounded-xl border border-slate-200">
+                    <h4 class="font-bold text-emerald-600">ActionNYC Legal Clinics</h4>
+                    <p class="text-slate-600 mt-0.5">Free, safe legal screening for immigrant New Yorkers in all 5 boroughs.</p>
+                </div>
+                <div class="p-3 bg-slate-50 rounded-xl border border-slate-200">
+                    <h4 class="font-bold text-amber-600">Emergency Food & Mutual Aid</h4>
+                    <p class="text-slate-600 mt-0.5">Local food pantries and sanctuary hubs in Queens, Brooklyn, and South Bronx.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 6: VIDEO PLAYER PREVIEW -->
+    <div id="video-modal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4 hidden">
+        <div class="bg-white border border-slate-200 rounded-2xl max-w-2xl w-full p-5 space-y-4 shadow-2xl relative">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+                <div>
+                    <h3 id="modal-video-title" class="text-sm font-bold text-slate-900">Civilian Report Video</h3>
+                    <p id="modal-video-meta" class="text-xs text-slate-500">Queens • 12 mins ago</p>
+                </div>
+                <!-- Top Right X Close -->
+                <button onclick="toggleModal('video-modal')" class="text-slate-400 hover:text-slate-700 p-1 rounded-lg hover:bg-slate-100">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <!-- Simulated Video Player -->
+            <div class="relative bg-black rounded-xl overflow-hidden aspect-video flex items-center justify-center border border-slate-200 group">
+                <div id="modal-video-bg" class="absolute inset-0 bg-cover bg-center opacity-60"></div>
+                <button onclick="playMockVideo()" class="relative z-10 w-16 h-16 rounded-full bg-ice-500/90 text-white flex items-center justify-center hover:scale-110 transition shadow-2xl">
+                    <i data-lucide="play" class="w-8 h-8 fill-white ml-1"></i>
+                </button>
+                <div class="absolute bottom-3 left-3 right-3 bg-slate-900/80 backdrop-blur p-2 rounded-lg text-xs flex items-center justify-between text-slate-200">
+                    <span class="flex items-center gap-1.5"><i data-lucide="check-circle" class="w-3.5 h-3.5 text-emerald-400"></i> Community Verified Upload</span>
+                    <span class="text-[10px] text-slate-400">No EXIF Metadata</span>
+                </div>
+            </div>
+
+            <p id="modal-video-desc" class="text-xs text-slate-700 bg-slate-50 p-3 rounded-xl border border-slate-200">
+                Civilian footage showing activity on 82nd St near Jackson Heights subway entrance.
+            </p>
+        </div>
+    </div>
+
+    <!-- SCRIPT APPLICATION LOGIC -->
+    <script>
+        // Languages Dataset for Step 1 Onboarding Search
+        const allLanguages = [
+            { name: 'English', native: 'English' },
+            { name: 'Spanish', native: 'Español' },
+            { name: 'Chinese (Simplified)', native: '中文 (简体)' },
+            { name: 'Arabic', native: 'العربية' },
+            { name: 'French', native: 'Français' },
+            { name: 'Haitian Creole', native: 'Kreyòl Ayisyen' },
+            { name: 'Bengali', native: 'বাংলা' },
+            { name: 'Russian', native: 'Русский' },
+            { name: 'Hindi', native: 'हिन्दी' },
+            { name: 'Korean', native: '한국어' },
+            { name: 'Tagalog / Filipino', native: 'Tagalog' },
+            { name: 'Urdu', native: 'اردو' },
+            { name: 'Polish', native: 'Polski' },
+            { name: 'Portuguese', native: 'Português' },
+            { name: 'Vietnamese', native: 'Tiếng Việt' }
+        ];
+
+        // State Machine variables
+        let currentView = 'map';
+        let previousView = 'map';
+        let selectedLang = 'English';
+
+        // 12 Civilian Videos dataset
+        const mockVideos = [
+            { id: 1, borough: 'queens', location: 'Jackson Heights, Queens', lat: 40.7484, lng: -73.8857, time: '10 minutes ago', zone: 'red', zoneLabel: 'Red: Unsafe Zone', title: 'Observation on 82nd St', bg: 'https://images.unsplash.com/photo-1541872703-74c5e44368f9?auto=format&fit=crop&w=600&q=80', views: 342, upvotes: 89 },
+            { id: 2, borough: 'bronx', location: 'Mott Haven, Bronx', lat: 40.8090, lng: -73.9220, time: '28 minutes ago', zone: 'red', zoneLabel: 'Red: Unsafe Zone', title: '149th St Station Check', bg: 'https://images.unsplash.com/photo-1518391846015-55a9cc003b25?auto=format&fit=crop&w=600&q=80', views: 512, upvotes: 142 },
+            { id: 3, borough: 'brooklyn', location: 'Sunset Park, Brooklyn', lat: 40.6450, lng: -74.0100, time: '2 hours ago', zone: 'orange', zoneLabel: 'Orange: Beware', title: '5th Ave & 44th St Watch', bg: 'https://images.unsplash.com/photo-1534430480872-3498386e7856?auto=format&fit=crop&w=600&q=80', views: 210, upvotes: 64 },
+            { id: 4, borough: 'manhattan', location: 'Washington Heights, MN', lat: 40.8500, lng: -73.9350, time: '4 hours ago', zone: 'green', zoneLabel: 'Green: Safe / Go', title: '181st St Subway Clear', bg: 'https://images.unsplash.com/photo-1514565131-fce0801e5785?auto=format&fit=crop&w=600&q=80', views: 180, upvotes: 41 },
+            { id: 5, borough: 'queens', location: 'Corona, Queens', lat: 40.7400, lng: -73.8650, time: '6 hours ago', zone: 'orange', zoneLabel: 'Orange: Beware', title: 'Roosevelt Ave Observation', bg: 'https://images.unsplash.com/photo-1568515045052-f9a854d7e16a?auto=format&fit=crop&w=600&q=80', views: 420, upvotes: 110 },
+            { id: 6, borough: 'bronx', location: 'Grand Concourse, Bronx', lat: 40.8250, lng: -73.9210, time: 'Yesterday', zone: 'green', zoneLabel: 'Green: Safe / Go', title: 'Courthouse Area Clear', bg: 'https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?auto=format&fit=crop&w=600&q=80', views: 155, upvotes: 30 },
+            { id: 7, borough: 'brooklyn', location: 'Flatbush, Brooklyn', lat: 40.6520, lng: -73.9590, time: 'Yesterday', zone: 'red', zoneLabel: 'Red: Unsafe Zone', title: 'Nostrand Ave Report', bg: 'https://images.unsplash.com/photo-1506146332389-18140dc7b2fb?auto=format&fit=crop&w=600&q=80', views: 680, upvotes: 215 },
+            { id: 8, borough: 'staten', location: 'St. George, Staten Island', lat: 40.6400, lng: -74.0750, time: 'Aug 29, 2026', zone: 'green', zoneLabel: 'Green: Safe / Go', title: 'Ferry Terminal Verified Clear', bg: 'https://images.unsplash.com/photo-1528728329032-2972f65dfb3f?auto=format&fit=crop&w=600&q=80', views: 98, upvotes: 19 },
+            { id: 9, borough: 'queens', location: 'Flushing, Queens', lat: 40.7580, lng: -73.8300, time: 'Aug 28, 2026', zone: 'green', zoneLabel: 'Green: Safe / Go', title: 'Main Street Plaza Clear', bg: 'https://images.unsplash.com/photo-1519501025264-65ba15a82390?auto=format&fit=crop&w=600&q=80', views: 280, upvotes: 77 },
+            { id: 10, borough: 'manhattan', location: 'Inwood, Manhattan', lat: 40.8650, lng: -73.9210, time: 'Aug 27, 2026', zone: 'orange', zoneLabel: 'Orange: Beware', title: 'Dyckman St Observation', bg: 'https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?auto=format&fit=crop&w=600&q=80', views: 195, upvotes: 48 },
+            { id: 11, borough: 'bronx', location: 'Kingsbridge, Bronx', lat: 40.8780, lng: -73.9030, time: 'Aug 26, 2026', zone: 'green', zoneLabel: 'Green: Safe / Go', title: '231st St Hub Safe', bg: 'https://images.unsplash.com/photo-1477959858617-67f30ac4ce78?auto=format&fit=crop&w=600&q=80', views: 130, upvotes: 22 },
+            { id: 12, borough: 'brooklyn', location: 'Bushwick, Brooklyn', lat: 40.6940, lng: -73.9210, time: 'Aug 25, 2026', zone: 'orange', zoneLabel: 'Orange: Beware', title: 'Myrtle Ave Observation', bg: 'https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?auto=format&fit=crop&w=600&q=80', views: 305, upvotes: 91 }
+        ];
+
+        // Fully Anonymous Chat Dataset with Specific Timestamps (No Usernames)
+        const mockChat = [
+            { borough: 'Queens', zone: 'red', text: 'Spotted near Roosevelt Ave and 74th St. Caution everyone!', time: '10 minutes ago' },
+            { borough: 'Bronx', zone: 'red', text: 'Active check near 149th Grand Concourse. Spread the word.', time: '35 minutes ago' },
+            { borough: 'Brooklyn', zone: 'orange', text: 'Vehicle seen on 5th Ave turning onto 45th St. Stay alert.', time: '2 hours ago' },
+            { borough: 'Manhattan', zone: 'green', text: '181st Subway station completely clear right now. Safe to travel.', time: 'Yesterday' },
+            { borough: 'Queens', zone: 'orange', text: 'Junction Blvd area quiet but stay cautious.', time: 'Aug 28, 2026' }
+        ];
+
+        let leafletMap = null;
+
+        // On DOM Load
+        window.addEventListener('DOMContentLoaded', () => {
+            renderLanguageList(allLanguages);
+            renderVideoGrid(mockVideos);
+            renderChatMessages();
+            lucide.createIcons();
+        });
+
+        // 1. Language Search Filtering Function (Step 1 Onboarding)
+        function filterLanguages() {
+            const query = document.getElementById('lang-search-input').value.toLowerCase().trim();
+            const filtered = allLanguages.filter(l => 
+                l.name.toLowerCase().includes(query) || 
+                l.native.toLowerCase().includes(query)
+            );
+            renderLanguageList(filtered);
+        }
+
+        function renderLanguageList(list) {
+            const container = document.getElementById('language-list-container');
+            if (!container) return;
+            
+            if (list.length === 0) {
+                container.innerHTML = `<p class="text-xs text-slate-400 text-center py-4">No matching language found</p>`;
+                return;
+            }
+
+            container.innerHTML = list.map(l => `
+                <button onclick="chooseOnboardingLang('${l.native}')" class="w-full p-3 rounded-xl bg-slate-50 border border-slate-200 hover:border-ice-400 text-left flex items-center justify-between transition group">
+                    <span class="text-xs font-semibold text-slate-800 group-hover:text-ice-600">${l.native}</span>
+                    <span class="text-[10px] text-slate-400">${l.name}</span>
+                </button>
+            `).join('');
+        }
+
+        // Onboarding Navigation Logic
+        function chooseOnboardingLang(lang) {
+            selectedLang = lang;
+            document.getElementById('current-lang-display').innerText = lang;
+            document.getElementById('drawer-lang-tag').innerText = lang;
+            
+            // Proceed to Step 2
+            document.getElementById('onboarding-step1').classList.add('hidden');
+            document.getElementById('onboarding-step2').classList.remove('hidden');
+        }
+
+        function finishDisclaimerStep() {
+            // Proceed to Step 3
+            document.getElementById('onboarding-step2').classList.add('hidden');
+            document.getElementById('onboarding-step3').classList.remove('hidden');
+        }
+
+        function finishOnboarding() {
+            // Dismiss Onboarding & Open Satellite Map Home View
+            document.getElementById('onboarding-step3').classList.add('hidden');
+            switchView('map');
+        }
+
+        function restartOnboarding() {
+            document.getElementById('onboarding-step1').classList.remove('hidden');
+            document.getElementById('onboarding-step2').classList.add('hidden');
+            document.getElementById('onboarding-step3').classList.add('hidden');
+        }
+
+        // View Switching Logic
+        function switchView(targetView) {
+            if (currentView !== targetView) {
+                previousView = currentView;
+                currentView = targetView;
+            }
+
+            document.querySelectorAll('main > section').forEach(sec => sec.classList.add('hidden'));
+            
+            const activeSection = document.getElementById(`view-${targetView}`);
+            if (activeSection) {
+                activeSection.classList.remove('hidden');
+            }
+
+            updateNavHighlights(targetView);
+
+            if (targetView === 'map') {
+                if (!leafletMap) {
+                    setTimeout(initNYCMap, 150);
+                } else {
+                    setTimeout(() => leafletMap.invalidateSize(), 100);
+                }
+            }
+
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            lucide.createIcons();
+        }
+
+        function goBack() {
+            switchView(previousView || 'map');
+        }
+
+        function updateNavHighlights(view) {
+            const buttons = {
+                feed: 'nav-btn-home',
+                map: 'nav-btn-home',
+                record: 'nav-btn-record',
+                chat: 'nav-btn-chat'
+            };
+
+            const activeBtnId = buttons[view] || 'nav-btn-home';
+            ['nav-btn-record', 'nav-btn-chat', 'nav-btn-home'].forEach(id => {
+                const btn = document.getElementById(id);
+                if (btn) {
+                    if (id === activeBtnId && id !== 'nav-btn-record') {
+                        btn.classList.add('text-ice-600', 'bg-slate-200');
+                        btn.classList.remove('text-slate-600');
+                    } else if (id !== 'nav-btn-record') {
+                        btn.classList.remove('text-ice-600', 'bg-slate-200');
+                        btn.classList.add('text-slate-600');
+                    }
+                }
+            });
+        }
+
+        function renderVideoGrid(videos) {
+            const grid = document.getElementById('video-grid');
+            if (!grid) return;
+            grid.innerHTML = '';
+
+            videos.forEach(v => {
+                let zoneColorClass = 'bg-emerald-50 text-emerald-700 border-emerald-200';
+                let zoneBadge = '🟢 Safe / Go';
+                if (v.zone === 'red') {
+                    zoneColorClass = 'bg-red-50 text-red-700 border-red-200 animate-pulse';
+                    zoneBadge = '🔴 Unsafe Zone';
+                } else if (v.zone === 'orange') {
+                    zoneColorClass = 'bg-orange-50 text-orange-700 border-orange-200';
+                    zoneBadge = '🟠 Caution / Beware';
+                }
+
+                const card = document.createElement('div');
+                card.className = "bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm hover:border-ice-400 transition duration-300 flex flex-col group cursor-pointer";
+                card.onclick = () => openVideoModal(v);
+
+                card.innerHTML = `
+                    <div class="relative h-44 bg-slate-900 overflow-hidden">
+                        <img src="${v.bg}" alt="${v.title}" class="w-full h-full object-cover group-hover:scale-105 transition duration-500 opacity-80">
+                        <div class="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-black/30"></div>
+                        
+                        <span class="absolute top-2.5 left-2.5 px-2.5 py-1 rounded-full text-[10px] font-bold border backdrop-blur-md ${zoneColorClass}">
+                            ${zoneBadge}
+                        </span>
+
+                        <span class="absolute top-2.5 right-2.5 px-2 py-0.5 rounded-md text-[10px] bg-slate-900/80 text-slate-200 border border-slate-700">
+                            ${v.time}
+                        </span>
+
+                        <div class="absolute inset-0 flex items-center justify-center">
+                            <div class="w-11 h-11 rounded-full bg-ice-500/90 text-white flex items-center justify-center group-hover:scale-110 transition shadow-lg border border-white/40">
+                                <i data-lucide="play" class="w-5 h-5 fill-white ml-0.5"></i>
+                            </div>
+                        </div>
+
+                        <div class="absolute bottom-2 left-2.5 right-2.5 text-xs font-semibold text-white truncate flex items-center gap-1">
+                            <i data-lucide="map-pin" class="w-3.5 h-3.5 text-ice-400 shrink-0"></i>
+                            <span class="truncate">${v.location}</span>
+                        </div>
+                    </div>
+
+                    <div class="p-3 flex-1 flex flex-col justify-between space-y-2">
+                        <h3 class="text-xs font-bold text-slate-800 group-hover:text-ice-600 transition line-clamp-1">${v.title}</h3>
+                        
+                        <div class="flex items-center justify-between text-[11px] text-slate-500 pt-1 border-t border-slate-100">
+                            <span class="flex items-center gap-1"><i data-lucide="eye" class="w-3 h-3 text-slate-400"></i> ${v.views} views</span>
+                            <button onclick="event.stopPropagation(); upvoteVideo(${v.id}, this)" class="flex items-center gap-1 text-slate-600 hover:text-ice-600 transition px-2 py-1 rounded hover:bg-slate-100">
+                                <i data-lucide="shield-check" class="w-3.5 h-3.5 text-emerald-600"></i>
+                                <span>${v.upvotes} Confirm</span>
+                            </button>
+                        </div>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+            lucide.createIcons();
+        }
+
+        function filterFeed(borough) {
+            document.querySelectorAll('.feed-filter-btn').forEach(btn => {
+                btn.classList.remove('bg-ice-600', 'text-white', 'active', 'shadow-sm');
+                btn.classList.add('bg-slate-100', 'text-slate-600');
+            });
+            if (event && event.currentTarget) {
+                event.currentTarget.classList.add('bg-ice-600', 'text-white', 'active', 'shadow-sm');
+                event.currentTarget.classList.remove('bg-slate-100', 'text-slate-600');
+            }
+
+            if (borough === 'all') {
+                renderVideoGrid(mockVideos);
+            } else {
+                const filtered = mockVideos.filter(v => v.borough === borough);
+                renderVideoGrid(filtered);
+            }
+        }
+
+        function upvoteVideo(id, btnElem) {
+            const video = mockVideos.find(v => v.id === id);
+            if (video) {
+                video.upvotes++;
+                btnElem.querySelector('span').innerText = `${video.upvotes} Confirm`;
+                btnElem.classList.add('text-ice-600');
+            }
+        }
+
+        // Initialize NYC Satellite Map
+        function initNYCMap() {
+            if (leafletMap) return;
+
+            leafletMap = L.map('nyc-satellite-map', {
+                zoomControl: false
+            }).setView([40.7400, -73.9400], 11);
+
+            L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                attribution: 'Tiles &copy; Esri &mdash; NYC ICE OUT Satellite',
+                maxZoom: 18
+            }).addTo(leafletMap);
+
+            L.control.zoom({ position: 'topright' }).addTo(leafletMap);
+
+            const mapZones = [
+                { lat: 40.7484, lng: -73.8857, radius: 1200, color: '#ef4444', text: '<b>🔴 RED ZONE: High Activity Area</b><br>Jackson Heights / Roosevelt Ave' },
+                { lat: 40.8090, lng: -73.9220, radius: 1100, color: '#ef4444', text: '<b>🔴 RED ZONE: High Activity Area</b><br>Mott Haven / 149th St' },
+                { lat: 40.6450, lng: -74.0100, radius: 1300, color: '#f97316', text: '<b>🟠 ORANGE ZONE: Caution / Beware</b><br>Sunset Park / 5th Ave' },
+                { lat: 40.8500, lng: -73.9350, radius: 1000, color: '#22c55e', text: '<b>🟢 GREEN ZONE: Verified Clear</b><br>Washington Heights' },
+                { lat: 40.6400, lng: -74.0750, radius: 900, color: '#22c55e', text: '<b>🟢 GREEN ZONE: Verified Clear</b><br>Staten Island Ferry Terminal' }
+            ];
+
+            mapZones.forEach(z => {
+                L.circle([z.lat, z.lng], {
+                    color: z.color,
+                    fillColor: z.color,
+                    fillOpacity: 0.4,
+                    radius: z.radius,
+                    weight: 3
+                }).addTo(leafletMap);
+            });
+
+            mockVideos.forEach(v => {
+                let borderCol = 'border-emerald-500';
+                let bgBadge = 'bg-emerald-500';
+                if (v.zone === 'red') {
+                    borderCol = 'border-red-500 ring-2 ring-red-500/50 animate-pulse';
+                    bgBadge = 'bg-red-500';
+                } else if (v.zone === 'orange') {
+                    borderCol = 'border-orange-500';
+                    bgBadge = 'bg-orange-500';
+                }
+
+                const pinHtml = `
+                    <div onclick="openVideoModalById(${v.id})" class="video-pin-card relative cursor-pointer group">
+                        <div class="w-12 h-12 rounded-xl border-2 ${borderCol} overflow-hidden bg-slate-900 shadow-2xl relative flex items-center justify-center">
+                            <img src="${v.bg}" class="w-full h-full object-cover opacity-90 group-hover:scale-110 transition">
+                            <div class="absolute inset-0 bg-black/30"></div>
+                            
+                            <div class="w-5 h-5 rounded-full bg-ice-500/90 text-white flex items-center justify-center shadow-md">
+                                <i data-lucide="play" class="w-2.5 h-2.5 fill-white ml-0.5"></i>
+                            </div>
+
+                            <span class="absolute top-0.5 right-0.5 w-2 h-2 rounded-full ${bgBadge} border border-white"></span>
+                        </div>
+                        <div class="w-2.5 h-2.5 bg-slate-900 border-r-2 border-b-2 ${borderCol} transform rotate-45 -mt-1.5 mx-auto"></div>
+                    </div>
+                `;
+
+                const customIcon = L.divIcon({
+                    html: pinHtml,
+                    className: 'custom-video-pin',
+                    iconSize: [48, 58],
+                    iconAnchor: [24, 58],
+                    popupAnchor: [0, -50]
+                });
+
+                const marker = L.marker([v.lat, v.lng], { icon: customIcon }).addTo(leafletMap);
+
+                const popupContent = `
+                    <div class="p-2 space-y-2 max-w-[200px]">
+                        <div class="relative h-24 rounded-xl overflow-hidden bg-black">
+                            <img src="${v.bg}" class="w-full h-full object-cover">
+                            <button onclick="openVideoModalById(${v.id})" class="absolute inset-0 flex items-center justify-center bg-black/40 hover:bg-black/20 transition">
+                                <div class="w-9 h-9 rounded-full bg-ice-500 text-white flex items-center justify-center shadow-lg">
+                                    <i data-lucide="play" class="w-4 h-4 fill-white ml-0.5"></i>
+                                </div>
+                            </button>
+                        </div>
+                        <div>
+                            <span class="text-[10px] uppercase font-extrabold px-2 py-0.5 rounded ${v.zone === 'red' ? 'bg-red-100 text-red-700' : (v.zone === 'orange' ? 'bg-orange-100 text-orange-700' : 'bg-emerald-100 text-emerald-700')}">${v.zoneLabel}</span>
+                            <h4 class="text-xs font-bold text-slate-900 mt-1">${v.title}</h4>
+                            <p class="text-[10px] text-slate-500">${v.location} • ${v.time}</p>
+                        </div>
+                        <button onclick="openVideoModalById(${v.id})" class="w-full py-1.5 rounded-lg bg-ice-600 hover:bg-ice-500 text-white font-bold text-[11px] transition">
+                            Watch Civilian Video
+                        </button>
+                    </div>
+                `;
+
+                marker.bindPopup(popupContent);
+            });
+
+            setTimeout(() => {
+                lucide.createIcons();
+            }, 300);
+        }
+
+        function openVideoModalById(id) {
+            const video = mockVideos.find(v => v.id === id);
+            if (video) openVideoModal(video);
+        }
+
+        function panMapTo(lat, lng, zoom = 13) {
+            if (leafletMap) leafletMap.flyTo([lat, lng], zoom, { duration: 1.5 });
+        }
+
+        function openDrawer() {
+            document.getElementById('side-drawer').classList.remove('-translate-x-full');
+            document.getElementById('drawer-backdrop').classList.replace('opacity-0', 'opacity-100');
+        }
+
+        function closeDrawer() {
+            document.getElementById('side-drawer').classList.add('-translate-x-full');
+            document.getElementById('drawer-backdrop').classList.replace('opacity-100', 'opacity-0');
+        }
+
+        function toggleModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) modal.classList.toggle('hidden');
+        }
+
+        function selectAppLanguage(lang) {
+            selectedLang = lang;
+            document.getElementById('current-lang-display').innerText = lang;
+            document.getElementById('drawer-lang-tag').innerText = lang;
+            toggleModal('language-modal');
+        }
+
+        function openVideoModal(video) {
+            document.getElementById('modal-video-title').innerText = video.title;
+            document.getElementById('modal-video-meta').innerText = `${video.location} • ${video.time}`;
+            document.getElementById('modal-video-desc').innerText = `Civilian footage uploaded from ${video.location}. Classified under ${video.zoneLabel}. Verified by community observers.`;
+            document.getElementById('modal-video-bg').style.backgroundImage = `url('${video.bg}')`;
+            toggleModal('video-modal');
+        }
+
+        function playMockVideo() {
+            alert('▶ Playing civilian uploaded video footage (Simulated Player)');
+        }
+
+        let recordingInterval = null;
+        let isRecording = false;
+        let secondsRecorded = 0;
+
+        function toggleRecording() {
+            const btnText = document.getElementById('record-btn-text');
+            const indicator = document.getElementById('recording-indicator');
+            const placeholder = document.getElementById('camera-placeholder');
+
+            if (!isRecording) {
+                isRecording = true;
+                secondsRecorded = 0;
+                btnText.innerText = "Stop Recording";
+                indicator.classList.remove('hidden');
+                placeholder.classList.add('hidden');
+
+                recordingInterval = setInterval(() => {
+                    secondsRecorded++;
+                    const mins = String(Math.floor(secondsRecorded / 60)).padStart(2, '0');
+                    const secs = String(secondsRecorded % 60).padStart(2, '0');
+                    document.getElementById('record-timer').innerText = `${mins}:${secs}`;
+                }, 1000);
+            } else {
+                isRecording = false;
+                clearInterval(recordingInterval);
+                btnText.innerText = "Start Anonymous Recording";
+                indicator.classList.add('hidden');
+                placeholder.classList.remove('hidden');
+                alert(`Video recorded (${secondsRecorded}s). Metadata stripped and saved to session buffer.`);
+            }
+        }
+
+        function handleFileUpload(e) {
+            if (e.target.files && e.target.files[0]) {
+                alert(`Selected file: ${e.target.files[0].name}. EXIF data removed automatically.`);
+            }
+        }
+
+        function submitUpload() {
+            const borough = document.getElementById('upload-borough').value;
+            const zone = document.getElementById('upload-zone').value;
+            const desc = document.getElementById('upload-desc').value || 'Civilian observation';
+
+            const newVid = {
+                id: Date.now(),
+                borough: 'queens',
+                location: borough,
+                lat: 40.7484 + (Math.random() - 0.5) * 0.05,
+                lng: -73.8857 + (Math.random() - 0.5) * 0.05,
+                time: 'Just now',
+                zone: zone,
+                zoneLabel: zone === 'red' ? 'Red: Unsafe Zone' : (zone === 'orange' ? 'Orange: Beware' : 'Green: Safe / Go'),
+                title: desc,
+                bg: 'https://images.unsplash.com/photo-1541872703-74c5e44368f9?auto=format&fit=crop&w=600&q=80',
+                views: 1,
+                upvotes: 1
+            };
+
+            mockVideos.unshift(newVid);
+            renderVideoGrid(mockVideos);
+
+            if (leafletMap) {
+                let borderCol = newVid.zone === 'red' ? 'border-red-500' : (newVid.zone === 'orange' ? 'border-orange-500' : 'border-emerald-500');
+                const pinHtml = `
+                    <div onclick="openVideoModalById(${newVid.id})" class="video-pin-card relative cursor-pointer group">
+                        <div class="w-12 h-12 rounded-xl border-2 ${borderCol} overflow-hidden bg-slate-900 shadow-2xl relative flex items-center justify-center">
+                            <img src="${newVid.bg}" class="w-full h-full object-cover">
+                            <div class="w-5 h-5 rounded-full bg-ice-500 text-white flex items-center justify-center">
+                                <i data-lucide="play" class="w-2.5 h-2.5 fill-white ml-0.5"></i>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                const customIcon = L.divIcon({ html: pinHtml, className: 'custom-video-pin', iconSize: [48, 58] });
+                L.marker([newVid.lat, newVid.lng], { icon: customIcon }).addTo(leafletMap);
+            }
+
+            alert('Your civilian video alert has been broadcast onto the live satellite map and feed!');
+            switchView('map');
+        }
+
+        // Render Anonymous Chat Messages (NO Usernames, Specific Time Formats)
+        function renderChatMessages() {
+            const container = document.getElementById('chat-messages');
+            if (!container) return;
+            container.innerHTML = '';
+
+            mockChat.forEach(msg => {
+                let badgeClass = 'bg-emerald-50 text-emerald-700 border-emerald-200';
+                if (msg.zone === 'red') badgeClass = 'bg-red-50 text-red-700 border-red-200';
+                if (msg.zone === 'orange') badgeClass = 'bg-orange-50 text-orange-700 border-orange-200';
+
+                const item = document.createElement('div');
+                item.className = "p-3 bg-white rounded-xl border border-slate-200 space-y-1 shadow-sm";
+                item.innerHTML = `
+                    <div class="flex items-center justify-between text-xs">
+                        <div class="flex items-center gap-1.5">
+                            <span class="font-bold text-ice-600">Anonymous <span class="text-slate-400 font-normal">• ${msg.borough}</span></span>
+                            <span class="text-[10px] text-slate-400">• ${msg.time || 'Just now'}</span>
+                        </div>
+                        <span class="text-[10px] px-2 py-0.5 rounded-full border ${badgeClass}">${msg.zone.toUpperCase()} ZONE</span>
+                    </div>
+                    <p class="text-xs text-slate-700">${msg.text}</p>
+                `;
+                container.appendChild(item);
+            });
+
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function sendChatMessage() {
+            const input = document.getElementById('chat-input');
+            const text = input.value.trim();
+            if (!text) return;
+
+            mockChat.push({
+                borough: 'NYC Resident',
+                zone: 'orange',
+                text: text,
+                time: 'Just now'
+            });
+
+            input.value = '';
+            renderChatMessages();
+        }
+
+        function insertQuickTag(tag) {
+            const input = document.getElementById('chat-input');
+            input.value = `${tag} ${input.value}`;
+            input.focus();
+        }
+
+        function switchChatChannel() {
+            renderChatMessages();
+        }
+
+        function sendEmergencySignal() {
+            alert('🚨 EMERGENCY ALERT BROADCAST: Nearby ICE OUT app users in your borough have been notified for solidarity support.');
+        }
+    </script>
+</body>
+</html>

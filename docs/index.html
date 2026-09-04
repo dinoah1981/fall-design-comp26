@@ -66,29 +66,29 @@
     // name: null shows a "name pending" placeholder. Cards group by grade, in this order.
     const FINALISTS = [
       // grade 9
-      { grade: 9,  name: null,                advisory: 'Diverio/T. Johnson/Tripp', members: ['Kelly', 'Kristina', 'Salamatu', 'Tiana'],            app: null },
-      { grade: 9,  name: null,                advisory: 'Reardon/Ryan/Losi',        members: ['Eliot', 'Snider', 'Keilee', "Shon'Lion", 'Tahrima'],  app: null },
-      { grade: 9,  name: null,                advisory: 'Magaldi/Prasad',           members: ['Ethan', 'James', 'Miguel', 'Sean'],                   app: null },
-      { grade: 9,  name: 'Kamm',              advisory: 'Mao/Cramer',               members: ['Max', 'Alani', 'Musa', 'Keziah'],                     app: null },
-      { grade: 9,  name: null,                advisory: 'Bendau/Kedia',             members: ['Ailyn', 'Amir', 'Yailyn', 'Derrick'],                 app: null },
+      { grade: 9,  name: 'SameHere',            advisory: 'Diverio/T. Johnson/Tripp', members: ['Kelly', 'Kristina', 'Salamatu', 'Tiana'],             app: null },
+      { grade: 9,  name: 'FixMyBlock',          advisory: 'Reardon/Ryan/Losi',        members: ['Eliot', 'Snider', 'Keilee', "Shon'Lion", 'Tahrima'],  app: 'finalists/fixmyblock/index.html' },
+      { grade: 9,  name: 'Recyclean',           advisory: 'Magaldi/Prasad',           members: ['Ethan', 'James', 'Miguel', 'Sean'],                   app: 'finalists/recyclean/index.html' },
+      { grade: 9,  name: 'Kamm',                advisory: 'Mao/Cramer',               members: ['Max', 'Alani', 'Musa', 'Keziah'],                     app: null },
+      { grade: 9,  name: 'Safe Haven',          advisory: 'Bendau/Kedia',             members: ['Ailyn', 'Amir', 'Yailyn', 'Derrick'],                 app: null },
       // grade 10
-      { grade: 10, name: null,                advisory: 'Carapezza/Clark',          members: ['Ethel', 'Geanna', 'Jafraysi', 'Lovaya'],              app: null },
-      { grade: 10, name: null,                advisory: 'Peters/Yuen/L.Ortiz',      members: ['Chrisette', 'Elijah', 'Jacob', 'Stephany'],           app: null },
-      { grade: 10, name: null,                advisory: 'Phillips/Rodriguez',       members: ['Kenaz', 'Khamarle', 'Kwabena (Kobe)', 'Lachana'],     app: null },
-      { grade: 10, name: null,                advisory: 'Rahaman/Parcells',         members: ['Christal', 'Fatoumata', 'Janiah', 'Janmilet'],        app: null },
-      { grade: 10, name: 'NYC Crash Comfort', advisory: 'Thevenin/S.Joseph',        members: ['Dante', 'Dylan', 'Jordyn', 'Clarkston'],              app: null },
+      { grade: 10, name: 'Community Watch',     advisory: 'Carapezza/Clark',          members: ['Ethel', 'Geanna', 'Jafraysi', 'Lovaya'],              app: 'finalists/community-watch/index.html' },
+      { grade: 10, name: 'Street Support',      advisory: 'Peters/Yuen/L.Ortiz',      members: ['Chrisette', 'Elijah', 'Jacob', 'Stephany'],           app: 'finalists/street-support/index.html' },
+      { grade: 10, name: 'Uplift',              advisory: 'Phillips/Rodriguez',       members: ['Kenaz', 'Khamarle', 'Kwabena (Kobe)', 'Lachana'],     app: 'finalists/uplift/index.html' },
+      { grade: 10, name: 'Its a Party',         advisory: 'Rahaman/Parcells',         members: ['Christal', 'Fatoumata', 'Janiah', 'Janmilet'],        app: null },
+      { grade: 10, name: 'NYC Crash Comfort',   advisory: 'Thevenin/S.Joseph',        members: ['Dante', 'Dylan', 'Jordyn', 'Clarkston'],              app: 'finalists/nyc-crash-comfort/index.html' },
       // grade 11
-      { grade: 11, name: 'OpenBx',            advisory: 'Agrawal/Umana',            members: ['Hever', 'Jayla', 'Jasmine', 'Carew'],                 app: null },
-      { grade: 11, name: 'Tip Tier',          advisory: 'Mosley/Enriquez',          members: ['Anayah', 'Enmanuel', 'Heidi', 'Michael'],             app: null },
-      { grade: 11, name: null,                advisory: 'Berrios/Romero',           members: ['Donel', 'Kashari', 'Melanie', 'Randell', 'Vivianne'], app: null },
-      { grade: 11, name: 'QuietSignal',       advisory: 'Gouede/Helmer',            members: ['Christal', 'Ousmane', 'Analia', 'Julian'],            app: null },
-      { grade: 11, name: null,                advisory: 'Germain/Sturdy',           members: ['Esmerlin', 'Fatomata', 'Lavie', 'Victoria'],          app: null },
+      { grade: 11, name: 'OpenBx',              advisory: 'Agrawal/Umana',            members: ['Hever', 'Jayla', 'Jasmine', 'Carew'],                 app: 'finalists/openbx/index.html' },
+      { grade: 11, name: 'Tip Tier',            advisory: 'Mosley/Enriquez',          members: ['Anayah', 'Enmanuel', 'Heidi', 'Michael'],             app: 'finalists/tip-tier/index.html' },
+      { grade: 11, name: 'Haven',               advisory: 'Berrios/Romero',           members: ['Donel', 'Kashari', 'Melanie', 'Randell', 'Vivianne'], app: 'finalists/haven/index.html' },
+      { grade: 11, name: 'QuietSignal',         advisory: 'Gouede/Helmer',            members: ['Christal', 'Ousmane', 'Analia', 'Julian'],            app: 'finalists/quietsignal/index.html' },
+      { grade: 11, name: 'ICE OUT',             advisory: 'Germain/Sturdy',           members: ['Esmerlin', 'Fatomata', 'Lavie', 'Victoria'],          app: 'finalists/ice-out/index.html' },
       // grade 12
-      { grade: 12, name: null,                advisory: 'Uddin/Golden',             members: ['Anyolina', 'Max', 'Jennifer'],                        app: null },
-      { grade: 12, name: 'CRUTCH',            advisory: 'Kelly/Gonzalez',           members: ['Athalia', 'Damari', 'Evelyn', 'Kenny', 'Lucas'],      app: null },
-      { grade: 12, name: null,                advisory: 'Medina/Chambers',          members: ['Ariana'],                                             app: null },
-      { grade: 12, name: 'Next Step',         advisory: 'Metchiou/Bute',            members: ['Chanel', 'Kaylie', 'Kiara', 'Viany'],                 app: null },
-      { grade: 12, name: null,                advisory: 'Skwiersky/Stewart',        members: ['Ronald', 'Steven', 'Wasiur'],                         app: null },
+      { grade: 12, name: 'P.L.A.N.',            advisory: 'Uddin/Golden',             members: ['Anyolina', 'Max', 'Jennifer'],                        app: 'finalists/plan/index.html' },
+      { grade: 12, name: 'CRUTCH: MedinMotion', advisory: 'Kelly/Gonzalez',           members: ['Athalia', 'Damari', 'Evelyn', 'Kenny', 'Lucas'],      app: 'finalists/crutch/index.html' },
+      { grade: 12, name: null,                  advisory: 'Medina/Chambers',          members: ['Ariana'],                                             app: null },
+      { grade: 12, name: 'Next Step',           advisory: 'Metchiou/Bute',            members: ['Chanel', 'Kaylie', 'Kiara', 'Viany'],                 app: 'finalists/next-step/index.html' },
+      { grade: 12, name: 'Quick Cash',          advisory: 'Skwiersky/Stewart',        members: ['Ronald', 'Steven', 'Wasiur'],                         app: null },
     ];
   </script>
 </head>

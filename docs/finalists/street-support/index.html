@@ -1,0 +1,1821 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Street Support - Community Care Portal</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600&family=Fredoka:wght@400;600&family=Quicksand:wght@500;700&display=swap" rel="stylesheet">
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        sage: {
+                            50: '#f4f7f4',
+                            100: '#e3ebe3',
+                            200: '#c7d7c7',
+                            500: '#87a987',
+                            600: '#6d8f6d',
+                            700: '#557255',
+                            800: '#435a43',
+                            900: '#384938',
+                        },
+                        skyblue: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            200: '#bae6fd',
+                            400: '#38bdf8',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        :root {
+            --bg-color: #FAF6F0;
+            --card-bg: #FFFFFF;
+            --text-color: #4A4A4A;
+            --primary-color: #88C0D0;
+            --accent-color: #A3BE8C;
+            --border-radius: 16px;
+        }
+        body {
+            font-family: 'Quicksand', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+        }
+        .brand-title {
+            font-family: 'Fredoka', cursive;
+        }
+        .quote-title {
+            font-family: 'Caveat', cursive;
+        }
+        .page-content {
+            display: none;
+        }
+        .page-content.active {
+            display: block;
+        }
+        /* Modal Overlays */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.6);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background: var(--card-bg);
+            padding: 30px;
+            border-radius: var(--border-radius);
+            max-width: 440px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+        }
+        .lang-btn {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid var(--primary-color);
+            background: none;
+            border-radius: 20px;
+            font-family: inherit;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .lang-btn:hover {
+            background: var(--primary-color);
+            color: white;
+        }
+        /* Custom scrollbar for chat */
+        .chat-scroll::-webkit-scrollbar {
+            width: 6px;
+        }
+        .chat-scroll::-webkit-scrollbar-thumb {
+            background-color: #cbd5e1;
+            border-radius: 3px;
+        }
+        .typing-dot {
+            animation: typing 1.4s infinite ease-in-out both;
+        }
+        .typing-dot:nth-child(1) { animation-delay: 0s; }
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes typing {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1); }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col font-sans">
+
+    <!-- Modal 1: Initial Language Selector Prompt -->
+    <div class="modal-overlay" id="languageModal">
+        <div class="modal-content">
+            <h2 class="brand-title text-2xl text-slate-700 mb-3">Which language do you speak?</h2>
+            <p class="text-xs text-slate-500 mb-4">Select a language to customize your portal experience.</p>
+            <ul class="space-y-2">
+                <li><button class="lang-btn" onclick="selectLanguage('en')">English</button></li>
+                <li><button class="lang-btn" onclick="selectLanguage('es')">Español (Spanish)</button></li>
+                <li><button class="lang-btn" onclick="selectLanguage('fr')">Français (French)</button></li>
+                <li><button class="lang-btn" onclick="selectLanguage('pt')">Português (Portuguese)</button></li>
+                <li><button class="lang-btn" onclick="selectLanguage('ko')">한국어 (Korean)</button></li>
+                <li><button class="lang-btn" onclick="selectLanguage('vi')">Tiếng Việt (Vietnamese)</button></li>
+                <li><button class="lang-btn" onclick="selectLanguage('zh')">中文 (Mandarin)</button></li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Modal 2: Location Setup Prompt -->
+    <div class="modal-overlay" id="locationModal" style="display: none;">
+        <div class="modal-content">
+            <h2 class="brand-title text-2xl text-slate-700 mb-2" data-lang="locTitle">Set Your Location</h2>
+            <p class="text-xs text-slate-500 mb-4" data-lang="locDesc">Type your borough, neighborhood, or city (e.g., Bronx, Brooklyn, Queens, Manhattan):</p>
+            
+            <div class="text-left space-y-2 mb-4">
+                <label class="font-bold text-xs text-slate-700" data-lang="locOpt1">Option 1: Type borough, neighborhood, or ZIP code</label>
+                <div class="flex gap-2">
+                    <input type="text" id="manualAddressInput" placeholder="e.g. Bronx, Brooklyn, 10451..." data-lang-ph="addressPlaceholder"
+                           class="w-full px-3 py-2 border-2 border-sage-500 rounded-xl text-sm focus:outline-none">
+                    <button onclick="submitManualAddress()" class="bg-sage-600 hover:bg-sage-700 text-white font-bold text-xs px-4 py-2 rounded-xl transition" data-lang="locSave">
+                        Save
+                    </button>
+                </div>
+            </div>
+
+            <div class="text-xs font-bold text-sage-600 my-3">— OR —</div>
+
+            <div class="text-left space-y-2">
+                <label class="font-bold text-xs text-slate-700" data-lang="locOpt2">Option 2: Use current device location</label>
+                <button onclick="requestLocation()" class="w-full bg-skyblue-600 hover:bg-skyblue-700 text-white font-bold text-xs py-2.5 rounded-xl transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-location-crosshairs"></i> <span data-lang="locBtn">Share Location Access</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top Navigation Header -->
+    <header class="bg-sage-700 text-white shadow-md sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto px-4 py-3 flex flex-wrap justify-between items-center gap-2">
+            <div class="flex items-center space-x-2 cursor-pointer" onclick="switchTab('home')">
+                <i class="fa-solid fa-hands-holding-child text-2xl text-skyblue-200"></i>
+                <span class="brand-title font-bold text-2xl tracking-wide">Street Support</span>
+            </div>
+            
+            <div class="flex items-center space-x-2 sm:space-x-4">
+                <!-- Language Selector -->
+                <div class="flex items-center space-x-1 bg-sage-800 text-white text-xs px-2.5 py-1.5 rounded-lg border border-sage-600">
+                    <i class="fa-solid fa-globe text-skyblue-200"></i>
+                    <select id="language-select" onchange="changeLanguage(this.value)" class="bg-transparent text-white font-medium focus:outline-none cursor-pointer">
+                        <option value="en" class="text-slate-800">English</option>
+                        <option value="es" class="text-slate-800">Español (Spanish)</option>
+                        <option value="fr" class="text-slate-800">Français (French)</option>
+                        <option value="pt" class="text-slate-800">Português (Portuguese)</option>
+                        <option value="ko" class="text-slate-800">한국어 (Korean)</option>
+                        <option value="vi" class="text-slate-800">Tiếng Việt (Vietnamese)</option>
+                        <option value="zh" class="text-slate-800">中文 (Mandarin)</option>
+                    </select>
+                </div>
+
+                <!-- Emergency Call Button -->
+                <a href="tel:911" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1 transition">
+                    <i class="fa-solid fa-phone"></i> <span data-lang="emergencyBtn">Emergency: 911 / 211</span>
+                </a>
+            </div>
+        </div>
+
+        <!-- Sub Navigation Bar -->
+        <nav class="bg-sage-800 border-t border-sage-600 overflow-x-auto">
+            <div class="max-w-6xl mx-auto px-2 flex justify-start sm:justify-center space-x-1 sm:space-x-3 py-2 text-sm font-medium text-white whitespace-nowrap">
+                <button onclick="switchTab('home')" id="tab-home" class="nav-btn px-3 py-1.5 rounded-lg hover:bg-sage-700 transition flex items-center gap-2 bg-sage-700 font-bold">
+                    <i class="fa-solid fa-house text-skyblue-200"></i> <span data-lang="navHome">Home</span>
+                </button>
+                <button onclick="switchTab('food')" id="tab-food" class="nav-btn px-3 py-1.5 rounded-lg hover:bg-sage-700 transition flex items-center gap-2">
+                    <i class="fa-solid fa-utensils text-skyblue-200"></i> <span data-lang="navFood">Food</span>
+                </button>
+                <button onclick="switchTab('shelter')" id="tab-shelter" class="nav-btn px-3 py-1.5 rounded-lg hover:bg-sage-700 transition flex items-center gap-2">
+                    <i class="fa-solid fa-house-user text-skyblue-200"></i> <span data-lang="navShelter">Shelters</span>
+                </button>
+                <button onclick="switchTab('childcare')" id="tab-childcare" class="nav-btn px-3 py-1.5 rounded-lg hover:bg-sage-700 transition flex items-center gap-2">
+                    <i class="fa-solid fa-baby-carriage text-pink-300"></i> <span data-lang="navChildcare">Daycare & Moms</span>
+                </button>
+                <button onclick="switchTab('restroom')" id="tab-restroom" class="nav-btn px-3 py-1.5 rounded-lg hover:bg-sage-700 transition flex items-center gap-2">
+                    <i class="fa-solid fa-restroom text-skyblue-200"></i> <span data-lang="navRestrooms">Restrooms</span>
+                </button>
+                <button onclick="switchTab('pharmacy')" id="tab-pharmacy" class="nav-btn px-3 py-1.5 rounded-lg hover:bg-sage-700 transition flex items-center gap-2">
+                    <i class="fa-solid fa-prescription-bottle-medical text-skyblue-200"></i> <span data-lang="navPharmacy">Pharmacy & Meds</span>
+                </button>
+                <button onclick="switchTab('supplies')" id="tab-supplies" class="nav-btn px-3 py-1.5 rounded-lg hover:bg-sage-700 transition flex items-center gap-2">
+                    <i class="fa-solid fa-box-open text-skyblue-200"></i> <span data-lang="navJobs">Jobs & Supplies</span>
+                </button>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="flex-grow max-w-6xl w-full mx-auto p-4 sm:p-6 space-y-6">
+
+        <!-- Dynamic Pages -->
+
+        <!-- 0. HOME PAGE -->
+        <div id="page-home" class="page-content active space-y-6">
+            
+            <!-- Hero Banner -->
+            <div class="bg-gradient-to-r from-sage-600 via-skyblue-600 to-pink-600 rounded-3xl p-6 sm:p-8 text-white shadow-lg relative overflow-hidden">
+                <div class="max-w-2xl relative z-10 space-y-3">
+                    <span class="bg-white/20 text-white text-xs font-semibold px-3 py-1 rounded-full backdrop-blur-sm" data-lang="welcomeTag">Community Resource Hub</span>
+                    <h1 class="brand-title text-3xl sm:text-5xl font-extrabold tracking-tight" data-lang="heroTitle">Welcome to Street Support</h1>
+                    <p class="text-slate-100 text-sm sm:text-base leading-relaxed" data-lang="heroDesc">
+                        Find immediate community help, hot meals, overnight shelters, daycare for teen & single moms, clean restrooms, medical supplies, and job opportunities near you.
+                    </p>
+                    <div id="locationStatus" class="inline-block bg-black/20 text-xs px-3 py-1 rounded-full text-skyblue-100 font-semibold cursor-pointer" onclick="document.getElementById('locationModal').style.display = 'flex'">
+                        <i class="fa-solid fa-location-dot text-red-300"></i> <span id="locationStatusText" data-lang="defaultLocText">Location: New York City (Tap to change location)</span>
+                    </div>
+                </div>
+                <i class="fa-solid fa-heart-pulse absolute -right-6 -bottom-6 text-9xl text-white/10 pointer-events-none"></i>
+            </div>
+
+            <!-- Inspirational Quote Banner -->
+            <div class="bg-white p-4 rounded-2xl border border-sage-200 text-center shadow-sm">
+                <p class="quote-title text-2xl text-slate-700" data-lang="quoteText">"Every community grows stronger when we support one another."</p>
+            </div>
+
+            <!-- Global Search Bar & AI Ask Button -->
+            <section class="bg-white p-5 rounded-2xl shadow-md border border-slate-200 space-y-4">
+                <h2 class="font-bold text-slate-800 text-base flex items-center gap-2">
+                    <i class="fa-solid fa-magnifying-glass text-skyblue-600"></i>
+                    <span data-lang="searchTitle">Search Resources or Ask for Help</span>
+                </h2>
+                
+                <div class="flex gap-2">
+                    <div class="relative flex-grow">
+                        <input type="text" id="global-search-input" onkeyup="handleGlobalSearch()" 
+                               placeholder="Search for 'Bronx food', 'Daycare for teen moms', 'Brooklyn shelter'..." data-lang-ph="searchPlaceholder"
+                               class="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-sage-500 text-sm">
+                        <i class="fa-solid fa-search absolute left-3.5 top-3.5 text-slate-400"></i>
+                    </div>
+                    <button onclick="askAiFromSearch()" class="bg-sage-700 hover:bg-sage-800 text-white font-medium px-4 py-2.5 rounded-xl text-sm shrink-0 flex items-center gap-1.5 transition shadow-sm">
+                        <i class="fa-solid fa-robot text-skyblue-200"></i>
+                        <span data-lang="askAiBtn">Ask AI</span>
+                    </button>
+                </div>
+
+                <!-- Quick Location Buttons -->
+                <div class="flex flex-wrap gap-2 text-xs">
+                    <span class="text-slate-500 font-medium py-1" data-lang="quickSearchLabel">Quick Lookups:</span>
+                    <button onclick="quickAiSearch('free meals')" class="bg-sage-100 hover:bg-sage-200 text-sage-800 px-3 py-1 rounded-full transition">🍲 <span data-lang="btnMeals">Free Meals</span></button>
+                    <button onclick="quickAiSearch('available shelter beds')" class="bg-skyblue-100 hover:bg-skyblue-200 text-skyblue-800 px-3 py-1 rounded-full transition">🏠 <span data-lang="btnBeds">Beds Available</span></button>
+                    <button onclick="quickAiSearch('daycare for teen moms and single moms')" class="bg-pink-100 hover:bg-pink-200 text-pink-800 px-3 py-1 rounded-full transition">👶 <span data-lang="btnChildcare">Free Daycare & Babysitting</span></button>
+                    <button onclick="quickAiSearch('free clinic and pharmacy')" class="bg-red-100 hover:bg-red-200 text-red-800 px-3 py-1 rounded-full transition">💊 <span data-lang="btnPharmacy">Free Pharmacy</span></button>
+                    <button onclick="quickAiSearch('public showers and restrooms')" class="bg-cyan-100 hover:bg-cyan-200 text-cyan-800 px-3 py-1 rounded-full transition">🚿 <span data-lang="btnShowers">Public Showers</span></button>
+                    <button onclick="quickAiSearch('day labor and jobs')" class="bg-purple-100 hover:bg-purple-200 text-purple-800 px-3 py-1 rounded-full transition">💼 <span data-lang="btnJobs">Day Jobs</span></button>
+                </div>
+            </section>
+
+            <!-- Feature Navigation Grid -->
+            <div id="home-cards-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                
+                <!-- Food Card -->
+                <div onclick="switchTab('food')" class="searchable-card bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md hover:border-sage-300 transition cursor-pointer flex flex-col justify-between">
+                    <div class="space-y-3">
+                        <div class="w-12 h-12 rounded-xl bg-sage-100 text-sage-700 flex items-center justify-center text-xl">
+                            <i class="fa-solid fa-utensils"></i>
+                        </div>
+                        <h3 class="font-bold text-lg text-slate-800" data-lang="cardFoodTitle">Food Drives & Meals</h3>
+                        <p class="text-xs text-slate-600 leading-relaxed" data-lang="cardFoodDesc">Hot meal centers, food banks, and daily community groceries with public walk-in access across all boroughs.</p>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-sage-700">
+                        <span data-lang="cardViewLocations">View Locations</span>
+                        <i class="fa-solid fa-chevron-right"></i>
+                    </div>
+                </div>
+
+                <!-- Shelter Card -->
+                <div onclick="switchTab('shelter')" class="searchable-card bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md hover:border-skyblue-300 transition cursor-pointer flex flex-col justify-between">
+                    <div class="space-y-3">
+                        <div class="w-12 h-12 rounded-xl bg-skyblue-100 text-skyblue-700 flex items-center justify-center text-xl">
+                            <i class="fa-solid fa-house-user"></i>
+                        </div>
+                        <h3 class="font-bold text-lg text-slate-800" data-lang="cardShelterTitle">Emergency Shelters</h3>
+                        <p class="text-xs text-slate-600 leading-relaxed" data-lang="cardShelterDesc">Overnight stays, warming/cooling centers, and safe space locations with clear requirements listed for families and youth.</p>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-skyblue-700">
+                        <span data-lang="cardFindBeds">Find Beds</span>
+                        <i class="fa-solid fa-chevron-right"></i>
+                    </div>
+                </div>
+
+                <!-- Childcare & Moms Card -->
+                <div onclick="switchTab('childcare')" class="searchable-card bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md hover:border-pink-300 transition cursor-pointer flex flex-col justify-between">
+                    <div class="space-y-3">
+                        <div class="w-12 h-12 rounded-xl bg-pink-100 text-pink-600 flex items-center justify-center text-xl">
+                            <i class="fa-solid fa-baby-carriage"></i>
+                        </div>
+                        <h3 class="font-bold text-lg text-slate-800" data-lang="cardChildcareTitle">Daycare & Single/Teen Moms</h3>
+                        <p class="text-xs text-slate-600 leading-relaxed" data-lang="cardChildcareDesc">Free daycare centers, emergency babysitting, infant supply hubs, and young mother assistance programs in your area.</p>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-pink-600">
+                        <span data-lang="cardFindChildcare">Find Daycare & Support</span>
+                        <i class="fa-solid fa-chevron-right"></i>
+                    </div>
+                </div>
+
+                <!-- Restroom Card -->
+                <div onclick="switchTab('restroom')" class="searchable-card bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md hover:border-cyan-300 transition cursor-pointer flex flex-col justify-between">
+                    <div class="space-y-3">
+                        <div class="w-12 h-12 rounded-xl bg-cyan-100 text-cyan-700 flex items-center justify-center text-xl">
+                            <i class="fa-solid fa-restroom"></i>
+                        </div>
+                        <h3 class="font-bold text-lg text-slate-800" data-lang="cardRestroomTitle">Restrooms & Hygiene</h3>
+                        <p class="text-xs text-slate-600 leading-relaxed" data-lang="cardRestroomDesc">Clean public restrooms, handwashing hubs, mobile showers, and public walk-in hygiene facilities in every borough.</p>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-cyan-700">
+                        <span data-lang="cardLocateFacilities">Locate Facilities</span>
+                        <i class="fa-solid fa-chevron-right"></i>
+                    </div>
+                </div>
+
+                <!-- Pharmacy Card -->
+                <div onclick="switchTab('pharmacy')" class="searchable-card bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md hover:border-red-300 transition cursor-pointer flex flex-col justify-between">
+                    <div class="space-y-3">
+                        <div class="w-12 h-12 rounded-xl bg-red-100 text-red-700 flex items-center justify-center text-xl">
+                            <i class="fa-solid fa-prescription-bottle-medical"></i>
+                        </div>
+                        <h3 class="font-bold text-lg text-slate-800" data-lang="cardPharmacyTitle">Free Pharmacy & Clinic</h3>
+                        <p class="text-xs text-slate-600 leading-relaxed" data-lang="cardPharmacyDesc">Urgent medication voucher pickups, basic medical checks, and essential health supplies with public walk-in access.</p>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-red-700">
+                        <span data-lang="cardGetMedicalAid">Get Medical Aid</span>
+                        <i class="fa-solid fa-chevron-right"></i>
+                    </div>
+                </div>
+
+                <!-- Supplies & Jobs Card -->
+                <div onclick="switchTab('supplies')" class="searchable-card bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md hover:border-purple-300 transition cursor-pointer flex flex-col justify-between">
+                    <div class="space-y-3">
+                        <div class="w-12 h-12 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center text-xl">
+                            <i class="fa-solid fa-box-open"></i>
+                        </div>
+                        <h3 class="font-bold text-lg text-slate-800" data-lang="cardJobsTitle">Jobs, Schools & Clothing</h3>
+                        <p class="text-xs text-slate-600 leading-relaxed" data-lang="cardJobsDesc">Same-day pay work opportunities, clothing closets, blankets, and vocational schools with student childcare support.</p>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-purple-700">
+                        <span data-lang="cardExploreOpportunities">Explore Opportunities</span>
+                        <i class="fa-solid fa-chevron-right"></i>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- 1. FOOD PAGE -->
+        <div id="page-food" class="page-content space-y-6">
+            <div class="bg-sage-50 border-l-4 border-sage-500 p-4 rounded-r-xl">
+                <h2 class="text-xl font-bold text-slate-800 flex items-center gap-2">
+                    <i class="fa-solid fa-utensils text-sage-600"></i> <span data-lang="foodHeading">Food Drives & Soup Kitchens</span>
+                </h2>
+                <p class="text-slate-600 text-sm" data-lang="foodSubheading">Free hot meals, groceries, and meal pack distribution points near your location.</p>
+            </div>
+
+            <!-- Locations Container rendered dynamically -->
+            <div id="food-locations-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+        </div>
+
+        <!-- 2. SHELTER PAGE -->
+        <div id="page-shelter" class="page-content space-y-6">
+            <div class="bg-skyblue-50 border-l-4 border-skyblue-500 p-4 rounded-r-xl">
+                <h2 class="text-xl font-bold text-slate-800 flex items-center gap-2">
+                    <i class="fa-solid fa-house-user text-skyblue-600"></i> <span data-lang="shelterHeading">Emergency Shelters & Safe Havens</span>
+                </h2>
+                <p class="text-slate-600 text-sm" data-lang="shelterSubheading">Overnight accommodations, warming centers, youth facilities, and temporary housing options near you.</p>
+            </div>
+
+            <div id="shelter-locations-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+        </div>
+
+        <!-- 3. CHILDCARE & TEEN MOM PAGE -->
+        <div id="page-childcare" class="page-content space-y-6">
+            <div class="bg-pink-50 border-l-4 border-pink-500 p-4 rounded-r-xl">
+                <h2 class="text-xl font-bold text-slate-800 flex items-center gap-2">
+                    <i class="fa-solid fa-baby-carriage text-pink-600"></i> <span data-lang="childcareHeading">Daycare, Babysitting & Teen Mom Support</span>
+                </h2>
+                <p class="text-slate-600 text-sm" data-lang="childcareSubheading">Free flexible daycare, babysitting cooperatives, and infant supply hubs for single parents and teen mothers.</p>
+            </div>
+
+            <div id="childcare-locations-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+        </div>
+
+        <!-- 4. RESTROOM PAGE -->
+        <div id="page-restroom" class="page-content space-y-6">
+            <div class="bg-cyan-50 border-l-4 border-cyan-500 p-4 rounded-r-xl">
+                <h2 class="text-xl font-bold text-slate-800 flex items-center gap-2">
+                    <i class="fa-solid fa-restroom text-cyan-600"></i> <span data-lang="restroomHeading">Public Restrooms & Hygiene Hubs</span>
+                </h2>
+                <p class="text-slate-600 text-sm" data-lang="restroomSubheading">Clean, accessible restrooms, public handwashing stations, and shower facilities near you.</p>
+            </div>
+
+            <div id="restroom-locations-container" class="grid grid-cols-1 md:grid-cols-3 gap-4"></div>
+        </div>
+
+        <!-- 5. PHARMACY PAGE -->
+        <div id="page-pharmacy" class="page-content space-y-6">
+            <div class="bg-red-50 border-l-4 border-red-500 p-4 rounded-r-xl">
+                <h2 class="text-xl font-bold text-slate-800 flex items-center gap-2">
+                    <i class="fa-solid fa-prescription-bottle-medical text-red-600"></i> <span data-lang="pharmacyHeading">Urgent Pharmacy & Medical Assistance</span>
+                </h2>
+                <p class="text-slate-600 text-sm" data-lang="pharmacySubheading">Free emergency prescription fills, OTC medications, and urgent health consultations.</p>
+            </div>
+
+            <!-- Detailed Medication Lists -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                    <h4 class="font-bold text-slate-800 border-b pb-2 flex items-center gap-2 text-base">
+                        <i class="fa-solid fa-kit-medical text-sage-600"></i> <span data-lang="availMedsTitle">Available Free Urgent Medications</span>
+                    </h4>
+                    <ul class="mt-3 text-sm space-y-2.5 text-slate-700">
+                        <li class="flex items-start gap-2"><i class="fa-solid fa-circle-check text-sage-600 mt-1"></i> <div><strong data-lang="med1Name">Insulin & Diabetes Supplies:</strong> <span data-lang="med1Desc">Insulin vials/pens, syringes, and blood glucose test strips.</span></div></li>
+                        <li class="flex items-start gap-2"><i class="fa-solid fa-circle-check text-sage-600 mt-1"></i> <div><strong data-lang="med2Name">Asthma Inhalers:</strong> <span data-lang="med2Desc">Albuterol rescue inhalers and breathing treatment supplies.</span></div></li>
+                        <li class="flex items-start gap-2"><i class="fa-solid fa-circle-check text-sage-600 mt-1"></i> <div><strong data-lang="med3Name">Blood Pressure & Heart Meds:</strong> <span data-lang="med3Desc">Hypertension control refills (Lisnopril, Amlodipine, etc.).</span></div></li>
+                        <li class="flex items-start gap-2"><i class="fa-solid fa-circle-check text-sage-600 mt-1"></i> <div><strong data-lang="med4Name">Antibiotics:</strong> <span data-lang="med4Desc">Common bacterial infection treatments (requires clinic evaluation).</span></div></li>
+                        <li class="flex items-start gap-2"><i class="fa-solid fa-circle-check text-sage-600 mt-1"></i> <div><strong data-lang="med5Name">OTC Pain & Cold Relievers:</strong> <span data-lang="med5Desc">Ibuprofen, Acetaminophen, cough drops, and allergy medication.</span></div></li>
+                        <li class="flex items-start gap-2"><i class="fa-solid fa-circle-check text-sage-600 mt-1"></i> <div><strong data-lang="med6Name">First Aid & Antiseptics:</strong> <span data-lang="med6Desc">Bandages, gauze, antibiotic ointment, and hydrogen peroxide.</span></div></li>
+                    </ul>
+                </div>
+
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                    <h4 class="font-bold text-slate-800 border-b pb-2 flex items-center gap-2 text-base">
+                        <i class="fa-solid fa-hand-holding-medical text-amber-600"></i> <span data-lang="neededMedsTitle">High-Demand Needed Donations</span>
+                    </h4>
+                    <ul class="mt-3 text-sm space-y-2.5 text-slate-700">
+                        <li class="flex items-start gap-2"><i class="fa-solid fa-circle-exclamation text-amber-500 mt-1"></i> <div><strong data-lang="don1Name">Unopened First Aid Kits:</strong> <span data-lang="don1Desc">Bandages, medical tape, sterile pads, and burn cream.</span></div></li>
+                        <li class="flex items-start gap-2"><i class="fa-solid fa-circle-exclamation text-amber-500 mt-1"></i> <div><strong data-lang="don2Name">Pain & Fever Relievers:</strong> <span data-lang="don2Desc">Sealed bottles of adult and children pain relief meds.</span></div></li>
+                        <li class="flex items-start gap-2"><i class="fa-solid fa-circle-exclamation text-amber-500 mt-1"></i> <div><strong data-lang="don3Name">Cough & Cold Medicine:</strong> <span data-lang="don3Desc">Decongestants, throat lozenges, and immune support vitamins.</span></div></li>
+                        <li class="flex items-start gap-2"><i class="fa-solid fa-circle-exclamation text-amber-500 mt-1"></i> <div><strong data-lang="don4Name">Hygiene & Menstrual Kits:</strong> <span data-lang="don4Desc">Pads, tampons, wipes, hand sanitizer, and lip balm.</span></div></li>
+                        <li class="flex items-start gap-2"><i class="fa-solid fa-circle-exclamation text-amber-500 mt-1"></i> <div><strong data-lang="don5Name">Dental Care Supplies:</strong> <span data-lang="don5Desc">Toothbrushes, toothpaste, dental floss, and mouthwash.</span></div></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div id="pharmacy-locations-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+        </div>
+
+        <!-- 6. SUPPLIES & JOBS PAGE -->
+        <div id="page-supplies" class="page-content space-y-6">
+            <div class="bg-purple-50 border-l-4 border-purple-500 p-4 rounded-r-xl">
+                <h2 class="text-xl font-bold text-slate-800 flex items-center gap-2">
+                    <i class="fa-solid fa-box-open text-purple-600"></i> <span data-lang="jobsHeading">Clothing, Supplies, Schools & Job Opportunities</span>
+                </h2>
+                <p class="text-slate-600 text-sm" data-lang="jobsSubheading">Essential items distribution, clothing closets, vocational schools, and job placement assistance by borough.</p>
+            </div>
+
+            <div id="jobs-locations-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+        </div>
+
+        <!-- AI Assistant / Resource Finder Section -->
+        <section id="ai-assistant-section" class="bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden">
+            <div class="bg-sage-800 text-white p-4 flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-robot text-skyblue-200 text-lg"></i>
+                    <h2 class="font-semibold text-lg" data-lang="aiTitle">Street Support AI Assistant</h2>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button onclick="clearChatHistory()" class="text-xs bg-sage-700 hover:bg-sage-600 text-slate-200 px-2.5 py-1 rounded-lg transition flex items-center gap-1" title="Reset Conversation">
+                        <i class="fa-solid fa-rotate-right"></i> <span data-lang="resetChatBtn">New Chat</span>
+                    </button>
+                    <span class="text-xs bg-skyblue-500 text-white font-bold px-2.5 py-0.5 rounded-full">24/7 AI</span>
+                </div>
+            </div>
+            
+            <div id="chat-box" class="h-80 overflow-y-auto p-4 bg-slate-50 space-y-4 text-sm chat-scroll">
+                <div class="bg-white border border-slate-200 p-3.5 rounded-xl max-w-lg shadow-sm">
+                    <p class="text-slate-700" id="ai-welcome-msg" data-lang="aiWelcome">👋 Hello! I am your Street Support Assistant. Ask me about food drives, shelters, daycare & teen mom support, restrooms, pharmacies, job supplies, or schools nearby, and I will find the exact resources for you!</p>
+                </div>
+            </div>
+
+            <!-- Status bar when generating -->
+            <div id="ai-status-bar" class="px-4 py-1.5 bg-slate-100 border-t border-slate-200 text-xs text-slate-500 hidden justify-between items-center">
+                <span class="flex items-center gap-2">
+                    <i class="fa-solid fa-spinner fa-spin text-sage-600"></i> AI is thinking...
+                </span>
+                <button onclick="stopAiGeneration()" class="text-xs text-red-600 font-bold hover:underline">
+                    <i class="fa-solid fa-circle-stop"></i> Stop
+                </button>
+            </div>
+
+            <form id="ai-form" onsubmit="handleAiSearch(event)" class="p-3 bg-white border-t border-slate-200 flex gap-2">
+                <input type="text" id="ai-input" placeholder="Type location & need (e.g. 'Daycare in the Bronx' or 'Pharmacy in Brooklyn')" data-lang-ph="aiPlaceholder" required
+                    class="flex-grow px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-sage-500 text-sm">
+                <button type="submit" id="ai-submit-btn" class="bg-sage-700 hover:bg-sage-800 text-white px-5 py-2.5 rounded-xl font-medium transition flex items-center gap-2 text-sm shrink-0">
+                    <span data-lang="askAiBtn">Ask AI</span>
+                    <i class="fa-solid fa-paper-plane"></i>
+                </button>
+            </form>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-slate-800 text-slate-400 py-6 text-center text-xs border-t border-slate-700 mt-8">
+        <div class="max-w-6xl mx-auto px-4 space-y-2">
+            <p data-lang="footer1">Street Support Portal — Built with compassion to connect people with vital community services.</p>
+            <p data-lang="footer2">If you are in immediate danger or need critical medical help, please dial 911 immediately.</p>
+        </div>
+    </footer>
+
+    <!-- Application Script -->
+    <script>
+        const apiKey = ""; // Runtime environment provides key authorization
+        let currentLang = 'en';
+        let chatHistory = [];
+        let currentAbortController = null;
+        let userLocation = null;
+        let userLocationQuery = "City Center";
+
+        // Embedded Resource Database covering Food, Shelters, Childcare/Moms, Restrooms, Pharmacies/Meds, Jobs/Supplies, and Schools
+        const resourceDatabase = [
+            // --- THE BRONX ---
+            {
+                id: 'food-bx-1',
+                category: 'food',
+                borough: 'bronx',
+                nameKey: "foodBx1Name",
+                addressKey: "foodBx1Addr",
+                hoursKey: "foodBx1Hours",
+                phone: "(718) 555-0144",
+                lat: 40.8162, lng: -73.9189,
+                statusKey: "statusOpenDaily",
+                reqKey: "reqWalkIn",
+                childcareKey: "childcareBx1",
+                descKey: "foodBx1Desc",
+                features: ["Hot Meals", "Public Walk-In", "South Bronx"]
+            },
+            {
+                id: 'food-bx-2',
+                category: 'food',
+                borough: 'bronx',
+                nameKey: "foodBx2Name",
+                addressKey: "foodBx2Addr",
+                hoursKey: "foodBx2Hours",
+                phone: "(718) 555-0188",
+                lat: 40.8350, lng: -73.9180,
+                statusKey: "statusMWF",
+                reqKey: "reqWalkIn",
+                childcareKey: "childcareBx2",
+                descKey: "foodBx2Desc",
+                features: ["Grocery Boxes", "Fresh Produce"]
+            },
+            {
+                id: 'shelter-bx-1',
+                category: 'shelter',
+                borough: 'bronx',
+                nameKey: "shelterBx1Name",
+                addressKey: "shelterBx1Addr",
+                hoursKey: "shelterBx1Hours",
+                phone: "(718) 555-0192",
+                lat: 40.8105, lng: -73.9220,
+                statusKey: "statusBedsAvail",
+                reqKey: "reqIntake",
+                childcareKey: "childcareShelterBx1",
+                descKey: "shelterBx1Desc",
+                features: ["Men & Women", "Hot Showers", "Luggage Storage"]
+            },
+            {
+                id: 'shelter-bx-2',
+                category: 'shelter',
+                borough: 'bronx',
+                nameKey: "shelterBx2Name",
+                addressKey: "shelterBx2Addr",
+                hoursKey: "shelterBx2Hours",
+                phone: "(718) 555-0177",
+                lat: 40.8220, lng: -73.9190,
+                statusKey: "status247Youth",
+                reqKey: "reqYouth",
+                childcareKey: "childcareShelterBx2",
+                descKey: "shelterBx2Desc",
+                features: ["Teens & Youth", "Teen Mom Support", "Private Family Rooms"]
+            },
+            {
+                id: 'childcare-bx-1',
+                category: 'childcare',
+                borough: 'bronx',
+                nameKey: "childcareBx1Name",
+                addressKey: "childcareBx1Addr",
+                hoursKey: "childcareBx1Hours",
+                phone: "(718) 555-0199",
+                lat: 40.8180, lng: -73.9170,
+                statusKey: "statusFreeChildcare",
+                reqKey: "reqWalkIn",
+                childcareKey: "childcareMainBx1",
+                descKey: "childcareBx1Desc",
+                features: ["Free Daycare", "Teen Mom Mentoring", "Formula & Diapers"]
+            },
+            {
+                id: 'restroom-bx-1',
+                category: 'restroom',
+                borough: 'bronx',
+                nameKey: "restroomBx1Name",
+                addressKey: "restroomBx1Addr",
+                hoursKey: "restroomBx1Hours",
+                phone: "N/A - Public Facility",
+                lat: 40.8120, lng: -73.9130,
+                statusKey: "statusCleanAccessible",
+                reqKey: "reqWalkIn",
+                childcareKey: "childcareRestroomBx1",
+                descKey: "restroomBx1Desc",
+                features: ["Free Showers", "Baby Changing Stations", "Wheelchair Accessible"]
+            },
+            {
+                id: 'pharmacy-bx-1',
+                category: 'pharmacy',
+                borough: 'bronx',
+                nameKey: "pharmacyBx1Name",
+                addressKey: "pharmacyBx1Addr",
+                hoursKey: "pharmacyBx1Hours",
+                phone: "(718) 555-0111",
+                lat: 40.8200, lng: -73.8990,
+                statusKey: "statusWalkIns",
+                reqKey: "reqWalkIn",
+                childcareKey: "childcarePharmacyBx1",
+                descKey: "pharmacyBx1Desc",
+                features: ["Insulin & Inhalers", "Pediatric Care", "Free Prescriptions"]
+            },
+            {
+                id: 'jobs-bx-1',
+                category: 'supplies',
+                borough: 'bronx',
+                nameKey: "jobsBx1Name",
+                addressKey: "jobsBx1Addr",
+                hoursKey: "jobsBx1Hours",
+                phone: "(718) 555-0133",
+                lat: 40.8175, lng: -73.9160,
+                statusKey: "statusSameDayPay",
+                reqKey: "reqWalkIn",
+                childcareKey: "childcareJobsBx1",
+                descKey: "jobsBx1Desc",
+                features: ["Same-Day Pay", "Workplace Daycare Support", "Free Coats & Boots"]
+            },
+            {
+                id: 'school-bx-1',
+                category: 'supplies',
+                borough: 'bronx',
+                nameKey: "schoolBx1Name",
+                addressKey: "schoolBx1Addr",
+                hoursKey: "schoolBx1Hours",
+                phone: "(718) 555-0166",
+                lat: 40.8260, lng: -73.9180,
+                statusKey: "statusYouthJobs",
+                reqKey: "reqReg",
+                childcareKey: "childcareSchoolBx1",
+                descKey: "schoolBx1Desc",
+                features: ["Free Student Daycare", "GED/ESL", "Job Skills Training"]
+            },
+
+            // --- BROOKLYN ---
+            {
+                id: 'food-bk-1',
+                category: 'food',
+                borough: 'brooklyn',
+                nameKey: "foodBk1Name",
+                addressKey: "foodBk1Addr",
+                hoursKey: "foodBk1Hours",
+                phone: "(718) 555-0211",
+                lat: 40.6970, lng: -73.9870,
+                statusKey: "statusOpenDaily",
+                reqKey: "reqWalkIn",
+                childcareKey: "childcareFoodBk1",
+                descKey: "foodBk1Desc",
+                features: ["Hot Meals", "Public Walk-In", "Downtown Brooklyn"]
+            },
+            {
+                id: 'food-bk-2',
+                category: 'food',
+                borough: 'brooklyn',
+                nameKey: "foodBk2Name",
+                addressKey: "foodBk2Addr",
+                hoursKey: "foodBk2Hours",
+                phone: "(718) 555-0244",
+                lat: 40.6800, lng: -73.9550,
+                statusKey: "statusTueThu",
+                reqKey: "reqWalkIn",
+                childcareKey: "childcareFoodBk2",
+                descKey: "foodBk2Desc",
+                features: ["Grocery Boxes", "Fresh Vegetables"]
+            },
+            {
+                id: 'shelter-bk-1',
+                category: 'shelter',
+                borough: 'brooklyn',
+                nameKey: "shelterBk1Name",
+                addressKey: "shelterBk1Addr",
+                hoursKey: "shelterBk1Hours",
+                phone: "(718) 555-0299",
+                lat: 40.6780, lng: -73.9500,
+                statusKey: "statusBedsAvail",
+                reqKey: "reqIntake",
+                childcareKey: "childcareShelterBk1",
+                descKey: "shelterBk1Desc",
+                features: ["Men & Women Sections", "Warm Beds"]
+            },
+            {
+                id: 'shelter-bk-2',
+                category: 'shelter',
+                borough: 'brooklyn',
+                nameKey: "shelterBk2Name",
+                addressKey: "shelterBk2Addr",
+                hoursKey: "shelterBk2Hours",
+                phone: "(718) 555-0222",
+                lat: 40.6870, lng: -73.9480,
+                statusKey: "status247Youth",
+                reqKey: "reqYouth",
+                childcareKey: "childcareShelterBk2",
+                descKey: "shelterBk2Desc",
+                features: ["Teen Moms & Youth", "Counseling & Meals"]
+            },
+            {
+                id: 'childcare-bk-1',
+                category: 'childcare',
+                borough: 'brooklyn',
+                nameKey: "childcareBk1Name",
+                addressKey: "childcareBk1Addr",
+                hoursKey: "childcareBk1Hours",
+                phone: "(718) 555-0233",
+                lat: 40.6850, lng: -73.9520,
+                statusKey: "statusFreeChildcare",
+                reqKey: "reqWalkIn",
+                childcareKey: "childcareMainBk1",
+                descKey: "childcareBk1Desc",
+                features: ["Free Babysitting", "Single Mom Support", "After-School Care"]
+            },
+            {
+                id: 'restroom-bk-1',
+                category: 'restroom',
+                borough: 'brooklyn',
+                nameKey: "restroomBk1Name",
+                addressKey: "restroomBk1Addr",
+                hoursKey: "restroomBk1Hours",
+                phone: "N/A - Public Facility",
+                lat: 40.6910, lng: -73.9740,
+                statusKey: "statusCleanAccessible",
+                reqKey: "reqWalkIn",
+                childcareKey: "childcareRestroomBk1",
+                descKey: "restroomBk1Desc",
+                features: ["Free Hot Showers", "Towels & Soap", "Changing Tables"]
+            },
+            {
+                id: 'pharmacy-bk-1',
+                category: 'pharmacy',
+                borough: 'brooklyn',
+                nameKey: "pharmacyBk1Name",
+                addressKey: "pharmacyBk1Addr",
+                hoursKey: "pharmacyBk1Hours",
+                phone: "(718) 555-0255",
+                lat: 40.6860, lng: -73.9820,
+                statusKey: "statusWalkIns",
+                reqKey: "reqWalkIn",
+                childcareKey: "childcarePharmacyBk1",
+                descKey: "pharmacyBk1Desc",
+                features: ["Free Meds", "Diabetes & Asthma Vouchers", "Pediatric Care"]
+            },
+            {
+                id: 'jobs-bk-1',
+                category: 'supplies',
+                borough: 'brooklyn',
+                nameKey: "jobsBk1Name",
+                addressKey: "jobsBk1Addr",
+                hoursKey: "jobsBk1Hours",
+                phone: "(718) 555-0277",
+                lat: 40.6890, lng: -73.9840,
+                statusKey: "statusSameDayPay",
+                reqKey: "reqWalkIn",
+                childcareKey: "childcareJobsBk1",
+                descKey: "jobsBk1Desc",
+                features: ["Day Construction Jobs", "Work Boots & Coats", "Childcare Stipends"]
+            },
+            {
+                id: 'school-bk-1',
+                category: 'supplies',
+                borough: 'brooklyn',
+                nameKey: "schoolBk1Name",
+                addressKey: "schoolBk1Addr",
+                hoursKey: "schoolBk1Hours",
+                phone: "(718) 555-0288",
+                lat: 40.6810, lng: -73.9500,
+                statusKey: "statusYouthJobs",
+                reqKey: "reqReg",
+                childcareKey: "childcareSchoolBk1",
+                descKey: "schoolBk1Desc",
+                features: ["Free High School Completion", "On-site Student Nursery", "Vocational Training"]
+            },
+
+            // --- MANHATTAN ---
+            {
+                id: 'food-mn-1',
+                category: 'food',
+                borough: 'manhattan',
+                nameKey: "foodMn1Name",
+                addressKey: "foodMn1Addr",
+                hoursKey: "foodMn1Hours",
+                phone: "(212) 555-0311",
+                lat: 40.7180, lng: -73.9950,
+                statusKey: "statusOpenDaily",
+                reqKey: "reqWalkIn",
+                childcareKey: "childcareFoodMn1",
+                descKey: "foodMn1Desc",
+                features: ["Hot Lunches & Dinners", "Public Walk-In"]
+            },
+            {
+                id: 'shelter-mn-1',
+                category: 'shelter',
+                borough: 'manhattan',
+                nameKey: "shelterMn1Name",
+                addressKey: "shelterMn1Addr",
+                hoursKey: "shelterMn1Hours",
+                phone: "(212) 555-0344",
+                lat: 40.8090, lng: -73.9490,
+                statusKey: "statusBedsAvail",
+                reqKey: "reqIntake",
+                childcareKey: "childcareShelterMn1",
+                descKey: "shelterMn1Desc",
+                features: ["Warming Center", "Family Beds", "Infant Care"]
+            },
+            {
+                id: 'childcare-mn-1',
+                category: 'childcare',
+                borough: 'manhattan',
+                nameKey: "childcareMn1Name",
+                addressKey: "childcareMn1Addr",
+                hoursKey: "childcareMn1Hours",
+                phone: "(212) 555-0377",
+                lat: 40.8050, lng: -73.9500,
+                statusKey: "statusFreeChildcare",
+                reqKey: "reqWalkIn",
+                childcareKey: "childcareMainMn1",
+                descKey: "childcareMn1Desc",
+                features: ["Harlem Infant Hub", "Teen Mom Support", "Free Milk & Formula"]
+            },
+            {
+                id: 'restroom-mn-1',
+                category: 'restroom',
+                borough: 'manhattan',
+                nameKey: "restroomMn1Name",
+                addressKey: "restroomMn1Addr",
+                hoursKey: "restroomMn1Hours",
+                phone: "N/A - Public Facility",
+                lat: 40.7300, lng: -73.9970,
+                statusKey: "statusCleanAccessible",
+                reqKey: "reqWalkIn",
+                childcareKey: "childcareRestroomMn1",
+                descKey: "restroomMn1Desc",
+                features: ["Public Restrooms", "Changing Tables", "Handwashing"]
+            },
+
+            // --- QUEENS ---
+            {
+                id: 'food-qn-1',
+                category: 'food',
+                borough: 'queens',
+                nameKey: "foodQn1Name",
+                addressKey: "foodQn1Addr",
+                hoursKey: "foodQn1Hours",
+                phone: "(718) 555-0411",
+                lat: 40.7530, lng: -73.9450,
+                statusKey: "statusOpenDaily",
+                reqKey: "reqWalkIn",
+                childcareKey: "childcareFoodQn1",
+                descKey: "foodQn1Desc",
+                features: ["Free Hot Meals", "Public Walk-In"]
+            },
+            {
+                id: 'shelter-qn-1',
+                category: 'shelter',
+                borough: 'queens',
+                nameKey: "shelterQn1Name",
+                addressKey: "shelterQn1Addr",
+                hoursKey: "shelterQn1Hours",
+                phone: "(718) 555-0488",
+                lat: 40.7380, lng: -73.8780,
+                statusKey: "statusBedsAvail",
+                reqKey: "reqIntake",
+                childcareKey: "childcareShelterQn1",
+                descKey: "shelterQn1Desc",
+                features: ["Families & Individuals", "Playroom & Childcare"]
+            },
+
+            // --- STATEN ISLAND ---
+            {
+                id: 'food-si-1',
+                category: 'food',
+                borough: 'staten island',
+                nameKey: "foodSi1Name",
+                addressKey: "foodSi1Addr",
+                hoursKey: "foodSi1Hours",
+                phone: "(718) 555-0511",
+                lat: 40.6410, lng: -74.0730,
+                statusKey: "statusOpenDaily",
+                reqKey: "reqWalkIn",
+                childcareKey: "childcareFoodSi1",
+                descKey: "foodSi1Desc",
+                features: ["Grocery Bags", "Public Walk-In"]
+            }
+        ];
+
+        // Multi-Language Translation Dictionaries including Names, Addresses, Hours, Requirements, and Childcare
+        const translations = {
+            en: {
+                langName: "English",
+                locTitle: "Set Your Location",
+                locDesc: "Enter any city, neighborhood, or ZIP code to find nearby help:",
+                locOpt1: "Option 1: Type borough, neighborhood, or ZIP code",
+                locOpt2: "Option 2: Use current device location",
+                locSave: "Save",
+                locBtn: "Share Location Access",
+                addressPlaceholder: "e.g. Bronx, Brooklyn, 10451...",
+                searchPlaceholder: "Search for 'Bronx food', 'Daycare for teen moms', 'Brooklyn shelter'...",
+                aiPlaceholder: "Type location & need (e.g. 'Daycare in the Bronx' or 'Pharmacy in Brooklyn')",
+                emergencyBtn: "Emergency: 911 / 211",
+                navHome: "Home",
+                navFood: "Food",
+                navShelter: "Shelters",
+                navChildcare: "Daycare & Moms",
+                navRestrooms: "Restrooms",
+                navPharmacy: "Pharmacy & Meds",
+                navJobs: "Jobs & Supplies",
+                welcomeTag: "Community Resource Hub",
+                heroTitle: "Welcome to Street Support",
+                heroDesc: "Find immediate community help, hot meals, overnight shelters, daycare for teen & single moms, clean restrooms, medical supplies, and job opportunities near you.",
+                defaultLocText: "Location: New York City (Tap to change location)",
+                quoteText: '"Every community grows stronger when we support one another."',
+                searchTitle: "Search Resources or Ask for Help",
+                quickSearchLabel: "Quick Lookups:",
+                btnMeals: "Free Meals",
+                btnBeds: "Beds Available",
+                btnChildcare: "Free Daycare & Babysitting",
+                btnPharmacy: "Free Pharmacy",
+                btnShowers: "Public Showers",
+                btnJobs: "Day Jobs",
+                cardFoodTitle: "Food Drives & Meals",
+                cardFoodDesc: "Hot meal centers, food banks, and daily community groceries with public walk-in access across all boroughs.",
+                cardShelterTitle: "Emergency Shelters",
+                cardShelterDesc: "Overnight stays, warming/cooling centers, and safe space locations with clear requirements listed for families and youth.",
+                cardChildcareTitle: "Daycare & Single/Teen Moms",
+                cardChildcareDesc: "Free daycare centers, emergency babysitting, infant supply hubs, and young mother assistance programs in your area.",
+                cardRestroomTitle: "Restrooms & Hygiene",
+                cardRestroomDesc: "Clean public restrooms, handwashing hubs, mobile showers, and public walk-in hygiene facilities in every borough.",
+                cardPharmacyTitle: "Free Pharmacy & Clinic",
+                cardPharmacyDesc: "Urgent medication voucher pickups, basic medical checks, and essential health supplies with public walk-in access.",
+                cardJobsTitle: "Jobs, Schools & Clothing",
+                cardJobsDesc: "Same-day pay work opportunities, clothing closets, blankets, and vocational schools with student childcare support.",
+                cardViewLocations: "View Locations",
+                cardFindBeds: "Find Beds",
+                cardFindChildcare: "Find Daycare & Support",
+                cardLocateFacilities: "Locate Facilities",
+                cardGetMedicalAid: "Get Medical Aid",
+                cardExploreOpportunities: "Explore Opportunities",
+                directionsLink: "Directions",
+
+                foodHeading: "Food Drives & Soup Kitchens",
+                foodSubheading: "Free hot meals, groceries, and meal pack distribution points near your location.",
+                shelterHeading: "Emergency Shelters & Safe Havens",
+                shelterSubheading: "Overnight accommodations, warming centers, youth facilities, and temporary housing options near you.",
+                childcareHeading: "Daycare, Babysitting & Teen Mom Support",
+                childcareSubheading: "Free flexible daycare, babysitting cooperatives, and infant supply hubs for single parents and teen mothers.",
+                restroomHeading: "Public Restrooms & Hygiene Hubs",
+                restroomSubheading: "Clean, accessible restrooms, public handwashing stations, and shower facilities near you.",
+                pharmacyHeading: "Urgent Pharmacy & Medical Assistance",
+                pharmacySubheading: "Free emergency prescription fills, OTC medications, and urgent health consultations.",
+                jobsHeading: "Clothing, Supplies, Schools & Job Opportunities",
+                jobsSubheading: "Essential items distribution, clothing closets, vocational schools, and job placement assistance.",
+
+                availMedsTitle: "Available Free Urgent Medications",
+                med1Name: "Insulin & Diabetes Supplies:", med1Desc: "Insulin vials/pens, syringes, and blood glucose test strips.",
+                med2Name: "Asthma Inhalers:", med2Desc: "Albuterol rescue inhalers and breathing treatment supplies.",
+                med3Name: "Blood Pressure & Heart Meds:", med3Desc: "Hypertension control refills (Lisnopril, Amlodipine, etc.).",
+                med4Name: "Antibiotics:", med4Desc: "Common bacterial infection treatments (requires clinic evaluation).",
+                med5Name: "OTC Pain & Cold Relievers:", med5Desc: "Ibuprofen, Acetaminophen, cough drops, and allergy medication.",
+                med6Name: "First Aid & Antiseptics:", med6Desc: "Bandages, gauze, antibiotic ointment, and hydrogen peroxide.",
+
+                neededMedsTitle: "High-Demand Needed Donations",
+                don1Name: "Unopened First Aid Kits:", don1Desc: "Bandages, medical tape, sterile pads, and burn cream.",
+                don2Name: "Pain & Fever Relievers:", don2Desc: "Sealed bottles of adult and children pain relief meds.",
+                don3Name: "Cough & Cold Medicine:", don3Desc: "Decongestants, throat lozenges, and immune support vitamins.",
+                don4Name: "Hygiene & Menstrual Kits:", don4Desc: "Pads, tampons, wipes, hand sanitizer, and lip balm.",
+                don5Name: "Dental Care Supplies:", don5Desc: "Toothbrushes, toothpaste, dental floss, and mouthwash.",
+
+                // Status & Requirements Translations
+                statusOpenDaily: "Open Daily",
+                statusTueThu: "Open Tue & Thu",
+                statusMWF: "Mon, Wed, Fri",
+                statusBedsAvail: "Beds Available",
+                status247Youth: "24/7 Youth Center",
+                statusFreeChildcare: "Free Childcare & Babysitting",
+                statusCleanAccessible: "Clean & Accessible",
+                statusWalkIns: "Walk-ins Welcome",
+                statusSameDayPay: "Same-Day Pay",
+                statusYouthJobs: "Youth & Adult Jobs",
+
+                reqWalkIn: "Public Walk-In Only (No ID or Reservation Needed)",
+                reqIntake: "Requirement: Brief Intake Registration at Arrival",
+                reqYouth: "Requirement: Youth (Aged 14-24) or Single Moms with Kids",
+                reqReg: "Requirement: Free On-Site Student Registration",
+
+                // Childcare Nearby Translations
+                childcareBx1: "Nearby Childcare: South Bronx Teen Mom Daycare (0.2 mi - Drop-in infant care)",
+                childcareBx2: "Nearby Childcare: Concourse Family & Single Mom Care Hub (0.3 mi)",
+                childcareShelterBx1: "Childcare Support: On-site emergency nursery & evening babysitting for resident moms",
+                childcareShelterBx2: "Childcare Support: On-site Teen Mom Program with free infant care & parenting classes",
+                childcareMainBx1: "Childcare & Mom Services: Dedicated infant care, free diapers, early education, and parent mentoring",
+                childcareRestroomBx1: "Childcare Facility: St. Mary's Park Family Center & Drop-In Care (0.1 mi away)",
+                childcarePharmacyBx1: "Childcare Support: Lincoln Hospital Infant & Family Care Hub (0.4 mi away)",
+                childcareJobsBx1: "Childcare Support: Bronx Women & Single Parent Work-Daycare Center (0.3 mi away)",
+                childcareSchoolBx1: "Childcare Support: Free on-site classroom daycare for studying teen & single moms",
+
+                childcareFoodBk1: "Nearby Childcare: Downtown Brooklyn Single Parents & Childcare Co-op (0.2 mi away)",
+                childcareFoodBk2: "Nearby Childcare: Bed-Stuy Family Drop-In & Babysitting Hub (0.3 mi away)",
+                childcareShelterBk1: "Childcare Support: On-site supervised toddler care during job & housing appointments",
+                childcareShelterBk2: "Childcare Support: Comprehensive Teen Mom Nursery & Early Learning Program on-site",
+                childcareMainBk1: "Childcare & Mom Services: Free flexible babysitting, after-school care, and young mother peer groups",
+                childcareRestroomBk1: "Childcare Facility: Fort Greene Community Family Center (0.2 mi away)",
+                childcarePharmacyBk1: "Childcare Support: Atlantic Family Medical & Free Pediatric Care (0.1 mi away)",
+                childcareJobsBk1: "Childcare Support: Brooklyn Work-Parent Daycare Collective (0.3 mi away)",
+                childcareSchoolBk1: "Childcare Support: Free drop-in student nursery for enrolled mothers",
+
+                childcareFoodMn1: "Nearby Childcare: Lower East Side Children's Center & Babysitting (0.2 mi away)",
+                childcareShelterMn1: "Childcare Support: On-site family assistance & infant care support",
+                childcareMainMn1: "Childcare & Mom Services: Free daily daycare, infant formula/milk bank, and sitter matching",
+                childcareRestroomMn1: "Childcare Facility: Greenwich Village Family & Toddler Drop-In (0.3 mi away)",
+
+                childcareFoodQn1: "Nearby Childcare: Long Island City Family & Early Childhood Center (0.3 mi away)",
+                childcareShelterQn1: "Childcare Support: On-site supervised playroom & toddler activities",
+                childcareFoodSi1: "Nearby Childcare: St. George Community Family & Childcare Hub (0.2 mi away)",
+
+                // Bronx Resource Names & Descriptions
+                foodBx1Name: "Bronx Community Food Pantry", foodBx1Addr: "410 E 148th St, Bronx, NY 10455", foodBx1Hours: "Lunch: 11:00 AM - 2:00 PM | Dinner: 4:30 PM - 6:30 PM", foodBx1Desc: "Hot meal distribution serving warm lunches and dinners in South Bronx. Public walk-in only.",
+                foodBx2Name: "Grand Concourse Meal Hub", foodBx2Addr: "1280 Grand Concourse, Bronx, NY 10456", foodBx2Hours: "Mon, Wed, Fri: 8:00 AM - 12:00 PM", foodBx2Desc: "Free grocery box pickups providing essential food, canned goods, and fresh produce near Grand Concourse.",
+                shelterBx1Name: "Mott Haven Safe Sanctuary Shelter", shelterBx1Addr: "349 E 140th St, Bronx, NY 10454", shelterBx1Hours: "Intake daily starting at 5:00 PM", shelterBx1Desc: "Emergency overnight shelter near Mott Haven. Includes hot showers, warm meals, and safe storage.",
+                shelterBx2Name: "Bronx Youth & Family Haven", shelterBx2Addr: "286 E 156th St, Bronx, NY 10451", shelterBx2Hours: "24/7 Intake for Youth & Families", shelterBx2Desc: "Protected emergency accommodations for youth, teenagers, and single/teen mothers in South Bronx.",
+                childcareBx1Name: "Bronx Teen & Single Mom Childcare Hub", childcareBx1Addr: "425 E 149th St, Bronx, NY 10455", childcareBx1Hours: "Mon-Sat: 7:30 AM - 6:00 PM", childcareBx1Desc: "Free daycare, emergency drop-in babysitting, free diaper/formula supplies, and supportive mentorship for young mothers.",
+                restroomBx1Name: "St. Mary's Park Hygiene Hub", restroomBx1Addr: "St. Mary's Park (Jackson Ave & E 145th St), Bronx, NY 10455", restroomBx1Hours: "Daily: 7:00 AM - 8:00 PM", restroomBx1Desc: "Clean public restrooms, changing tables, and free shower stalls at St. Mary's Park.",
+                pharmacyBx1Name: "South Bronx Health Center & Free Pharmacy", pharmacyBx1Addr: "871 Westchester Ave, Bronx, NY 10459", pharmacyBx1Hours: "Mon-Fri: 8:30 AM - 5:30 PM", pharmacyBx1Desc: "Free community clinic offering medication vouchers, pediatric care, and insulin refills on Westchester Ave.",
+                jobsBx1Name: "Bronx Workforce & Clothing Center", jobsBx1Addr: "555 Bergen Ave, Bronx, NY 10455", jobsBx1Hours: "Daily Sign-ups: 6:30 AM | Clothing: Mon/Wed 10am-2pm", jobsBx1Desc: "Same-day pay work opportunities, winter coat giveaways, and workplace daycare assistance.",
+                schoolBx1Name: "Bronx Career & Vocational Training School", schoolBx1Addr: "360 E 161st St, Bronx, NY 10451", schoolBx1Hours: "Mon-Fri: 9:00 AM - 5:00 PM", schoolBx1Desc: "Free career training, GED/ESL courses, transit passes, and free student daycare for studying parents.",
+
+                // Brooklyn Resource Names & Descriptions
+                foodBk1Name: "Brooklyn Bridge Community Kitchen", foodBk1Addr: "285 Jay St, Brooklyn, NY 11201", foodBk1Hours: "Lunch: 11:30 AM - 2:00 PM | Dinner: 5:00 PM - 7:00 PM", foodBk1Desc: "Daily warm lunches and dinners served near Downtown Brooklyn. Public walk-in access.",
+                foodBk2Name: "Bed-Stuy Food Pantry & Produce Hub", foodBk2Addr: "1150 Fulton St, Brooklyn, NY 11216", foodBk2Hours: "Tue, Thu, Sat: 9:00 AM - 1:00 PM", foodBk2Desc: "Fresh groceries, canned goods, and produce bags distributed on Fulton St.",
+                shelterBk1Name: "Atlantic Avenue Emergency Shelter", shelterBk1Addr: "1310 Atlantic Ave, Brooklyn, NY 11216", shelterBk1Hours: "Intake daily starting at 5:00 PM", shelterBk1Desc: "Overnight shelter accommodations and warming center on Atlantic Ave with family rooms.",
+                shelterBk2Name: "Covenant House Brooklyn Youth & Teen Mom Center", shelterBk2Addr: "520 Gates Ave, Brooklyn, NY 11216", shelterBk2Hours: "24/7 Youth & Family Intake", shelterBk2Desc: "Drop-in shelter for young adults under age 21 and young mothers with counseling, childcare, and hot meals.",
+                childcareBk1Name: "Brooklyn Teen Mom & Family Care Network", childcareBk1Addr: "500 Fulton St, Brooklyn, NY 11201", childcareBk1Hours: "Mon-Fri: 7:00 AM - 7:00 PM", childcareBk1Desc: "Free drop-in daycare, peer support groups, free formula banks, and evening babysitting for single mothers.",
+                restroomBk1Name: "Fort Greene Park Hygiene & Shower Hub", restroomBk1Addr: "Fort Greene Park (DeKalb Ave & Washington Park), Brooklyn, NY 11205", restroomBk1Hours: "Daily: 7:00 AM - 8:30 PM", restroomBk1Desc: "Public restrooms, drinking water, changing tables, and hot shower stalls near Fort Greene Park.",
+                pharmacyBk1Name: "Downtown Brooklyn Community Health & Pharmacy", pharmacyBk1Addr: "485 Atlantic Ave, Brooklyn, NY 11217", pharmacyBk1Hours: "Mon-Fri: 8:00 AM - 6:00 PM", pharmacyBk1Desc: "Free clinical prescription fills, pediatric medicine, and asthma inhaler vouchers.",
+                jobsBk1Name: "Brooklyn Day Labor & Gear Exchange", jobsBk1Addr: "350 Livingston St, Brooklyn, NY 11201", jobsBk1Hours: "Sign-ups: 6:30 AM | Gear Closet: Mon/Wed 11am-3pm", jobsBk1Desc: "Day construction labor opportunities, work clothing closet, and childcare stipends on Livingston St.",
+                schoolBk1Name: "Brooklyn Adult Education & Career Academy", schoolBk1Addr: "475 Nostrand Ave, Brooklyn, NY 11216", schoolBk1Hours: "Mon-Fri: 8:30 AM - 4:30 PM", schoolBk1Desc: "Free high school completion, vocational training, and free student daycare center.",
+
+                // Manhattan & Queens & SI
+                foodMn1Name: "Lower East Side Community Table", foodMn1Addr: "122 Bowery, New York, NY 10013", foodMn1Hours: "Lunch: 11:30 AM - 1:30 PM | Dinner: 5:00 PM - 7:00 PM", foodMn1Desc: "Hot meal center in the Lower East Side serving lunches and dinners daily. Public walk-in.",
+                shelterMn1Name: "Harlem Haven Emergency Shelter", shelterMn1Addr: "215 W 125th St, New York, NY 10027", shelterMn1Hours: "24/7 Open Intake", shelterMn1Desc: "24/7 Harlem emergency warming shelter with family accommodations and infant supplies.",
+                childcareMn1Name: "Harlem Single Mom & Infant Support Hub", childcareMn1Addr: "230 W 125th St, New York, NY 10027", childcareMn1Hours: "Mon-Sat: 8:00 AM - 6:00 PM", childcareMn1Desc: "Free daily daycare, babysitter exchange program, infant nutrition milk bank, and parenting support.",
+                restroomMn1Name: "Washington Square Hygiene Station", restroomMn1Addr: "Washington Square Park South, New York, NY 10012", restroomMn1Hours: "Daily: 6:30 AM - 9:00 PM", restroomMn1Desc: "Public indoor restrooms, changing tables, and handwashing station in Washington Square Park.",
+                foodQn1Name: "Long Island City Food Kitchen", foodQn1Addr: "10-25 41st Ave, Long Island City, NY 11101", foodQn1Hours: "Lunch: 12:00 PM - 2:00 PM | Dinner: 5:30 PM - 7:00 PM", foodQn1Desc: "Warm meal distribution kitchen located in Long Island City, Queens. Public walk-in.",
+                shelterQn1Name: "Queens Boulevard Safe Sanctuary", shelterQn1Addr: "88-11 Queens Blvd, Elmhurst, NY 11373", shelterQn1Hours: "Intake daily at 5:00 PM", shelterQn1Desc: "Emergency family and individual shelter with supervised playroom located on Queens Blvd.",
+                foodSi1Name: "Staten Island Ferry Terminal Community Pantry", foodSi1Addr: "1 Bay St, Staten Island, NY 10301", foodSi1Hours: "Mon-Fri: 9:00 AM - 3:00 PM", foodSi1Desc: "Community pantry providing free grocery bags near the Staten Island Ferry Terminal. Public walk-in.",
+
+                aiTitle: "Street Support AI Assistant",
+                askAiBtn: "Ask AI",
+                resetChatBtn: "New Chat",
+                aiWelcome: "👋 Hello! I am your Street Support Assistant. Ask me about food drives, shelters, daycare & teen mom support, restrooms, pharmacies, job supplies, or schools nearby, and I will find the exact resources for you!",
+                footer1: "Street Support Portal — Built with compassion to connect people with vital community services.",
+                footer2: "If you are in immediate danger or need critical medical help, please dial 911 immediately."
+            },
+            es: {
+                langName: "Español",
+                locTitle: "Establecer su Ubicación",
+                locDesc: "Ingrese cualquier ciudad, vecindario o código postal para encontrar ayuda cercana:",
+                locOpt1: "Opción 1: Escriba ubicación, dirección o código postal",
+                locOpt2: "Opción 2: Usar ubicación actual del dispositivo",
+                locSave: "Guardar",
+                locBtn: "Compartir Acceso a Ubicación",
+                addressPlaceholder: "ej. El Bronx, Brooklyn, 10451...",
+                searchPlaceholder: "Buscar 'comida', 'guardería madres jóvenes', 'refugio'...",
+                aiPlaceholder: "Escriba lo que necesita (ej. 'Guardería en El Bronx' o 'Farmacia en Brooklyn')",
+                emergencyBtn: "Emergencia: 911 / 211",
+                navHome: "Inicio",
+                navFood: "Comida",
+                navShelter: "Refugios",
+                navChildcare: "Guardería y Mamás",
+                navRestrooms: "Baños",
+                navPharmacy: "Farmacia",
+                navJobs: "Empleos y Ropa",
+                welcomeTag: "Centro de Recursos Comunitarios",
+                heroTitle: "Bienvenido a Street Support",
+                heroDesc: "Encuentre ayuda comunitaria inmediata, comidas calientes, refugios, guarderías para madres jóvenes y solteras, baños limpios y trabajos.",
+                defaultLocText: "Ubicación: Ciudad de Nueva York (Toca para cambiar ubicación)",
+                quoteText: '"Cada comunidad se fortalece cuando nos apoyamos mutuamente."',
+                searchTitle: "Buscar Recursos o Pedir Ayuda",
+                quickSearchLabel: "Búsquedas rápidas:",
+                btnMeals: "Comidas Gratis",
+                btnBeds: "Camas Disponibles",
+                btnChildcare: "Guardería y Niñeras Gratis",
+                btnPharmacy: "Farmacia Gratuita",
+                btnShowers: "Duchas Públicas",
+                btnJobs: "Trabajos del Día",
+                cardFoodTitle: "Comida y Comedores",
+                cardFoodDesc: "Comedores comunitarios y alimentos con entrada libre sin requerimientos.",
+                cardShelterTitle: "Refugios de Emergencia",
+                cardShelterDesc: "Alojamientos nocturnos con requisitos claros para familias y jóvenes.",
+                cardChildcareTitle: "Guardería y Madres Jóvenes",
+                cardChildcareDesc: "Centros de guardería gratuitos, niñeras de emergencia y apoyo a madres solteras.",
+                cardRestroomTitle: "Baños e Higiene",
+                cardRestroomDesc: "Baños públicos limpios, duchas móviles y cambiadores de bebés.",
+                cardPharmacyTitle: "Farmacia y Clínica Gratuita",
+                cardPharmacyDesc: "Vales de medicamentos urgentes, atención pediátrica y chequeos.",
+                cardJobsTitle: "Empleos, Escuelas y Ropa",
+                cardJobsDesc: "Trabajos del día, escuelas vocacionales y guardería para estudiantes.",
+                cardViewLocations: "Ver Ubicaciones",
+                cardFindBeds: "Buscar Camas",
+                cardFindChildcare: "Buscar Guardería y Apoyo",
+                cardLocateFacilities: "Localizar Instalaciones",
+                cardGetMedicalAid: "Obtener Ayuda Médica",
+                cardExploreOpportunities: "Explorar Oportunidades",
+                directionsLink: "Cómo llegar",
+
+                foodHeading: "Comedores y Bancos de Alimentos",
+                foodSubheading: "Puntos de distribución de comidas calientes y víveres gratis.",
+                shelterHeading: "Refugios de Emergencia",
+                shelterSubheading: "Alojamiento nocturno y centros de acogida.",
+                childcareHeading: "Guarderías, Niñeras y Apoyo a Madres Jóvenes",
+                childcareSubheading: "Guarderías gratuitas, niñeras comunitarias y suministros para bebés.",
+                restroomHeading: "Baños Públicos y Duchas",
+                restroomSubheading: "Baños limpios, lavado de manos y duchas gratuitas.",
+                pharmacyHeading: "Farmacia Urgente y Clínica",
+                pharmacySubheading: "Medicamentos de emergencia y consultas gratuitas.",
+                jobsHeading: "Ropa, Suministros, Escuelas y Empleos",
+                jobsSubheading: "Roperos comunitarios, escuelas vocacionales y trabajos diarios.",
+
+                availMedsTitle: "Medicamentos Urgentes Disponibles Gratis",
+                med1Name: "Insulina y Diabetes:", med1Desc: "Jeringas, plumas de insulina y tiras reactivas.",
+                med2Name: "Inhaladores de Asma:", med2Desc: "Inhaladores de rescate Albuterol.",
+                med3Name: "Presión Arterial:", med3Desc: "Medicamentos para control hipertensivo.",
+                med4Name: "Antibióticos:", med4Desc: "Tratamiento bacteriano común con evaluación.",
+                med5Name: "Analgésicos sin Receta:", med5Desc: "Ibuprofeno, Paracetamol y jarabe.",
+                med6Name: "Primeros Auxilios:", med6Desc: "Vendas, gasas y pomadas.",
+
+                neededMedsTitle: "Donaciones de Alta Demanda",
+                don1Name: "Botiquines:", don1Desc: "Vendas, cinta médica y cremas.",
+                don2Name: "Analgésicos:", don2Desc: "Frascos sellados para dolor y fiebre.",
+                don3Name: "Jarabe para la Tos:", don3Desc: "Descongestionantes y vitaminas.",
+                don4Name: "Kits Femeninos:", don4Desc: "Toallas sanitarias, tampones y toallitas.",
+                don5Name: "Higiene Dental:", don5Desc: "Cepillos, pasta dental e hilo dental.",
+
+                statusOpenDaily: "Abierto Diariamente",
+                statusTueThu: "Mar y Jue",
+                statusMWF: "Lun, Mié, Vie",
+                statusBedsAvail: "Camas Disponibles",
+                status247Youth: "Centro Juvenil 24/7",
+                statusFreeChildcare: "Guardería y Niñeras Gratis",
+                statusCleanAccessible: "Limpio y Accesible",
+                statusWalkIns: "Entrada Libre",
+                statusSameDayPay: "Pago el Mismo Día",
+                statusYouthJobs: "Empleos Jóvenes/Adultos",
+
+                reqWalkIn: "Entrada Libre Pública (Sin Identificación o Cita)",
+                reqIntake: "Requisito: Registro Breve de Entrada",
+                reqYouth: "Requisito: Jóvenes (14-24 años) o Madres Solteras con Niños",
+                reqReg: "Requisito: Registro Gratuito de Estudiante",
+
+                childcareBx1: "Guardería Cercana: Guardería para Madres Jóvenes del Sur del Bronx (a 0.2 mi)",
+                childcareBx2: "Guardería Cercana: Centro de Cuidado Infantil Concourse (a 0.3 mi)",
+                childcareShelterBx1: "Apoyo Infantil: Guardería nocturna de emergencia en el refugio",
+                childcareShelterBx2: "Apoyo Infantil: Programa para Madres Jóvenes con guardería e infantes gratis",
+                childcareMainBx1: "Servicios para Mamás: Guardería infantil, pañales y leches gratis, tutorías",
+                childcareRestroomBx1: "Centro Infantil: Centro Familiar St. Mary's Park (a 0.1 mi)",
+                childcarePharmacyBx1: "Apoyo Infantil: Centro de Salud Infantil Hospital Lincoln (a 0.4 mi)",
+                childcareJobsBx1: "Apoyo Infantil: Guardería laboral para madres trabajadoras (a 0.3 mi)",
+                childcareSchoolBx1: "Apoyo Infantil: Guardería escolar gratuita para madres estudiantes",
+
+                childcareFoodBk1: "Guardería Cercana: Cooperativa Infantil de Madres Solteras de Brooklyn (a 0.2 mi)",
+                childcareFoodBk2: "Guardería Cercana: Centro Infantil y Niñeras Bed-Stuy (a 0.3 mi)",
+                childcareShelterBk1: "Apoyo Infantil: Cuidado supervisado de niños durante citas laborales",
+                childcareShelterBk2: "Apoyo Infantil: Programa completo de guardería para madres jóvenes en el sitio",
+                childcareMainBk1: "Servicios para Mamás: Niñeras flexibles gratis, cuidado extraescolar y grupos de apoyo",
+                childcareRestroomBk1: "Centro Infantil: Centro Familiar Fort Greene (a 0.2 mi)",
+                childcarePharmacyBk1: "Apoyo Infantil: Atención Pediátrica Gratuita Atlantic (a 0.1 mi)",
+                childcareJobsBk1: "Apoyo Infantil: Colectivo de Guardería Laboral Brooklyn (a 0.3 mi)",
+                childcareSchoolBk1: "Apoyo Infantil: Guardería gratuita para estudiantes inscritas",
+
+                childcareFoodMn1: "Guardería Cercana: Centro Infantil Lower East Side (a 0.2 mi)",
+                childcareShelterMn1: "Apoyo Infantil: Asistencia familiar y cuidado infantil en el sitio",
+                childcareMainMn1: "Servicios para Mamás: Guardería diaria, banco de leche/fórmula y red de niñeras",
+                childcareRestroomMn1: "Centro Infantil: Centro Familiar Washington Square (a 0.3 mi)",
+
+                childcareFoodQn1: "Guardería Cercana: Centro Infantil Long Island City (a 0.3 mi)",
+                childcareShelterQn1: "Apoyo Infantil: Sala de juegos supervisada y actividades infantiles",
+                childcareFoodSi1: "Guardería Cercana: Centro Familiar y Guardería Staten Island (a 0.2 mi)",
+
+                foodBx1Name: "Despensa Comunitaria de Alimentos del Bronx", foodBx1Addr: "410 E 148th St, Bronx, NY 10455", foodBx1Hours: "Almuerzo: 11:00 AM - 2:00 PM | Cena: 4:30 PM - 6:30 PM", foodBx1Desc: "Distribución de comidas calientes en el sur del Bronx. Entrada libre pública.",
+                foodBx2Name: "Centro de Alimentos Grand Concourse", foodBx2Addr: "1280 Grand Concourse, Bronx, NY 10456", foodBx2Hours: "Lun, Mié, Vie: 8:00 AM - 12:00 PM", foodBx2Desc: "Entrega gratuita de cajas de comestibles cerca de Grand Concourse.",
+                shelterBx1Name: "Refugio Santuario Seguro Mott Haven", shelterBx1Addr: "349 E 140th St, Bronx, NY 10454", shelterBx1Hours: "Entrada diaria a partir de las 5:00 PM", shelterBx1Desc: "Refugio nocturno cerca de Mott Haven. Incluye duchas calientes y cena.",
+                shelterBx2Name: "Refugio Juvenil y Familiar del Bronx", shelterBx2Addr: "286 E 156th St, Bronx, NY 10451", shelterBx2Hours: "Atención 24/7 para jóvenes y familias", shelterBx2Desc: "Alojamiento protegido para jóvenes y madres solteras o adolescentes en el sur del Bronx.",
+                childcareBx1Name: "Centro de Guardería para Madres Jóvenes del Bronx", childcareBx1Addr: "425 E 149th St, Bronx, NY 10455", childcareBx1Hours: "Lun-Sáb: 7:30 AM - 6:00 PM", childcareBx1Desc: "Guardería gratuita, servicio de niñeras de emergencia, pañales y fórmula infantil para madres jóvenes.",
+                restroomBx1Name: "Centro de Higiene St. Mary's Park", restroomBx1Addr: "Parque St. Mary's (Jackson Ave y E 145th St), Bronx, NY 10455", restroomBx1Hours: "Diario: 7:00 AM - 8:00 PM", restroomBx1Desc: "Baños públicos limpios, cambiadores de bebés y duchas gratuitas en St. Mary's Park.",
+                pharmacyBx1Name: "Centro de Salud y Farmacia Gratuita Sur del Bronx", pharmacyBx1Addr: "871 Westchester Ave, Bronx, NY 10459", pharmacyBx1Hours: "Lun-Vie: 8:30 AM - 5:30 PM", pharmacyBx1Desc: "Clínica gratuita que ofrece vales de medicamentos, pediatría e insulina.",
+                jobsBx1Name: "Centro de Trabajo y Ropa del Bronx", jobsBx1Addr: "555 Bergen Ave, Bronx, NY 10455", jobsBx1Hours: "Inscripciones: 6:30 AM | Ropa: Lun/Mié 10am-2pm", jobsBx1Desc: "Trabajos con pago el mismo día, abrigos de invierno y asistencia de guardería laboral.",
+                schoolBx1Name: "Escuela de Capacitación Vocacional del Bronx", schoolBx1Addr: "360 E 161st St, Bronx, NY 10451", schoolBx1Hours: "Lun-Vie: 9:00 AM - 5:00 PM", schoolBx1Desc: "Clases gratuitas de GED, inglés (ESL), transporte y guardería gratuita para estudiantes.",
+
+                foodBk1Name: "Comedor Comunitario Brooklyn Bridge", foodBk1Addr: "285 Jay St, Brooklyn, NY 11201", foodBk1Hours: "Almuerzo: 11:30 AM - 2:00 PM | Cena: 5:00 PM - 7:00 PM", foodBk1Desc: "Almuerzos y cenas calientes cerca del centro de Brooklyn. Entrada libre.",
+                foodBk2Name: "Despensa y Frutas Bed-Stuy", foodBk2Addr: "1150 Fulton St, Brooklyn, NY 11216", foodBk2Hours: "Mar, Jue, Sáb: 9:00 AM - 1:00 PM", foodBk2Desc: "Comestibles frescos y frutas distribuidas en Fulton St.",
+                shelterBk1Name: "Refugio de Emergencia Atlantic Avenue", shelterBk1Addr: "1310 Atlantic Ave, Brooklyn, NY 11216", shelterBk1Hours: "Entrada diaria desde las 5:00 PM", shelterBk1Desc: "Alojamiento nocturno y centro de acogida en Atlantic Ave.",
+                shelterBk2Name: "Centro Juvenil y Madres Jóvenes Covenant House", shelterBk2Addr: "520 Gates Ave, Brooklyn, NY 11216", shelterBk2Hours: "Atención de emergencia 24/7", shelterBk2Desc: "Refugio para jóvenes menores de 21 años y madres adolescentes con cuidado infantil.",
+                childcareBk1Name: "Red de Guardería y Apoyo a Mamás de Brooklyn", childcareBk1Addr: "500 Fulton St, Brooklyn, NY 11201", childcareBk1Hours: "Lun-Vie: 7:00 AM - 7:00 PM", childcareBk1Desc: "Guardería flexible gratuita, grupos de apoyo para madres solteras, banco de leche y niñeras nocturnas.",
+                restroomBk1Name: "Centro de Higiene Fort Greene Park", restroomBk1Addr: "Parque Fort Greene, Brooklyn, NY 11205", restroomBk1Hours: "Diario: 7:00 AM - 8:30 PM", restroomBk1Desc: "Baños públicos, cambiadores de bebé y duchas calientes cerca del parque.",
+                pharmacyBk1Name: "Farmacia y Salud Comunitaria Brooklyn", pharmacyBk1Addr: "485 Atlantic Ave, Brooklyn, NY 11217", pharmacyBk1Hours: "Lun-Vie: 8:00 AM - 6:00 PM", pharmacyBk1Desc: "Medicamentos recetados gratuitos, pediatría y medicinas para asma y diabetes.",
+                jobsBk1Name: "Centro de Trabajo Diario de Brooklyn", jobsBk1Addr: "350 Livingston St, Brooklyn, NY 11201", jobsBk1Hours: "Inscripción: 6:30 AM | Ropa: Lun/Mié 11am-3pm", jobsBk1Desc: "Oportunidades de trabajo en construcción y apoyo económico de guardería.",
+                schoolBk1Name: "Academia de Educación Vocacional para Adultos", schoolBk1Addr: "475 Nostrand Ave, Brooklyn, NY 11216", schoolBk1Hours: "Lun-Vie: 8:30 AM - 4:30 PM", schoolBk1Desc: "Secundaria para adultos gratuita, cursos vocacionales y guardería estudiantil.",
+
+                foodMn1Name: "Comedor Comunitario Lower East Side", foodMn1Addr: "122 Bowery, New York, NY 10013", foodMn1Hours: "Almuerzo: 11:30 AM - 1:30 PM | Cena: 5:00 PM - 7:00 PM", foodMn1Desc: "Centro de comida caliente que sirve almuerzos y cenas diariamente. Entrada libre.",
+                shelterMn1Name: "Refugio de Emergencia Harlem Haven", shelterMn1Addr: "215 W 125th St, New York, NY 10027", shelterMn1Hours: "Entrada abierta 24/7", shelterMn1Desc: "Centro de acogida de emergencia 24/7 en Harlem con suministros infantiles.",
+                childcareMn1Name: "Centro de Guardería y Apoyo Infantil de Harlem", childcareMn1Addr: "230 W 125th St, New York, NY 10027", childcareMn1Hours: "Lun-Sáb: 8:00 AM - 6:00 PM", childcareMn1Desc: "Guardería diaria gratuita, banco de fórmula/leche y red de niñeras para madres jóvenes.",
+                restroomMn1Name: "Estación de Higiene Washington Square", restroomMn1Addr: "Parque Washington Square, New York, NY 10012", restroomMn1Hours: "Diario: 6:30 AM - 9:00 PM", restroomMn1Desc: "Baños públicos interiores y cambiadores en el parque Washington Square.",
+                foodQn1Name: "Cocina Comunitaria Long Island City", foodQn1Addr: "10-25 41st Ave, Long Island City, NY 11101", foodQn1Hours: "Almuerzo: 12:00 PM - 2:00 PM | Cena: 5:30 PM - 7:00 PM", foodQn1Desc: "Cocina de distribución de comida caliente en Queens. Entrada libre.",
+                shelterQn1Name: "Refugio Seguro Queens Boulevard", shelterQn1Addr: "88-11 Queens Blvd, Elmhurst, NY 11373", shelterQn1Hours: "Entrada diaria a las 5:00 PM", shelterQn1Desc: "Refugio de emergencia para familias e individuos con sala infantil en Queens Blvd.",
+                foodSi1Name: "Despensa Terminal de Ferry Staten Island", foodSi1Addr: "1 Bay St, Staten Island, NY 10301", foodSi1Hours: "Lun-Vie: 9:00 AM - 3:00 PM", foodSi1Desc: "Despensa comunitaria cerca de la terminal del ferry. Entrada libre.",
+
+                aiTitle: "Asistente IA Street Support",
+                askAiBtn: "Preguntar a IA",
+                resetChatBtn: "Nuevo Chat",
+                aiWelcome: "👋 ¡Hola! Soy tu asistente de Street Support. Pregúntame sobre comedores, refugios, guarderías y niñeras para mamás jóvenes, baños, farmacias, suministros de trabajo o escuelas cercanas.",
+                footer1: "Portal Street Support — Creado con compasión para conectar personas con servicios esenciales.",
+                footer2: "Si se encuentra en peligro inmediato, llame al 911 de inmediato."
+            }
+        };
+
+        // Render Page Resource Lists dynamically
+        function populatePageResources() {
+            const containers = {
+                food: document.getElementById('food-locations-container'),
+                shelter: document.getElementById('shelter-locations-container'),
+                childcare: document.getElementById('childcare-locations-container'),
+                restroom: document.getElementById('restroom-locations-container'),
+                pharmacy: document.getElementById('pharmacy-locations-container'),
+                supplies: document.getElementById('jobs-locations-container')
+            };
+
+            for (const key in containers) {
+                if (containers[key]) containers[key].innerHTML = '';
+            }
+
+            const langData = translations[currentLang] || translations.en;
+            const targetBorough = userLocationQuery.toLowerCase();
+
+            const filteredResources = resourceDatabase.filter(res => {
+                if (targetBorough.includes('bronx') && res.borough !== 'bronx') return false;
+                if (targetBorough.includes('brooklyn') && res.borough !== 'brooklyn') return false;
+                if (targetBorough.includes('manhattan') && res.borough !== 'manhattan') return false;
+                if (targetBorough.includes('queens') && res.borough !== 'queens') return false;
+                if (targetBorough.includes('staten island') && res.borough !== 'staten island') return false;
+                return true;
+            });
+
+            const displayList = filteredResources.length > 0 ? filteredResources : resourceDatabase;
+
+            displayList.forEach(res => {
+                const target = containers[res.category];
+                if (!target) return;
+
+                const nameText = langData[res.nameKey] || res.name || res.nameKey;
+                const addrText = langData[res.addressKey] || res.address || res.addressKey;
+                const hoursText = langData[res.hoursKey] || res.hours || res.hoursKey;
+                const statusText = langData[res.statusKey] || res.statusKey;
+                const reqText = langData[res.reqKey] || res.reqKey;
+                const childcareText = langData[res.childcareKey] || res.childcareKey;
+                const descText = langData[res.descKey] || res.descKey;
+
+                const isWalkIn = res.reqKey === 'reqWalkIn';
+                const reqBadgeClass = isWalkIn ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-900 font-semibold';
+                const reqIcon = isWalkIn ? 'fa-door-open' : 'fa-id-card';
+
+                const cardHtml = `
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition flex flex-col justify-between space-y-3">
+                        <div>
+                            <div class="flex justify-between items-start gap-2">
+                                <h3 class="font-bold text-lg text-slate-800">${nameText}</h3>
+                                <span class="bg-sage-100 text-sage-800 text-xs font-semibold px-2.5 py-1 rounded-full shrink-0">${statusText}</span>
+                            </div>
+                            
+                            <!-- Access Requirements Banner -->
+                            <div class="mt-2 text-xs px-2.5 py-1.5 rounded-xl ${reqBadgeClass} flex items-center gap-1.5">
+                                <i class="fa-solid ${reqIcon}"></i> <span>${reqText}</span>
+                            </div>
+
+                            <p class="text-xs text-slate-600 mt-2"><i class="fa-solid fa-location-dot text-red-500"></i> ${addrText}</p>
+                            <p class="text-xs text-slate-500 mt-1"><i class="fa-regular fa-clock"></i> ${hoursText}</p>
+                            <p class="text-xs text-slate-600 mt-2 leading-relaxed">${descText}</p>
+
+                            <!-- Nearby Daycare / Babysitter Support Info -->
+                            ${childcareText ? `
+                                <div class="mt-3 text-xs text-pink-900 bg-pink-50/80 p-2.5 rounded-xl border border-pink-200 flex items-start gap-2">
+                                    <i class="fa-solid fa-baby-carriage text-pink-600 mt-0.5 shrink-0"></i>
+                                    <div><strong>Childcare & Mom Support:</strong> ${childcareText}</div>
+                                </div>
+                            ` : ''}
+                        </div>
+                        <div class="pt-3 border-t border-slate-100 flex justify-between items-center text-xs">
+                            <span class="text-slate-500"><i class="fa-solid fa-phone text-sage-600"></i> ${res.phone}</span>
+                            <a href="https://maps.google.com/?q=${encodeURIComponent(nameText + ' ' + addrText)}" target="_blank" class="text-sage-700 font-semibold hover:underline flex items-center gap-1">
+                                <span data-lang="directionsLink">${langData.directionsLink || 'Directions'}</span> <i class="fa-solid fa-arrow-right"></i>
+                            </a>
+                        </div>
+                    </div>
+                `;
+                target.insertAdjacentHTML('beforeend', cardHtml);
+            });
+        }
+
+        // Location & Language Handlers
+        window.selectLanguage = function(langCode) {
+            const langModal = document.getElementById('languageModal');
+            if (langModal) langModal.style.display = 'none';
+
+            const selectEl = document.getElementById('language-select');
+            if (selectEl) selectEl.value = langCode;
+
+            changeLanguage(langCode);
+
+            const locModal = document.getElementById('locationModal');
+            if (locModal) locModal.style.display = 'flex';
+        };
+
+        window.submitManualAddress = function() {
+            const input = document.getElementById('manualAddressInput').value.trim();
+            if (input) {
+                userLocationQuery = input;
+                document.getElementById('locationStatusText').innerText = `Location: ${input}`;
+                populatePageResources();
+            }
+            document.getElementById('locationModal').style.display = 'none';
+        };
+
+        window.requestLocation = function() {
+            const statusEl = document.getElementById('locationStatusText');
+            if (navigator.geolocation) {
+                statusEl.innerText = `Detecting device location...`;
+                navigator.geolocation.getCurrentPosition(
+                    (pos) => {
+                        userLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+                        userLocationQuery = "GPS Shared";
+                        statusEl.innerText = `Location: GPS Shared (${pos.coords.latitude.toFixed(2)}, ${pos.coords.longitude.toFixed(2)})`;
+                        document.getElementById('locationModal').style.display = 'none';
+                        populatePageResources();
+                    },
+                    (err) => {
+                        statusEl.innerText = `Location: New York City (Default)`;
+                        document.getElementById('locationModal').style.display = 'none';
+                    }
+                );
+            } else {
+                document.getElementById('locationModal').style.display = 'none';
+            }
+        };
+
+        window.switchTab = function(tabName) {
+            const pages = document.querySelectorAll('.page-content');
+            pages.forEach(p => p.classList.remove('active'));
+
+            const navBtns = document.querySelectorAll('.nav-btn');
+            navBtns.forEach(btn => {
+                btn.classList.remove('bg-sage-700', 'font-bold');
+            });
+
+            const activePage = document.getElementById(`page-${tabName}`);
+            if(activePage) {
+                activePage.classList.add('active');
+            }
+
+            const activeTab = document.getElementById(`tab-${tabName}`);
+            if(activeTab) {
+                activeTab.classList.add('bg-sage-700', 'font-bold');
+            }
+
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        };
+
+        window.changeLanguage = function(langKey) {
+            currentLang = langKey;
+            const langData = translations[langKey] || translations.en;
+            
+            document.querySelectorAll('[data-lang]').forEach(el => {
+                const key = el.getAttribute('data-lang');
+                if (langData[key]) {
+                    el.innerText = langData[key];
+                }
+            });
+
+            document.querySelectorAll('[data-lang-ph]').forEach(el => {
+                const key = el.getAttribute('data-lang-ph');
+                if (langData[key]) {
+                    el.placeholder = langData[key];
+                }
+            });
+
+            const welcomeEl = document.getElementById('ai-welcome-msg');
+            if (welcomeEl && langData.aiWelcome) {
+                welcomeEl.innerText = langData.aiWelcome;
+            }
+
+            populatePageResources();
+        };
+
+        window.handleGlobalSearch = function() {
+            const query = document.getElementById('global-search-input').value.toLowerCase().trim();
+            const cards = document.querySelectorAll('.searchable-card');
+
+            cards.forEach(card => {
+                const text = card.innerText.toLowerCase();
+                if (!query || text.includes(query)) {
+                    card.style.display = 'flex';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        };
+
+        window.filterByKeyword = function(keyword) {
+            const searchInput = document.getElementById('global-search-input');
+            searchInput.value = keyword;
+            handleGlobalSearch();
+        };
+
+        function formatAiResponse(text) {
+            if (!text) return '';
+            let safe = text
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;");
+            
+            safe = safe.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            safe = safe.replace(/\n/g, '<br>');
+            return safe;
+        }
+
+        function getDistanceMiles(lat1, lon1, lat2, lon2) {
+            const R = 3958.8;
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                Math.sin(dLon/2) * Math.sin(dLon/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return (R * c).toFixed(1);
+        }
+
+        // Smart Resource Search Matcher including Daycare / Teen Mom query support
+        function findRelevantResources(userMessage) {
+            const msg = userMessage.toLowerCase();
+            let matchedCategory = null;
+
+            if (msg.includes('food') || msg.includes('hungr') || msg.includes('eat') || msg.includes('meal') || msg.includes('grocer') || msg.includes('pantry') || msg.includes('breakfast') || msg.includes('dinner')) {
+                matchedCategory = 'food';
+            } else if (msg.includes('shelter') || msg.includes('sleep') || msg.includes('bed') || msg.includes('overnight') || msg.includes('stay') || msg.includes('housing') || msg.includes('warm')) {
+                matchedCategory = 'shelter';
+            } else if (msg.includes('daycare') || msg.includes('babysitt') || msg.includes('teen mom') || msg.includes('single mom') || msg.includes('childcare') || msg.includes('infant') || msg.includes('diaper') || msg.includes('formula') || msg.includes('toddler')) {
+                matchedCategory = 'childcare';
+            } else if (msg.includes('restroom') || msg.includes('bathroom') || msg.includes('shower') || msg.includes('toilet') || msg.includes('wash') || msg.includes('soap') || msg.includes('bath')) {
+                matchedCategory = 'restroom';
+            } else if (msg.includes('med') || msg.includes('pharmacy') || msg.includes('clinic') || msg.includes('doctor') || msg.includes('health') || msg.includes('prescription') || msg.includes('insulin') || msg.includes('inhaler')) {
+                matchedCategory = 'pharmacy';
+            } else if (msg.includes('job') || msg.includes('work') || msg.includes('employ') || msg.includes('cloth') || msg.includes('coat') || msg.includes('blanket') || msg.includes('boot') || msg.includes('pay') || msg.includes('school') || msg.includes('train') || msg.includes('esl') || msg.includes('ged')) {
+                matchedCategory = 'supplies';
+            }
+
+            let targetBorough = null;
+            if (msg.includes('bronx')) targetBorough = 'bronx';
+            else if (msg.includes('brooklyn')) targetBorough = 'brooklyn';
+            else if (msg.includes('manhattan')) targetBorough = 'manhattan';
+            else if (msg.includes('queens')) targetBorough = 'queens';
+            else if (msg.includes('staten island')) targetBorough = 'staten island';
+            else if (userLocationQuery && userLocationQuery !== 'City Center') {
+                const locLower = userLocationQuery.toLowerCase();
+                if (locLower.includes('bronx')) targetBorough = 'bronx';
+                if (locLower.includes('brooklyn')) targetBorough = 'brooklyn';
+                if (locLower.includes('manhattan')) targetBorough = 'manhattan';
+                if (locLower.includes('queens')) targetBorough = 'queens';
+                if (locLower.includes('staten island')) targetBorough = 'staten island';
+            }
+
+            return resourceDatabase.filter(r => {
+                const matchesCategory = matchedCategory ? r.category === matchedCategory : true;
+                const matchesBorough = targetBorough ? r.borough === targetBorough : true;
+                return matchesCategory && matchesBorough;
+            });
+        }
+
+        function renderResourceCardsInChat(resources) {
+            if (!resources || resources.length === 0) return '';
+            const langData = translations[currentLang] || translations.en;
+
+            let html = '<div class="mt-3 space-y-3 border-t border-slate-200 pt-3">';
+            html += '<p class="text-xs font-bold text-sage-800 uppercase tracking-wider mb-2"><i class="fa-solid fa-list-check"></i> Matching Local Resources:</p>';
+
+            resources.forEach(res => {
+                const distText = userLocation ? `${getDistanceMiles(userLocation.lat, userLocation.lng, res.lat, res.lng)} miles away` : `${res.borough.toUpperCase()} Area`;
+                const nameText = langData[res.nameKey] || res.name || res.nameKey;
+                const addrText = langData[res.addressKey] || res.address || res.addressKey;
+                const hoursText = langData[res.hoursKey] || res.hours || res.hoursKey;
+                const statusText = langData[res.statusKey] || res.statusKey;
+                const reqText = langData[res.reqKey] || res.reqKey;
+                const childcareText = langData[res.childcareKey] || res.childcareKey;
+                const descText = langData[res.descKey] || res.descKey;
+                const mapsUrl = `https://maps.google.com/?q=${encodeURIComponent(nameText + ' ' + addrText)}`;
+
+                const isWalkIn = res.reqKey === 'reqWalkIn';
+                const reqBadgeClass = isWalkIn ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-900 font-semibold';
+                const reqIcon = isWalkIn ? 'fa-door-open' : 'fa-id-card';
+
+                html += `
+                    <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs shadow-sm hover:border-sage-300 transition">
+                        <div class="flex justify-between items-start font-bold text-slate-800 text-sm">
+                            <span>${nameText}</span>
+                            <span class="bg-sage-100 text-sage-800 text-[10px] px-2 py-0.5 rounded-full font-medium">${statusText}</span>
+                        </div>
+
+                        <!-- Requirements Banner -->
+                        <div class="mt-1.5 text-[11px] px-2 py-1 rounded-lg ${reqBadgeClass} inline-flex items-center gap-1">
+                            <i class="fa-solid ${reqIcon}"></i> <span>${reqText}</span>
+                        </div>
+
+                        <p class="text-slate-600 mt-1.5"><i class="fa-solid fa-location-dot text-red-500"></i> ${addrText} • <span class="text-sage-700 font-semibold">${distText}</span></p>
+                        <p class="text-slate-500 mt-1"><i class="fa-regular fa-clock"></i> ${hoursText}</p>
+                        <p class="text-slate-600 mt-1.5 leading-snug">${descText}</p>
+                        
+                        ${childcareText ? `
+                            <div class="mt-2 text-[11px] text-pink-900 bg-pink-50 p-2 rounded-lg border border-pink-200">
+                                <i class="fa-solid fa-baby-carriage text-pink-600"></i> <strong>Daycare & Single/Teen Mom Support:</strong> ${childcareText}
+                            </div>
+                        ` : ''}
+
+                        <div class="mt-2.5 pt-2 border-t border-slate-200 flex flex-wrap gap-1.5">
+                            <a href="${mapsUrl}" target="_blank" class="bg-sage-700 hover:bg-sage-800 text-white font-bold px-2.5 py-1 rounded-lg transition inline-flex items-center gap-1">
+                                <i class="fa-solid fa-diamond-turn-right"></i> Get Directions
+                            </a>
+                            <a href="tel:${res.phone.replace(/[^0-9]/g, '')}" class="bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold px-2.5 py-1 rounded-lg transition inline-flex items-center gap-1">
+                                <i class="fa-solid fa-phone"></i> Call
+                            </a>
+                            <button onclick="switchTab('${res.category}')" class="bg-skyblue-100 hover:bg-skyblue-200 text-skyblue-800 font-bold px-2.5 py-1 rounded-lg transition inline-flex items-center gap-1">
+                                <i class="fa-solid fa-circle-info"></i> View Details
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+
+            html += '</div>';
+            return html;
+        }
+
+        window.clearChatHistory = function() {
+            chatHistory = [];
+            const chatBox = document.getElementById('chat-box');
+            const langData = translations[currentLang] || translations.en;
+            chatBox.innerHTML = `
+                <div class="bg-white border border-slate-200 p-3.5 rounded-xl max-w-lg shadow-sm">
+                    <p class="text-slate-700" id="ai-welcome-msg">${langData.aiWelcome}</p>
+                </div>
+            `;
+        };
+
+        window.stopAiGeneration = function() {
+            if (currentAbortController) {
+                currentAbortController.abort();
+                currentAbortController = null;
+            }
+            const statusBar = document.getElementById('ai-status-bar');
+            if (statusBar) statusBar.classList.add('hidden');
+            
+            const submitBtn = document.getElementById('ai-submit-btn');
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.classList.remove('opacity-50');
+            }
+        };
+
+        window.askAiFromSearch = function() {
+            const searchInput = document.getElementById('global-search-input');
+            const query = searchInput.value.trim();
+            if (!query) return;
+
+            const aiInput = document.getElementById('ai-input');
+            aiInput.value = query;
+            
+            const aiSection = document.getElementById('ai-assistant-section');
+            if (aiSection) aiSection.scrollIntoView({ behavior: 'smooth' });
+
+            handleAiSearch();
+        };
+
+        window.quickAiSearch = function(promptText) {
+            const aiInput = document.getElementById('ai-input');
+            aiInput.value = promptText;
+
+            const aiSection = document.getElementById('ai-assistant-section');
+            if (aiSection) aiSection.scrollIntoView({ behavior: 'smooth' });
+
+            handleAiSearch();
+        };
+
+        window.copyTextToClipboard = function(text) {
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(text);
+            } else {
+                const input = document.createElement('textarea');
+                input.value = text;
+                document.body.appendChild(input);
+                input.select();
+                document.execCommand('copy');
+                document.body.removeChild(input);
+            }
+        };
+
+        // Safe AI Execution
+        async function fetchGeminiAI(userQuery, retries = 5, delay = 1000) {
+            const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+            const targetLangName = translations[currentLang]?.langName || 'English';
+            
+            const systemPrompt = `You are a supportive, friendly Street Support AI assistant helping individuals (including teen mothers, single mothers, youth, and underprivileged families) find community resources in their specified location/borough (e.g., Bronx, Brooklyn, Queens, Manhattan, Staten Island).
+Provide clear, conversational, encouraging, practical, safe, clean, and wholesome advice in full, well-structured sentences.
+Always mention access requirements (e.g. 'Public Walk-In Only (No ID Needed)' or specific intake rules) and point out nearby daycare, babysitter cooperatives, or mother-support programs.
+Keep all responses completely safe, clean, positive, encouraging, and appropriate for all ages (under 18 friendly).
+IMPORTANT: Respond in ${targetLangName}.`;
+
+            chatHistory.push({ role: 'user', parts: [{ text: userQuery }] });
+
+            const contentsPayload = chatHistory.map(item => ({
+                role: item.role,
+                parts: item.parts
+            }));
+
+            const payload = {
+                contents: contentsPayload,
+                systemInstruction: { parts: [{ text: systemPrompt }] }
+            };
+
+            for (let i = 0; i < retries; i++) {
+                currentAbortController = new AbortController();
+                try {
+                    const response = await fetch(endpoint, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(payload),
+                        signal: currentAbortController.signal
+                    });
+
+                    if (response.ok) {
+                        const dataJson = await response.json();
+                        const aiReply = dataJson.candidates?.[0]?.content?.parts?.[0]?.text || "I am here to support you and your family. How can I assist you further?";
+                        chatHistory.push({ role: 'model', parts: [{ text: aiReply }] });
+                        return { success: true, text: aiReply };
+                    } else {
+                        const errData = await response.json().catch(() => ({}));
+                        if (response.status === 429) {
+                            await new Promise(res => setTimeout(res, delay));
+                            delay *= 2;
+                            continue;
+                        }
+                        
+                        chatHistory.pop();
+                        let userErrorMessage = "AI service request encountered an issue. Please try again.";
+                        if (response.status === 400 || response.status === 401 || (errData.error && errData.error.message && errData.error.message.includes("unregistered callers"))) {
+                            userErrorMessage = "AI service authentication needs to be configured in the runtime environment.";
+                        } else if (errData.error && errData.error.message) {
+                            userErrorMessage = `API Error (${response.status}): ${errData.error.message}`;
+                        }
+                        return { success: false, error: userErrorMessage };
+                    }
+                } catch (err) {
+                    if (err.name === 'AbortError') {
+                        chatHistory.pop();
+                        return { success: false, error: "Generation stopped by user." };
+                    }
+                    if (i < retries - 1) {
+                        await new Promise(res => setTimeout(res, delay));
+                        delay *= 2;
+                    }
+                } finally {
+                    currentAbortController = null;
+                }
+            }
+
+            chatHistory.pop();
+            return { success: false, error: "Unable to connect to AI service. Please check your network connection and click Retry." };
+        }
+
+        window.handleAiSearch = async function(e) {
+            if (e) e.preventDefault();
+            const inputEl = document.getElementById('ai-input');
+            const chatBox = document.getElementById('chat-box');
+            const submitBtn = document.getElementById('ai-submit-btn');
+            const statusBar = document.getElementById('ai-status-bar');
+
+            const userQuery = inputEl.value.trim();
+            if (!userQuery) return;
+
+            const userMsgDiv = document.createElement('div');
+            userMsgDiv.className = 'bg-sage-100 text-sage-900 border border-sage-200 p-3.5 rounded-2xl max-w-lg ml-auto shadow-sm text-right font-medium';
+            userMsgDiv.innerText = userQuery;
+            chatBox.appendChild(userMsgDiv);
+
+            inputEl.value = '';
+            submitBtn.disabled = true;
+            submitBtn.classList.add('opacity-50');
+            if (statusBar) statusBar.classList.remove('hidden');
+
+            const loadingDiv = document.createElement('div');
+            loadingDiv.className = 'bg-white border border-slate-200 p-3.5 rounded-2xl max-w-lg shadow-sm text-slate-500 flex items-center gap-2 text-xs font-semibold';
+            loadingDiv.innerHTML = `
+                <i class="fa-solid fa-robot text-skyblue-500 text-sm"></i>
+                <span>Thinking...</span>
+                <span class="flex gap-1 items-center ml-1">
+                    <span class="w-1.5 h-1.5 bg-sage-500 rounded-full typing-dot"></span>
+                    <span class="w-1.5 h-1.5 bg-sage-500 rounded-full typing-dot"></span>
+                    <span class="w-1.5 h-1.5 bg-sage-500 rounded-full typing-dot"></span>
+                </span>
+            `;
+            chatBox.appendChild(loadingDiv);
+            chatBox.scrollTop = chatBox.scrollHeight;
+
+            const result = await fetchGeminiAI(userQuery);
+
+            if (chatBox.contains(loadingDiv)) {
+                chatBox.removeChild(loadingDiv);
+            }
+            if (statusBar) statusBar.classList.add('hidden');
+            submitBtn.disabled = false;
+            submitBtn.classList.remove('opacity-50');
+
+            if (result.success) {
+                const matchedResources = findRelevantResources(userQuery);
+                const resourceCardsHtml = renderResourceCardsInChat(matchedResources);
+
+                const aiMsgDiv = document.createElement('div');
+                aiMsgDiv.className = 'bg-white border border-slate-200 p-4 rounded-2xl max-w-xl shadow-sm text-slate-700 leading-relaxed relative group';
+                
+                const rawText = result.text;
+                aiMsgDiv.innerHTML = `
+                    <div class="flex justify-between items-start mb-1 text-xs text-slate-400">
+                        <span class="font-bold text-sage-800 flex items-center gap-1"><i class="fa-solid fa-robot text-skyblue-500"></i> Street Support AI</span>
+                        <button onclick="copyTextToClipboard(\`${rawText.replace(/`/g, '\\`')}\`)" class="hover:text-slate-600 transition" title="Copy Message">
+                            <i class="fa-regular fa-copy"></i> Copy
+                        </button>
+                    </div>
+                    <div>${formatAiResponse(rawText)}</div>
+                    ${resourceCardsHtml}
+                `;
+                chatBox.appendChild(aiMsgDiv);
+            } else {
+                const matchedResources = findRelevantResources(userQuery);
+                const resourceCardsHtml = renderResourceCardsInChat(matchedResources);
+
+                const fallbackMsg = matchedResources.length > 0 
+                    ? "Here are the top local community resources matching your request:" 
+                    : "I am here to help you find food drives, shelters, daycare & teen mom support, restrooms, pharmacies, job supplies, and vocational schools. Please try specifying your location or explore the tabs above!";
+
+                const aiMsgDiv = document.createElement('div');
+                aiMsgDiv.className = 'bg-white border border-slate-200 p-4 rounded-2xl max-w-xl shadow-sm text-slate-700 leading-relaxed relative group';
+                
+                aiMsgDiv.innerHTML = `
+                    <div class="flex justify-between items-start mb-1 text-xs text-slate-400">
+                        <span class="font-bold text-sage-800 flex items-center gap-1"><i class="fa-solid fa-robot text-skyblue-500"></i> Street Support AI</span>
+                        <button onclick="copyTextToClipboard(\`${fallbackMsg.replace(/`/g, '\\`')}\`)" class="hover:text-slate-600 transition" title="Copy Message">
+                            <i class="fa-regular fa-copy"></i> Copy
+                        </button>
+                    </div>
+                    <div>${formatAiResponse(fallbackMsg)}</div>
+                    ${resourceCardsHtml}
+                `;
+                chatBox.appendChild(aiMsgDiv);
+            }
+
+            chatBox.scrollTop = chatBox.scrollHeight;
+        };
+
+        window.addEventListener('DOMContentLoaded', () => {
+            populatePageResources();
+        });
+    </script>
+</body>
+</html>

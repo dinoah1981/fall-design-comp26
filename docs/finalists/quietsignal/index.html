@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>QuietSignal - Personal Safety & Prevention</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Leaflet CSS & JS for Interactive Safe Spot Map -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0f7ff',
+                            100: '#e0effe',
+                            500: '#2563eb',
+                            600: '#1d4ed8',
+                            700: '#1e40af',
+                            800: '#1e3a8a',
+                            900: '#172554',
+                        },
+                        danger: {
+                            500: '#ef4444',
+                            600: '#dc2626',
+                            700: '#b91c1c'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @keyframes pulse-ring {
+            0% { transform: scale(0.95); opacity: 0.8; }
+            50% { transform: scale(1.08); opacity: 0.4; }
+            100% { transform: scale(0.95); opacity: 0.8; }
+        }
+        @keyframes siren-flash {
+            0%, 100% { background-color: #dc2626; }
+            50% { background-color: #2563eb; }
+        }
+        .animate-pulse-ring {
+            animation: pulse-ring 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        .siren-active {
+            animation: siren-flash 0.5s infinite;
+        }
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        #leaflet-map {
+            min-height: 250px;
+            border-radius: 0.75rem;
+            z-index: 10;
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col items-center justify-start p-0 sm:p-4 md:p-6 font-sans antialiased selection:bg-brand-500 selection:text-white">
+
+    <!-- App Outer Shell container (Mobile View Simulation on Desktop) -->
+    <div class="w-full max-w-md bg-slate-800 sm:rounded-3xl shadow-2xl border border-slate-700 overflow-hidden flex flex-col min-h-screen sm:min-h-[840px] relative">
+        
+        <!-- Top Status Bar Simulation -->
+        <div class="bg-slate-900 text-slate-400 text-xs px-5 pt-2 pb-1 flex justify-between items-center border-b border-slate-800">
+            <span id="current-time">10:26 AM</span>
+            <div class="flex items-center space-x-2">
+                <span class="text-[10px] text-slate-400"><i class="fa-solid fa-house text-emerald-400 mr-1"></i>OMW Mode</span>
+                <i class="fa-solid fa-signal"></i>
+                <i class="fa-solid fa-wifi"></i>
+                <i class="fa-solid fa-battery-full"></i>
+            </div>
+        </div>
+
+        <!-- App Top Navigation Bar -->
+        <header class="bg-slate-800/90 backdrop-blur-md px-4 py-3 border-b border-slate-700 sticky top-0 z-30 flex items-center justify-between">
+            <button id="btn-open-menu" class="text-slate-300 hover:text-white p-2 rounded-lg transition-colors focus:outline-none">
+                <i class="fa-solid fa-bars text-xl"></i>
+            </button>
+            
+            <div class="flex items-center space-x-2">
+                <i class="fa-solid fa-shield-halved text-brand-500 text-xl"></i>
+                <h1 class="text-lg font-bold text-white tracking-tight">QuietSignal</h1>
+            </div>
+
+            <div class="flex items-center space-x-2">
+                <!-- Recording Badge Button -->
+                <button id="btn-rec-toggle" class="flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-slate-700 hover:bg-slate-600 border border-slate-600 text-xs font-semibold transition-all">
+                    <span class="w-2 h-2 rounded-full bg-slate-400" id="rec-dot"></span>
+                    <span id="rec-label" class="text-slate-300">REC</span>
+                </button>
+                
+                <!-- Quick Emergency Call -->
+                <button id="btn-call-911" class="p-2 text-danger-500 hover:text-danger-600 hover:bg-danger-500/10 rounded-full transition-colors" title="Call Emergency Services">
+                    <i class="fa-solid fa-phone text-lg"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- Main View Container -->
+        <main class="flex-1 overflow-y-auto hide-scrollbar p-4 space-y-6 pb-24" id="main-content">
+            
+            <!-- VIEW 1: HOME VIEW -->
+            <div id="view-home" class="space-y-6">
+
+                <!-- IMMEDIATE ACTION SECTION -->
+                <section class="bg-slate-800/50 rounded-2xl p-5 border border-slate-700/80 text-center flex flex-col items-center justify-center relative overflow-hidden">
+                    <div class="absolute top-2 left-3 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                        Immediate Action
+                    </div>
+
+                    <p class="text-xs text-slate-400 mt-3 mb-4">
+                        For when you feel unsafe or something is happening.
+                    </p>
+
+                    <!-- Main Blue "I FEEL UNSAFE" Button -->
+                    <div class="relative my-2">
+                        <div id="unsafe-pulse" class="absolute -inset-3 rounded-full bg-brand-500/30 animate-pulse-ring hidden"></div>
+                        <button id="btn-feel-unsafe" class="relative w-40 h-40 rounded-full bg-gradient-to-br from-brand-500 to-brand-700 hover:from-brand-600 hover:to-brand-800 text-white font-black text-xl shadow-xl shadow-brand-500/30 flex flex-col items-center justify-center border-4 border-brand-400 transform active:scale-95 transition-all duration-200">
+                            <i class="fa-solid fa-hand-fist text-2xl mb-1"></i>
+                            <span>I FEEL</span>
+                            <span>UNSAFE</span>
+                        </button>
+                    </div>
+
+                    <span class="text-xs text-slate-400 mt-3 font-medium">
+                        Tap if it's happening or you feel unsafe
+                    </span>
+                </section>
+
+                <!-- LOCATION HELP SECTION -->
+                <section class="bg-slate-800/50 rounded-2xl p-4 border border-slate-700/80 space-y-3">
+                    <div class="flex items-center justify-between">
+                        <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                            Location Help
+                        </div>
+                        <span class="text-xs font-semibold text-emerald-400 flex items-center gap-1">
+                            <i class="fa-solid fa-circle-check text-[10px]"></i> Live Location Active
+                        </span>
+                    </div>
+
+                    <div class="text-sm font-semibold text-slate-200 flex items-center justify-between">
+                        <span>Is this location correct?</span>
+                        <button id="btn-refresh-loc" class="text-xs text-brand-500 hover:underline">
+                            <i class="fa-solid fa-rotate-right mr-1"></i>Refresh
+                        </button>
+                    </div>
+
+                    <!-- Search Input -->
+                    <div class="relative">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                        <input type="text" id="location-input" placeholder="Enter location or place..." value="Main St & 5th Ave (Current Location)" class="w-full bg-slate-900 border border-slate-700 rounded-xl py-2.5 pl-9 pr-9 text-xs text-slate-200 focus:outline-none focus:border-brand-500">
+                        <button id="btn-get-gps" class="absolute right-3 top-1/2 -translate-y-1/2 text-brand-500 hover:text-brand-400">
+                            <i class="fa-solid fa-location-crosshairs"></i>
+                        </button>
+                    </div>
+
+                    <!-- Near You List -->
+                    <div class="space-y-2 pt-1">
+                        <div class="text-xs text-slate-400 font-medium">Near you</div>
+                        
+                        <div class="space-y-2" id="safe-places-list">
+                            <!-- Police Station -->
+                            <div class="safe-place-card bg-slate-900/80 hover:bg-slate-700/60 p-2.5 rounded-xl border border-slate-700 flex items-center justify-between cursor-pointer transition-colors" data-lat="40.7128" data-lng="-74.0060" data-name="Police Station">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-8 h-8 rounded-lg bg-blue-500/20 text-blue-400 flex items-center justify-center">
+                                        <i class="fa-solid fa-building-shield text-sm"></i>
+                                    </div>
+                                    <div>
+                                        <div class="text-xs font-semibold text-slate-200">Police Station</div>
+                                        <div class="text-[10px] text-slate-400">Open 24/7 • Safe Zone</div>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <span class="text-xs font-bold text-slate-300">0.2 mi</span>
+                                    <div class="text-[10px] text-brand-500">Get Route &gt;</div>
+                                </div>
+                            </div>
+
+                            <!-- 24/7 Convenience Store -->
+                            <div class="safe-place-card bg-slate-900/80 hover:bg-slate-700/60 p-2.5 rounded-xl border border-slate-700 flex items-center justify-between cursor-pointer transition-colors" data-lat="40.7135" data-lng="-74.0050" data-name="24/7 Convenience Store">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
+                                        <i class="fa-solid fa-store text-sm"></i>
+                                    </div>
+                                    <div>
+                                        <div class="text-xs font-semibold text-slate-200">24/7 Convenience Store</div>
+                                        <div class="text-[10px] text-slate-400">Well lit • Public Area</div>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <span class="text-xs font-bold text-slate-300">0.3 mi</span>
+                                    <div class="text-[10px] text-brand-500">Get Route &gt;</div>
+                                </div>
+                            </div>
+
+                        </div>
+
+                        <!-- View More Accordion -->
+                        <button id="btn-toggle-more-places" class="w-full text-center text-xs text-slate-400 hover:text-slate-200 py-1 font-medium flex items-center justify-center gap-1">
+                            <span>View more</span>
+                            <i class="fa-solid fa-chevron-down text-[10px]" id="icon-more-places"></i>
+                        </button>
+                    </div>
+
+                    <!-- Quick Transportation & Location Texting -->
+                    <div class="pt-2 border-t border-slate-700/60 flex flex-col gap-2">
+                        <button id="btn-request-uber" class="w-full bg-slate-900 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl py-2 px-3 text-xs flex items-center justify-between transition-colors">
+                            <span class="flex items-center gap-2">
+                                <i class="fa-solid fa-car text-brand-400"></i> Request Uber / Safe Ride
+                            </span>
+                            <span class="text-[10px] text-slate-400">Shares location data</span>
+                        </button>
+
+                        <button id="btn-text-cop-info" class="w-full bg-slate-900 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl py-2 px-3 text-xs flex items-center justify-between transition-colors">
+                            <span class="flex items-center gap-2">
+                                <i class="fa-solid fa-comment-sms text-emerald-400"></i> Text Nearest Cop Info to Contact
+                            </span>
+                            <i class="fa-solid fa-arrow-right text-[10px] text-slate-400"></i>
+                        </button>
+                    </div>
+                </section>
+
+                <!-- SHARE & CONNECT SECTION -->
+                <section class="bg-slate-800/50 rounded-2xl p-4 border border-slate-700/80 space-y-3">
+                    <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                        Share &amp; Connect
+                    </div>
+
+                    <div>
+                        <h3 class="text-sm font-semibold text-slate-100">Share your location</h3>
+                        <p class="text-xs text-slate-400">Let someone know where you are in real-time.</p>
+                    </div>
+
+                    <button id="btn-share-location-main" class="w-full bg-slate-700 hover:bg-slate-600 active:bg-slate-800 text-white font-semibold py-2.5 px-4 rounded-xl border border-slate-600 shadow-md flex items-center justify-center space-x-2 transition-colors">
+                        <i class="fa-solid fa-user-group text-brand-400"></i>
+                        <span>Share Location</span>
+                    </button>
+                </section>
+
+                <!-- SAFETY TOOLS SECTION -->
+                <section class="bg-slate-800/50 rounded-2xl p-4 border border-slate-700/80 space-y-3">
+                    <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                        Safety Tools
+                    </div>
+
+                    <div class="grid grid-cols-4 gap-2">
+                        <!-- Fake Call -->
+                        <button id="tool-fake-call" class="bg-slate-900 hover:bg-slate-700/80 p-3 rounded-2xl border border-slate-700 flex flex-col items-center justify-center space-y-1.5 transition-all text-center">
+                            <div class="w-10 h-10 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center text-lg">
+                                <i class="fa-solid fa-phone-volume"></i>
+                            </div>
+                            <span class="text-[11px] font-medium text-slate-200 leading-tight">Fake Call</span>
+                        </button>
+
+                        <!-- Loud Alarm -->
+                        <button id="tool-loud-alarm" class="bg-slate-900 hover:bg-slate-700/80 p-3 rounded-2xl border border-slate-700 flex flex-col items-center justify-center space-y-1.5 transition-all text-center">
+                            <div class="w-10 h-10 rounded-full bg-danger-500/20 text-danger-400 flex items-center justify-center text-lg">
+                                <i class="fa-solid fa-bell"></i>
+                            </div>
+                            <span class="text-[11px] font-medium text-slate-200 leading-tight">Loud Alarm</span>
+                        </button>
+
+                        <!-- Safety Tips -->
+                        <button id="tool-safety-tips" class="bg-slate-900 hover:bg-slate-700/80 p-3 rounded-2xl border border-slate-700 flex flex-col items-center justify-center space-y-1.5 transition-all text-center">
+                            <div class="w-10 h-10 rounded-full bg-brand-500/20 text-brand-400 flex items-center justify-center text-lg">
+                                <i class="fa-solid fa-shield-halved"></i>
+                            </div>
+                            <span class="text-[11px] font-medium text-slate-200 leading-tight">Safety Tips</span>
+                        </button>
+
+                        <!-- Quick Text -->
+                        <button id="tool-quick-text" class="bg-slate-900 hover:bg-slate-700/80 p-3 rounded-2xl border border-slate-700 flex flex-col items-center justify-center space-y-1.5 transition-all text-center">
+                            <div class="w-10 h-10 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-lg">
+                                <i class="fa-solid fa-message"></i>
+                            </div>
+                            <span class="text-[11px] font-medium text-slate-200 leading-tight">Quick Text</span>
+                        </button>
+                    </div>
+                </section>
+            </div>
+
+            <!-- VIEW 2: INTERACTIVE MAP VIEW -->
+            <div id="view-map" class="hidden space-y-4">
+                <div class="bg-slate-800/50 p-4 rounded-2xl border border-slate-700 space-y-3">
+                    <div class="flex items-center justify-between">
+                        <h2 class="text-sm font-bold text-white">Safe Havens &amp; Police Nearby</h2>
+                        <span class="text-xs text-brand-400 font-medium"><i class="fa-solid fa-location-dot mr-1"></i>Map View</span>
+                    </div>
+                    <p class="text-xs text-slate-400">Locate illuminated stores, police stations, and verified safe points.</p>
+                    <div id="leaflet-map" class="w-full h-64 rounded-xl border border-slate-700"></div>
+                </div>
+
+                <!-- Navigation Quick List -->
+                <div class="bg-slate-800/50 p-4 rounded-2xl border border-slate-700 space-y-2">
+                    <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider">Directions &amp; Navigation</h3>
+                    <div id="map-directions-box" class="text-xs text-slate-400 bg-slate-900 p-3 rounded-xl border border-slate-700">
+                        Select a point on the map or tap a safe spot from the Home screen to view turn-by-turn directions.
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW 3: TRUSTED CONTACTS VIEW -->
+            <div id="view-contacts" class="hidden space-y-4">
+                <div class="bg-slate-800/50 p-4 rounded-2xl border border-slate-700 space-y-3">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <h2 class="text-sm font-bold text-white">Trusted Contacts</h2>
+                            <p class="text-xs text-slate-400">People who will be alerted when you tap "I Feel Unsafe".</p>
+                        </div>
+                        <button id="btn-add-contact" class="bg-brand-600 hover:bg-brand-700 text-white text-xs px-3 py-1.5 rounded-lg font-medium">
+                            + Add
+                        </button>
+                    </div>
+
+                    <div class="space-y-2" id="contacts-list-container">
+                        <!-- Contact 1 -->
+                        <div class="bg-slate-900 p-3 rounded-xl border border-slate-700 flex items-center justify-between">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-9 h-9 rounded-full bg-slate-700 text-brand-400 font-bold flex items-center justify-center text-sm">
+                                    JD
+                                </div>
+                                <div>
+                                    <div class="text-xs font-bold text-white">Jordan Doe (Mom)</div>
+                                    <div class="text-[10px] text-slate-400">+1 (555) 019-2831 • Primary Contact</div>
+                                </div>
+                            </div>
+                            <span class="text-emerald-400 text-xs" title="Auto-Notify Active"><i class="fa-solid fa-bell"></i></span>
+                        </div>
+
+                        <!-- Contact 2 -->
+                        <div class="bg-slate-900 p-3 rounded-xl border border-slate-700 flex items-center justify-between">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-9 h-9 rounded-full bg-slate-700 text-purple-400 font-bold flex items-center justify-center text-sm">
+                                    AS
+                                </div>
+                                <div>
+                                    <div class="text-xs font-bold text-white">Alex Smith (Roommate)</div>
+                                    <div class="text-[10px] text-slate-400">+1 (555) 482-9102 • Location Sharing On</div>
+                                </div>
+                            </div>
+                            <span class="text-emerald-400 text-xs" title="Auto-Notify Active"><i class="fa-solid fa-bell"></i></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW 4: SETTINGS VIEW -->
+            <div id="view-settings" class="hidden space-y-4">
+                <div class="bg-slate-800/50 p-4 rounded-2xl border border-slate-700 space-y-4">
+                    <h2 class="text-sm font-bold text-white">App Settings &amp; Stealth Features</h2>
+
+                    <div class="space-y-3 divide-y divide-slate-700/60">
+                        <!-- Stealth Mode -->
+                        <div class="pt-2 flex items-center justify-between">
+                            <div>
+                                <div class="text-xs font-semibold text-slate-200">Discreet Camouflage</div>
+                                <div class="text-[10px] text-slate-400">Disguise app UI as Calculator or Weather</div>
+                            </div>
+                            <input type="checkbox" id="toggle-stealth" class="w-4 h-4 rounded accent-brand-500">
+                        </div>
+
+                        <!-- Audio Recording on Alert -->
+                        <div class="pt-3 flex items-center justify-between">
+                            <div>
+                                <div class="text-xs font-semibold text-slate-200">Auto Audio Record</div>
+                                <div class="text-[10px] text-slate-400">Start background recording when "I Feel Unsafe" tapped</div>
+                            </div>
+                            <input type="checkbox" id="toggle-auto-rec" checked class="w-4 h-4 rounded accent-brand-500">
+                        </div>
+
+                        <!-- Pin Protection -->
+                        <div class="pt-3 flex items-center justify-between">
+                            <div>
+                                <div class="text-xs font-semibold text-slate-200">De-activation Safety PIN</div>
+                                <div class="text-[10px] text-slate-400">Require 4-digit code to stop active alerts</div>
+                            </div>
+                            <button id="btn-set-pin" class="text-xs text-brand-400 hover:underline font-medium">Set PIN</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+
+        <!-- BOTTOM NAVIGATION BAR -->
+        <nav class="absolute bottom-0 left-0 right-0 bg-slate-900/95 backdrop-blur-md border-t border-slate-800 px-2 py-2 z-30">
+            <div class="flex justify-around items-center">
+                <button class="nav-btn flex flex-col items-center py-1 px-3 rounded-xl text-brand-500" data-target="view-home">
+                    <i class="fa-solid fa-house text-lg mb-0.5"></i>
+                    <span class="text-[10px] font-semibold">Home</span>
+                </button>
+
+                <button class="nav-btn flex flex-col items-center py-1 px-3 rounded-xl text-slate-400 hover:text-slate-200" data-target="view-map">
+                    <i class="fa-solid fa-map-location-dot text-lg mb-0.5"></i>
+                    <span class="text-[10px] font-semibold">Map</span>
+                </button>
+
+                <button class="nav-btn flex flex-col items-center py-1 px-3 rounded-xl text-slate-400 hover:text-slate-200" data-target="view-contacts">
+                    <i class="fa-solid fa-user-group text-lg mb-0.5"></i>
+                    <span class="text-[10px] font-semibold">Contacts</span>
+                </button>
+
+                <button class="nav-btn flex flex-col items-center py-1 px-3 rounded-xl text-slate-400 hover:text-slate-200" data-target="view-settings">
+                    <i class="fa-solid fa-gear text-lg mb-0.5"></i>
+                    <span class="text-[10px] font-semibold">Settings</span>
+                </button>
+            </div>
+        </nav>
+
+        <!-- MODAL 1: UNSAFE ALERT OVERLAY -->
+        <div id="modal-unsafe-alert" class="fixed inset-0 bg-slate-950/90 backdrop-blur-lg z-50 flex flex-col items-center justify-center p-6 hidden">
+            <div class="w-full max-w-sm bg-slate-900 border border-brand-500/50 rounded-3xl p-6 text-center space-y-5 shadow-2xl relative">
+                <div class="w-20 h-20 rounded-full bg-brand-600/20 text-brand-400 flex items-center justify-center mx-auto text-3xl border-2 border-brand-500 animate-pulse">
+                    <i class="fa-solid fa-shield-halved"></i>
+                </div>
+
+                <div>
+                    <h2 class="text-xl font-black text-white">QuietSignal Active</h2>
+                    <p class="text-xs text-slate-300 mt-1">Discreet protection sequence initiated.</p>
+                </div>
+
+                <div class="bg-slate-800 p-3 rounded-xl text-left text-xs space-y-2 border border-slate-700">
+                    <div class="flex items-center text-emerald-400 space-x-2">
+                        <i class="fa-solid fa-check-circle"></i>
+                        <span>Live GPS broadcasted to trusted contacts</span>
+                    </div>
+                    <div class="flex items-center text-emerald-400 space-x-2" id="alert-rec-status">
+                        <i class="fa-solid fa-check-circle"></i>
+                        <span>Audio recording active in background</span>
+                    </div>
+                    <div class="flex items-center text-slate-300 space-x-2">
+                        <i class="fa-solid fa-spinner animate-spin text-brand-400"></i>
+                        <span>Searching nearest verified safe points</span>
+                    </div>
+                </div>
+
+                <div class="space-y-2 pt-2">
+                    <button id="btn-trigger-siren-alert" class="w-full bg-danger-600 hover:bg-danger-700 text-white font-bold py-3 rounded-xl shadow-lg flex items-center justify-center space-x-2">
+                        <i class="fa-solid fa-bell"></i>
+                        <span>TRIGGER LOUD SIREN</span>
+                    </button>
+
+                    <button id="btn-alert-call-cop" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow-lg flex items-center justify-center space-x-2">
+                        <i class="fa-solid fa-phone"></i>
+                        <span>CALL EMERGENCY SERVICES</span>
+                    </button>
+
+                    <button id="btn-cancel-alert" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold py-2.5 rounded-xl border border-slate-700">
+                        I am Safe Now (De-activate)
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODAL 2: FAKE CALL SCREEN -->
+        <div id="modal-fake-call" class="fixed inset-0 bg-slate-950 z-50 flex flex-col justify-between p-8 text-center hidden">
+            <div class="pt-12 space-y-3">
+                <div class="w-24 h-24 rounded-full bg-slate-800 border-2 border-slate-700 text-slate-300 text-4xl flex items-center justify-center mx-auto shadow-inner">
+                    <i class="fa-solid fa-user"></i>
+                </div>
+                <h2 id="fake-caller-name" class="text-2xl font-bold text-white">Mom (Incoming Call)</h2>
+                <p class="text-xs text-slate-400">Mobile +1 (555) 019-2831</p>
+            </div>
+
+            <!-- Audio Call Graphic Wave -->
+            <div class="flex justify-center space-x-1 items-center h-12">
+                <span class="w-1.5 h-6 bg-brand-500 rounded-full animate-bounce"></span>
+                <span class="w-1.5 h-10 bg-brand-400 rounded-full animate-bounce delay-100"></span>
+                <span class="w-1.5 h-4 bg-brand-600 rounded-full animate-bounce delay-200"></span>
+                <span class="w-1.5 h-8 bg-brand-500 rounded-full animate-bounce delay-150"></span>
+            </div>
+
+            <!-- Call Controls -->
+            <div class="pb-10 flex justify-around items-center">
+                <button id="btn-decline-fake-call" class="w-16 h-16 rounded-full bg-danger-600 hover:bg-danger-700 text-white flex items-center justify-center text-2xl shadow-lg">
+                    <i class="fa-solid fa-phone-slash"></i>
+                </button>
+
+                <button id="btn-accept-fake-call" class="w-16 h-16 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white flex items-center justify-center text-2xl shadow-lg animate-pulse">
+                    <i class="fa-solid fa-phone"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- MODAL 3: SAFETY TIPS -->
+        <div id="modal-safety-tips" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+            <div class="w-full max-w-sm bg-slate-900 border border-slate-700 rounded-3xl p-5 space-y-4 max-h-[80vh] flex flex-col">
+                <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                    <h3 class="font-bold text-white text-base"><i class="fa-solid fa-lightbulb text-amber-400 mr-2"></i>Personal Safety Tips</h3>
+                    <button class="close-modal text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+                </div>
+
+                <div class="flex-1 overflow-y-auto space-y-3 text-xs text-slate-300 pr-1">
+                    <div class="bg-slate-800 p-3 rounded-xl border border-slate-700">
+                        <h4 class="font-bold text-brand-400 mb-1"><i class="fa-solid fa-person-walking mr-1"></i> Walking Alone</h4>
+                        <p class="text-slate-400">Keep head up, avoid headphones/distractions, walk in well-lit areas near open businesses.</p>
+                    </div>
+
+                    <div class="bg-slate-800 p-3 rounded-xl border border-slate-700">
+                        <h4 class="font-bold text-emerald-400 mb-1"><i class="fa-solid fa-taxi mr-1"></i> Ride Sharing</h4>
+                        <p class="text-slate-400">Always confirm driver name and license plate before entering. Share ride status via QuietSignal.</p>
+                    </div>
+
+                    <div class="bg-slate-800 p-3 rounded-xl border border-slate-700">
+                        <h4 class="font-bold text-purple-400 mb-1"><i class="fa-solid fa-handshake-angle mr-1"></i> De-escalation &amp; Exit</h4>
+                        <p class="text-slate-400">Use QuietSignal's Fake Call to create a believable excuse to step away from uncomfortable situations.</p>
+                    </div>
+                </div>
+
+                <button class="close-modal w-full bg-slate-800 hover:bg-slate-700 text-white font-semibold py-2 rounded-xl text-xs">
+                    Close
+                </button>
+            </div>
+        </div>
+
+        <!-- MODAL 4: QUICK TEXT -->
+        <div id="modal-quick-text" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+            <div class="w-full max-w-sm bg-slate-900 border border-slate-700 rounded-3xl p-5 space-y-4">
+                <div class="flex justify-between items-center border-b border-slate-800 pb-2">
+                    <h3 class="font-bold text-white text-base"><i class="fa-solid fa-message text-emerald-400 mr-2"></i>Quick Preset Text</h3>
+                    <button class="close-modal text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+                </div>
+
+                <p class="text-xs text-slate-400">Tap to send instant SMS alert with current GPS to contacts:</p>
+
+                <div class="space-y-2">
+                    <button class="btn-send-preset-msg w-full text-left bg-slate-800 hover:bg-slate-700 p-3 rounded-xl border border-slate-700 text-xs text-slate-200">
+                        "I feel uneasy. Please call me right now."
+                    </button>
+                    <button class="btn-send-preset-msg w-full text-left bg-slate-800 hover:bg-slate-700 p-3 rounded-xl border border-slate-700 text-xs text-slate-200">
+                        "Tracking my location on QuietSignal. Heading home now."
+                    </button>
+                    <button class="btn-send-preset-msg w-full text-left bg-slate-800 hover:bg-slate-700 p-3 rounded-xl border border-slate-700 text-xs text-slate-200">
+                        "EMERGENCY: I need help at my current position!"
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- TOAST NOTIFICATION CONTAINER -->
+        <div id="toast-container" class="fixed top-12 left-1/2 -translate-x-1/2 z-50 w-full max-w-xs px-2 pointer-events-none space-y-2"></div>
+
+    </div>
+
+    <script>
+        // Global Application State
+        const state = {
+            isRecording: false,
+            recSeconds: 0,
+            recTimer: null,
+            activeTab: 'view-home',
+            leafletMap: null,
+            mapInitialized: false,
+            audioCtx: null,
+            sirenOscillator: null,
+            ringtoneOscillator: null,
+            isSirenActive: false,
+            currentLat: 40.7128,
+            currentLng: -74.0060
+        };
+
+        // DOM Element references
+        const btnFeelUnsafe = document.getElementById('btn-feel-unsafe');
+        const unsafePulse = document.getElementById('unsafe-pulse');
+        const modalUnsafeAlert = document.getElementById('modal-unsafe-alert');
+        const btnCancelAlert = document.getElementById('btn-cancel-alert');
+        const btnRecToggle = document.getElementById('btn-rec-toggle');
+        const recDot = document.getElementById('rec-dot');
+        const recLabel = document.getElementById('rec-label');
+        const toastContainer = document.getElementById('toast-container');
+
+        function showToast(message, type = 'info') {
+            const toast = document.createElement('div');
+            toast.className = `p-3 rounded-xl text-xs font-semibold shadow-lg backdrop-blur-md transition-all duration-300 transform translate-y-2 flex items-center space-x-2 text-white pointer-events-auto ${
+                type === 'danger' ? 'bg-danger-600/90 border border-danger-500' :
+                type === 'success' ? 'bg-emerald-600/90 border border-emerald-500' :
+                'bg-brand-600/90 border border-brand-500'
+            }`;
+            
+            const iconClass = type === 'danger' ? 'fa-triangle-exclamation' : type === 'success' ? 'fa-circle-check' : 'fa-circle-info';
+            toast.innerHTML = `<i class="fa-solid ${iconClass}"></i> <span>${message}</span>`;
+
+            toastContainer.appendChild(toast);
+            setTimeout(() => {
+                toast.classList.remove('translate-y-2');
+            }, 10);
+
+            setTimeout(() => {
+                toast.classList.add('opacity-0', '-translate-y-2');
+                setTimeout(() => toast.remove(), 300);
+            }, 3500);
+        }
+
+        function initAudioContext() {
+            if (!state.audioCtx) {
+                state.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        function playLoudSiren() {
+            initAudioContext();
+            if (state.isSirenActive) return;
+
+            state.isSirenActive = true;
+            document.body.classList.add('siren-active');
+
+            const osc = state.audioCtx.createOscillator();
+            const gain = state.audioCtx.createGain();
+
+            osc.type = 'sawtooth';
+            gain.gain.setValueAtTime(0.3, state.audioCtx.currentTime);
+
+            osc.connect(gain);
+            gain.connect(state.audioCtx.destination);
+
+            let high = false;
+            const interval = setInterval(() => {
+                if (!state.isSirenActive) {
+                    clearInterval(interval);
+                    osc.stop();
+                    return;
+                }
+                osc.frequency.setValueAtTime(high ? 900 : 400, state.audioCtx.currentTime);
+                high = !high;
+            }, 300);
+
+            osc.start();
+            state.sirenOscillator = { osc, interval };
+            showToast('LOUD SIREN ACTIVATED!', 'danger');
+        }
+
+        function stopLoudSiren() {
+            if (state.isSirenActive) {
+                state.isSirenActive = false;
+                document.body.classList.remove('siren-active');
+                if (state.sirenOscillator) {
+                    clearInterval(state.sirenOscillator.interval);
+                    try { state.sirenOscillator.osc.stop(); } catch(e){}
+                }
+                showToast('Siren Deactivated', 'info');
+            }
+        }
+
+        function startFakeCallRingtone() {
+            initAudioContext();
+            const osc = state.audioCtx.createOscillator();
+            const gain = state.audioCtx.createGain();
+
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(440, state.audioCtx.currentTime);
+            gain.gain.setValueAtTime(0.2, state.audioCtx.currentTime);
+
+            osc.connect(gain);
+            gain.connect(state.audioCtx.destination);
+            osc.start();
+
+            state.ringtoneOscillator = osc;
+        }
+
+        function stopFakeCallRingtone() {
+            if (state.ringtoneOscillator) {
+                try { state.ringtoneOscillator.stop(); } catch(e){}
+                state.ringtoneOscillator = null;
+            }
+        }
+
+        function toggleRecording() {
+            state.isRecording = !state.isRecording;
+            if (state.isRecording) {
+                recDot.className = 'w-2 h-2 rounded-full bg-danger-500 animate-pulse';
+                recLabel.className = 'text-danger-400 font-bold';
+                recLabel.textContent = 'REC 00:01';
+                state.recSeconds = 1;
+                state.recTimer = setInterval(() => {
+                    state.recSeconds++;
+                    const mins = String(Math.floor(state.recSeconds / 60)).padStart(2, '0');
+                    const secs = String(state.recSeconds % 60).padStart(2, '0');
+                    recLabel.textContent = `REC ${mins}:${secs}`;
+                }, 1000);
+                showToast('Audio Recording Started', 'danger');
+            } else {
+                clearInterval(state.recTimer);
+                recDot.className = 'w-2 h-2 rounded-full bg-slate-400';
+                recLabel.className = 'text-slate-300';
+                recLabel.textContent = 'REC';
+                showToast('Recording Saved Securely', 'success');
+            }
+        }
+
+        const navBtns = document.querySelectorAll('.nav-btn');
+        const views = {
+            'view-home': document.getElementById('view-home'),
+            'view-map': document.getElementById('view-map'),
+            'view-contacts': document.getElementById('view-contacts'),
+            'view-settings': document.getElementById('view-settings')
+        };
+
+        navBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const target = btn.dataset.target;
+                
+                // Update nav styles
+                navBtns.forEach(b => {
+                    b.classList.remove('text-brand-500');
+                    b.classList.add('text-slate-400');
+                });
+                btn.classList.add('text-brand-500');
+                btn.classList.remove('text-slate-400');
+
+                // Switch visible view
+                Object.keys(views).forEach(vKey => {
+                    if (vKey === target) {
+                        views[vKey].classList.remove('hidden');
+                    } else {
+                        views[vKey].classList.add('hidden');
+                    }
+                });
+
+                // Lazy initialize map when switching to map tab
+                if (target === 'view-map' && !state.mapInitialized) {
+                    initLeafletMap();
+                }
+            });
+        });
+
+        function initLeafletMap() {
+            state.mapInitialized = true;
+            state.leafletMap = L.map('leaflet-map').setView([state.currentLat, state.currentLng], 14);
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; OpenStreetMap'
+            }).addTo(state.leafletMap);
+
+            // User Location Marker
+            L.marker([state.currentLat, state.currentLng]).addTo(state.leafletMap)
+                .bindPopup("<b>You are here</b><br>Live GPS Signal Active")
+                .openPopup();
+
+            // Safe Spot Markers
+            const safeSpots = [
+                { lat: 40.7128, lng: -74.0060, title: "Police Station (0.2 mi)" },
+                { lat: 40.7135, lng: -74.0050, title: "24/7 Convenience Store (0.3 mi)" },
+                { lat: 40.7140, lng: -74.0070, title: "Community Safe Haven (0.4 mi)" }
+            ];
+
+            safeSpots.forEach(spot => {
+                L.marker([spot.lat, spot.lng]).addTo(state.leafletMap)
+                    .bindPopup(`<b>${spot.title}</b><br><button onclick="window.routeToSpot('${spot.title}')" class="text-xs text-blue-500 underline mt-1">Get Directions</button>`);
+            });
+        }
+
+        window.routeToSpot = function(title) {
+            document.getElementById('map-directions-box').innerHTML = `
+                <div class="text-slate-200 font-bold mb-1"><i class="fa-solid fa-route text-brand-400 mr-1"></i> Fast Route to ${title}</div>
+                <p>1. Head North on Main St for 0.1 miles</p>
+                <p>2. Turn Right onto 5th Ave (Lit sidewalk)</p>
+                <p>3. Destination is on your right (1 min walk)</p>
+            `;
+            showToast(`Route calculated for ${title}`, 'info');
+        };
+
+        btnFeelUnsafe.addEventListener('click', () => {
+            unsafePulse.classList.remove('hidden');
+            modalUnsafeAlert.classList.remove('hidden');
+            if (!state.isRecording && document.getElementById('toggle-auto-rec').checked) {
+                toggleRecording();
+            }
+            showToast('Emergency Signal Triggered!', 'danger');
+        });
+
+        btnCancelAlert.addEventListener('click', () => {
+            unsafePulse.classList.add('hidden');
+            modalUnsafeAlert.classList.add('hidden');
+            stopLoudSiren();
+            showToast('Alert De-activated', 'success');
+        });
+
+        btnRecToggle.addEventListener('click', toggleRecording);
+
+        // Fake Call Tool
+        const modalFakeCall = document.getElementById('modal-fake-call');
+        document.getElementById('tool-fake-call').addEventListener('click', () => {
+            showToast('Incoming Fake Call in 3 seconds...', 'info');
+            setTimeout(() => {
+                modalFakeCall.classList.remove('hidden');
+                startFakeCallRingtone();
+            }, 3000);
+        });
+
+        document.getElementById('btn-decline-fake-call').addEventListener('click', () => {
+            modalFakeCall.classList.add('hidden');
+            stopFakeCallRingtone();
+        });
+
+        document.getElementById('btn-accept-fake-call').addEventListener('click', () => {
+            stopFakeCallRingtone();
+            showToast('Fake Call Active. Act like you are speaking to family/friends.', 'info');
+            setTimeout(() => {
+                modalFakeCall.classList.add('hidden');
+            }, 5000);
+        });
+
+        // Loud Alarm Tool
+        document.getElementById('tool-loud-alarm').addEventListener('click', () => {
+            if (state.isSirenActive) {
+                stopLoudSiren();
+            } else {
+                playLoudSiren();
+            }
+        });
+
+        document.getElementById('btn-trigger-siren-alert').addEventListener('click', () => {
+            playLoudSiren();
+        });
+
+        // Safety Tips Tool
+        const modalSafetyTips = document.getElementById('modal-safety-tips');
+        document.getElementById('tool-safety-tips').addEventListener('click', () => {
+            modalSafetyTips.classList.remove('hidden');
+        });
+
+        // Quick Text Tool
+        const modalQuickText = document.getElementById('modal-quick-text');
+        document.getElementById('tool-quick-text').addEventListener('click', () => {
+            modalQuickText.classList.remove('hidden');
+        });
+
+        // Close Modals buttons
+        document.querySelectorAll('.close-modal').forEach(btn => {
+            btn.addEventListener('click', () => {
+                modalSafetyTips.classList.add('hidden');
+                modalQuickText.classList.add('hidden');
+            });
+        });
+
+        // Preset Message trigger
+        document.querySelectorAll('.btn-send-preset-msg').forEach(btn => {
+            btn.addEventListener('click', () => {
+                modalQuickText.classList.add('hidden');
+                showToast('Preset text dispatched to emergency contacts!', 'success');
+            });
+        });
+
+        // Share Location Button
+        document.getElementById('btn-share-location-main').addEventListener('click', () => {
+            showToast('Live GPS Location Link copied & sent to contacts!', 'success');
+        });
+
+        // Request Uber Button
+        document.getElementById('btn-request-uber').addEventListener('click', () => {
+            showToast('Redirecting to Uber ride request with current location...', 'info');
+        });
+
+        // Text Cop Info
+        document.getElementById('btn-text-cop-info').addEventListener('click', () => {
+            showToast('Nearest Police Station details sent to contacts.', 'success');
+        });
+
+        // Safe Place Card Click to Route
+        document.querySelectorAll('.safe-place-card').forEach(card => {
+            card.addEventListener('click', () => {
+                const name = card.dataset.name;
+                showToast(`Routing to ${name}...`, 'info');
+                // Switch to map view
+                document.querySelector('[data-target="view-map"]').click();
+                setTimeout(() => {
+                    window.routeToSpot(name);
+                }, 300);
+            });
+        });
+
+        // Toggle More Places accordion
+        const btnToggleMore = document.getElementById('btn-toggle-more-places');
+        btnToggleMore.addEventListener('click', () => {
+            showToast('All nearby safe locations loaded', 'info');
+        });
+
+        // Emergency 911 Call Buttons
+        document.getElementById('btn-call-911').addEventListener('click', () => {
+            showToast('Simulating call to Emergency Services (911)...', 'danger');
+        });
+        document.getElementById('btn-alert-call-cop').addEventListener('click', () => {
+            showToast('Connecting to 911 Dispatcher...', 'danger');
+        });
+
+        // Time updates
+        function updateTime() {
+            const now = new Date();
+            let hours = now.getHours();
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+            hours = hours % 12 || 12;
+            document.getElementById('current-time').textContent = `${hours}:${minutes} ${ampm}`;
+        }
+        setInterval(updateTime, 10000);
+        updateTime();
+    </script>
+</body>
+</html>

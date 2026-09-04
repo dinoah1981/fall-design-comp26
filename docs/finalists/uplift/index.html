@@ -1,0 +1,1287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UPLIFT - BX Innovators | Shelter, Food & Community Dashboard</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        navy: {
+                            800: '#0C1829',
+                            900: '#060D17',
+                        },
+                        teal: {
+                            500: '#1D7A82',
+                            600: '#155B62',
+                            700: '#0E4146',
+                        },
+                        gold: {
+                            400: '#FFC107',
+                            500: '#FFB703',
+                            600: '#E0A100',
+                        },
+                        brightBg: '#F8F9FA'
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- Custom Root CSS Variables provided in requirements -->
+    <style>
+        :root {
+            /* Branding Colors */
+            --color-primary-teal: #1D7A82;
+            --color-dark-navy: #0C1829;
+            --color-light-bg: #F8F9FA;
+            --color-white: #FFFFFF;
+        }
+
+        /* Header & Navigation */
+        header, nav, footer {
+            background-color: var(--color-dark-navy);
+            color: var(--color-white);
+        }
+
+        /* Primary Action Buttons */
+        .btn-primary {
+            background-color: var(--color-primary-teal);
+            color: var(--color-white);
+            border: none;
+            border-radius: 6px;
+            padding: 12px 24px;
+            font-weight: bold;
+            transition: all 0.2s ease-in-out;
+        }
+
+        .btn-primary:hover {
+            background-color: #155B62; /* Slightly darker teal for hover state */
+            transform: translateY(-1px);
+        }
+
+        /* Accent Links and Icons */
+        a.accent-link, .icon-highlight {
+            color: var(--color-primary-teal);
+        }
+
+        .hero-overlay {
+            background: linear-gradient(180deg, rgba(12, 24, 41, 0.88) 0%, rgba(6, 13, 23, 0.96) 100%);
+        }
+
+        .smooth-scroll {
+            scroll-behavior: smooth;
+        }
+
+        /* Glowing text effects for pop */
+        .glow-text {
+            text-shadow: 0 0 20px rgba(29, 122, 130, 0.5);
+        }
+
+        /* Animated Progress Bar */
+        .progress-bar-fill {
+            transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+    </style>
+</head>
+<body class="bg-[#F8F9FA] text-gray-800 font-sans smooth-scroll flex flex-col min-h-screen">
+
+    <!-- Top Emergency & Language Bar -->
+    <div class="bg-gradient-to-r from-red-600 via-rose-600 to-red-700 text-white text-xs sm:text-sm py-2 px-4 shadow-md">
+        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
+            <div class="flex items-center gap-2 text-center sm:text-left">
+                <i data-lucide="alert-triangle" class="w-4 h-4 text-gold-400 shrink-0"></i>
+                <span data-i18n="top-banner-text">In an immediate crisis? Call <strong>911</strong> or Dial <strong>211</strong> for NYC South Bronx local shelter placement.</span>
+            </div>
+            
+            <!-- Language Selector Dropdown (FULL WORKING TRANSLATION ENGINE) -->
+            <div class="flex items-center gap-2 bg-navy-900/60 px-3 py-1 rounded-full border border-white/20">
+                <i data-lucide="globe" class="w-3.5 h-3.5 text-teal-400"></i>
+                <span class="text-xs font-semibold text-gray-300 hidden md:inline">Language:</span>
+                <select id="language-select" onchange="changeLanguage(this.value)" class="bg-transparent text-white text-xs font-bold outline-none cursor-pointer">
+                    <option value="en" class="bg-navy-900 text-white">English (US)</option>
+                    <option value="es" class="bg-navy-900 text-white">Español (Spanish)</option>
+                    <option value="fr" class="bg-navy-900 text-white">Français (French)</option>
+                    <option value="ht" class="bg-navy-900 text-white">Kreyòl Ayisyen</option>
+                    <option value="bn" class="bg-navy-900 text-white">বাংলা (Bengali)</option>
+                    <option value="ar" class="bg-navy-900 text-white">العربية (Arabic)</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- Header / Navigation Bar -->
+    <header class="sticky top-0 z-40 bg-navy-800/95 backdrop-blur-md border-b border-navy-800 shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-20">
+                
+                <!-- Logo Top-Left (Exact Re-creation of Uploaded Artwork) -->
+                <a href="#home" class="flex items-center gap-3 group">
+                    <div class="w-14 h-14 bg-white rounded-2xl flex items-center justify-center shadow-md p-1.5 group-hover:scale-105 transition-transform border-2 border-teal-500">
+                        <!-- Custom SVG recreating uploaded UPLIFT - BX INNOVATORS logo -->
+                        <svg viewBox="0 0 200 200" class="w-full h-full">
+                            <!-- Golden Sun Background -->
+                            <circle cx="100" cy="80" r="50" fill="#FFB703"/>
+                            <!-- City Skyline silhouette inside sun -->
+                            <path d="M 60,110 L 60,90 L 70,90 L 70,80 L 80,80 L 80,95 L 88,95 L 88,60 L 100,50 L 112,60 L 112,85 L 122,85 L 122,75 L 132,75 L 132,100 L 140,100 L 140,110 Z" fill="#0C1829"/>
+                            <!-- Bridge graphic inside sun right side -->
+                            <path d="M 125,95 Q 138,80 152,95 M 128,95 L 128,102 M 138,88 L 138,102 M 148,93 L 148,102" stroke="#0C1829" stroke-width="2.5" fill="none"/>
+                            <!-- Welcoming Hands (Teal/Dark Teal) -->
+                            <path d="M 45,85 C 40,120 70,135 100,135 C 130,135 160,120 155,85 C 135,115 100,115 100,115 C 100,115 65,115 45,85 Z" fill="#1D7A82"/>
+                            <!-- Uplifting Person Silhouette -->
+                            <circle cx="100" cy="70" r="11" fill="#0C1829"/>
+                            <path d="M 72,60 C 80,85 100,90 100,115 C 100,90 120,85 128,60 C 115,75 100,80 100,80 C 100,80 85,75 72,60 Z" fill="#0C1829"/>
+                        </svg>
+                    </div>
+                    <div class="flex flex-col">
+                        <span class="text-2xl font-black tracking-wider text-white leading-none flex items-center">
+                            UPL<span class="text-teal-500 inline-flex items-center transform -translate-y-0.5">
+                                <svg class="w-5 h-6 text-teal-400 fill-current" viewBox="0 0 24 24"><path d="M12 2L4 10h5v12h6V10h5L12 2z"/></svg>
+                            </span>FT
+                        </span>
+                        <span class="text-[10px] font-extrabold tracking-widest text-teal-400 uppercase mt-0.5">BX INNOVATORS</span>
+                    </div>
+                </a>
+
+                <!-- Navigation Links (Desktop) -->
+                <nav class="hidden md:flex space-x-6 text-sm font-bold text-gray-200">
+                    <a href="#home" data-i18n="nav-home" class="hover:text-teal-400 transition-colors py-2 border-b-2 border-transparent hover:border-teal-400">Home</a>
+                    <a href="#dashboard" data-i18n="nav-dashboard" class="hover:text-teal-400 transition-colors py-2">Dashboard</a>
+                    <a href="#search-section" onclick="filterService('Shelter')" data-i18n="nav-shelter" class="hover:text-teal-400 transition-colors py-2">Find Shelter</a>
+                    <a href="#search-section" onclick="filterService('Pantry')" data-i18n="nav-food" class="hover:text-teal-400 transition-colors py-2">Food Assistance</a>
+                    <a href="#gofundme" data-i18n="nav-gofundme" class="hover:text-gold-400 text-gold-400 font-extrabold transition-colors py-2 flex items-center gap-1"><i data-lucide="heart" class="w-4 h-4 fill-current"></i> GoFundMe</a>
+                    <a href="#mission" data-i18n="nav-mission" class="hover:text-teal-400 transition-colors py-2">Our Mission</a>
+                    <a href="#contact" data-i18n="nav-contact" class="hover:text-teal-400 transition-colors py-2">Contact</a>
+                </nav>
+
+                <!-- Primary Action Button (Top-Right) -->
+                <div class="hidden sm:flex items-center gap-3">
+                    <button onclick="openModal('help-modal')" class="btn-primary flex items-center gap-2 shadow-lg shadow-teal-900/50">
+                        <i data-lucide="phone-call" class="w-4 h-4"></i>
+                        <span data-i18n="btn-need-help">NEED HELP NOW</span>
+                    </button>
+                </div>
+
+                <!-- Mobile Menu Button -->
+                <div class="md:hidden flex items-center gap-2">
+                    <button onclick="openModal('help-modal')" class="btn-primary text-xs px-3 py-2">
+                        NEED HELP
+                    </button>
+                    <button id="mobile-menu-btn" class="text-white p-2 rounded-md hover:bg-navy-700">
+                        <i data-lucide="menu" class="w-6 h-6"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile Menu Dropdown -->
+        <div id="mobile-menu" class="hidden md:hidden bg-navy-900 border-b border-navy-700 px-4 pt-2 pb-6 space-y-3">
+            <a href="#home" onclick="closeMobileMenu()" data-i18n="nav-home" class="block text-gray-200 font-semibold py-2 border-b border-navy-800">Home</a>
+            <a href="#dashboard" onclick="closeMobileMenu()" data-i18n="nav-dashboard" class="block text-gray-200 font-semibold py-2 border-b border-navy-800">Community Dashboard</a>
+            <a href="#search-section" onclick="filterService('Shelter'); closeMobileMenu();" data-i18n="nav-shelter" class="block text-gray-200 font-semibold py-2 border-b border-navy-800">Find Shelter</a>
+            <a href="#search-section" onclick="filterService('Pantry'); closeMobileMenu();" data-i18n="nav-food" class="block text-gray-200 font-semibold py-2 border-b border-navy-800">Food Assistance</a>
+            <a href="#gofundme" onclick="closeMobileMenu()" data-i18n="nav-gofundme" class="block text-gold-400 font-extrabold py-2 border-b border-navy-800">GoFundMe Progress</a>
+            <a href="#mission" onclick="closeMobileMenu()" data-i18n="nav-mission" class="block text-gray-200 font-semibold py-2 border-b border-navy-800">Our Mission</a>
+            <a href="#contact" onclick="closeMobileMenu()" data-i18n="nav-contact" class="block text-gray-200 font-semibold py-2">Contact Us</a>
+        </div>
+    </header>
+
+    <!-- Main Content Body -->
+    <main class="flex-grow">
+
+        <!-- Hero Section (Above the Fold with Skyline Background & Color Pop) -->
+        <section id="home" class="relative bg-navy-900 text-white py-20 lg:py-28 overflow-hidden">
+            <!-- Background Image with Dark Overlay -->
+            <div class="absolute inset-0 z-0">
+                <div class="absolute inset-0 bg-cover bg-center mix-blend-overlay opacity-40" style="background-image: url('https://images.unsplash.com/photo-1477959858617-67f30ac4ce78?auto=format&fit=crop&w=1920&q=80');"></div>
+                <div class="absolute inset-0 hero-overlay"></div>
+            </div>
+
+            <div class="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+                <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs sm:text-sm font-bold bg-teal-500/20 text-teal-300 border border-teal-400/30 mb-6 backdrop-blur-md">
+                    <span class="w-2.5 h-2.5 rounded-full bg-teal-400 animate-ping"></span> 
+                    <span data-i18n="hero-badge">Direct Relief Network • South Bronx & Greater NYC</span>
+                </div>
+                
+                <h1 class="text-4xl sm:text-5xl lg:text-7xl font-black tracking-tight leading-tight mb-6">
+                    <span data-i18n="hero-title-1">Connecting Our Community to</span> <br>
+                    <span class="text-transparent bg-clip-text bg-gradient-to-r from-teal-400 via-emerald-300 to-gold-400 glow-text" data-i18n="hero-title-2">Shelter, Food & Hope.</span>
+                </h1>
+                
+                <p class="text-lg sm:text-2xl text-gray-200 max-w-3xl mx-auto mb-10 font-normal leading-relaxed" data-i18n="hero-subtext">
+                    Fast, accessible local resources in the South Bronx to keep individuals and families safe, nourished, and supported off the streets.
+                </p>
+
+                <!-- Dual Action Buttons -->
+                <div class="flex flex-col sm:flex-row justify-center gap-4 max-w-lg mx-auto">
+                    <a href="#search-section" onclick="filterService('Shelter')" class="btn-primary text-base py-4 px-8 rounded-xl shadow-xl flex items-center justify-center gap-2 text-center font-bold">
+                        <i data-lucide="home" class="w-5 h-5"></i>
+                        <span data-i18n="btn-find-shelter">Find Nearby Shelter</span>
+                    </a>
+                    <a href="#search-section" onclick="filterService('Pantry')" class="bg-gold-500 hover:bg-gold-600 text-navy-900 font-extrabold px-8 py-4 rounded-xl shadow-xl transition-all flex items-center justify-center gap-2 text-center text-base">
+                        <i data-lucide="utensils" class="w-5 h-5"></i>
+                        <span data-i18n="btn-locate-food">Locate Free Food</span>
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- LIVE GOFUNDME FUNDRAISER SECTION (385,000 GOAL PROGRESS) -->
+        <section id="gofundme" class="py-12 bg-gradient-to-b from-navy-900 via-navy-800 to-navy-900 text-white border-y border-teal-500/30">
+            <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="bg-navy-800/90 border-2 border-gold-500/40 rounded-3xl p-6 sm:p-10 shadow-2xl relative overflow-hidden">
+                    
+                    <div class="flex flex-col md:flex-row items-center justify-between gap-8">
+                        
+                        <!-- Left Campaign Info -->
+                        <div class="md:w-7/12 space-y-4 text-left">
+                            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold bg-gold-500/20 text-gold-400 border border-gold-500/30">
+                                <i data-lucide="heart-handshake" class="w-4 h-4 text-gold-400"></i> Official Community Campaign
+                            </div>
+                            <h2 class="text-3xl sm:text-4xl font-black text-white leading-tight">
+                                Help Us Expand South Bronx Emergency Shelters & Kitchens
+                            </h2>
+                            <p class="text-gray-300 text-sm sm:text-base leading-relaxed" data-i18n="gofundme-desc">
+                                We are raising emergency capital to acquire mobile warming vans, fund daily hot meal distributions, and secure 50+ overnight emergency beds across South Bronx zip codes. Every dollar goes directly to relief.
+                            </p>
+                            
+                            <!-- Live Goal Tracker Text -->
+                            <div class="flex flex-wrap items-baseline gap-3 pt-2">
+                                <span class="text-3xl sm:text-4xl font-black text-teal-400" id="raised-amount">$248,350</span>
+                                <span class="text-gray-400 text-sm font-semibold">raised of <strong class="text-white text-base" id="goal-amount">$385,000</strong> goal</span>
+                                <span class="text-xs px-2.5 py-1 rounded-full bg-teal-500/20 text-teal-300 font-bold border border-teal-500/30" id="progress-percent">64.5% Funded</span>
+                            </div>
+
+                            <!-- Progress Bar -->
+                            <div class="w-full bg-navy-900 rounded-full h-5 overflow-hidden border border-gray-700 p-0.5">
+                                <div id="progress-fill" class="bg-gradient-to-r from-teal-500 via-emerald-400 to-gold-400 h-full rounded-full progress-bar-fill shadow-lg" style="width: 64.5%;"></div>
+                            </div>
+
+                            <div class="flex justify-between text-xs text-gray-400 font-semibold">
+                                <span id="donor-count"><i data-lucide="users" class="w-3.5 h-3.5 inline mr-1 text-teal-400"></i> 1,842 Supporters</span>
+                                <span>Target: $385,000</span>
+                            </div>
+                        </div>
+
+                        <!-- Right Live Donation Interactive Box -->
+                        <div class="md:w-5/12 w-full bg-navy-900/90 rounded-2xl p-6 border border-gray-700/80 shadow-xl text-center space-y-4">
+                            <h3 class="text-lg font-bold text-white flex items-center justify-center gap-2">
+                                <i data-lucide="sparkles" class="w-5 h-5 text-gold-400"></i> Make The Fund Go Up!
+                            </h3>
+                            <p class="text-xs text-gray-400">Select an amount to test adding to the $385,000 fundraiser goal in real time:</p>
+                            
+                            <div class="grid grid-cols-3 gap-2">
+                                <button onclick="selectPresetAmount(25)" class="donate-btn bg-navy-800 hover:bg-teal-600 border border-gray-700 hover:border-teal-400 text-white font-bold py-2 rounded-lg text-sm transition-all">$25</button>
+                                <button onclick="selectPresetAmount(50)" class="donate-btn bg-navy-800 hover:bg-teal-600 border border-gray-700 hover:border-teal-400 text-white font-bold py-2 rounded-lg text-sm transition-all">$50</button>
+                                <button onclick="selectPresetAmount(100)" class="donate-btn bg-navy-800 hover:bg-teal-600 border border-gray-700 hover:border-teal-400 text-white font-bold py-2 rounded-lg text-sm transition-all">$100</button>
+                                <button onclick="selectPresetAmount(250)" class="donate-btn bg-navy-800 hover:bg-teal-600 border border-gray-700 hover:border-teal-400 text-white font-bold py-2 rounded-lg text-sm transition-all">$250</button>
+                                <button onclick="selectPresetAmount(500)" class="donate-btn bg-navy-800 hover:bg-teal-600 border border-gray-700 hover:border-teal-400 text-white font-bold py-2 rounded-lg text-sm transition-all">$500</button>
+                                <button onclick="selectPresetAmount(1000)" class="donate-btn bg-navy-800 hover:bg-teal-600 border border-gray-700 hover:border-teal-400 text-white font-bold py-2 rounded-lg text-sm transition-all">$1,000</button>
+                            </div>
+
+                            <div class="relative">
+                                <span class="absolute left-3 top-2.5 text-gray-400 font-bold">$</span>
+                                <input type="number" id="custom-donation" placeholder="Custom Amount" class="w-full bg-navy-800 border border-gray-700 rounded-xl py-2 pl-7 pr-3 text-white text-sm focus:border-gold-400 outline-none">
+                            </div>
+
+                            <button onclick="submitDonation()" class="w-full bg-gradient-to-r from-gold-500 to-amber-600 hover:from-gold-400 hover:to-amber-500 text-navy-900 font-black py-3 rounded-xl shadow-lg hover:shadow-gold-500/30 transition-all flex items-center justify-center gap-2 text-base">
+                                <i data-lucide="heart" class="w-5 h-5 fill-current"></i>
+                                <span>DONATE TO GOFUNDME</span>
+                            </button>
+
+                            <!-- Live Feed of Recent Donors -->
+                            <div class="pt-2 text-left">
+                                <p class="text-[11px] font-bold text-gray-400 uppercase mb-2">Recent Community Supporters:</p>
+                                <div id="donor-feed" class="space-y-1.5 max-h-24 overflow-y-auto text-xs text-gray-300">
+                                    <div class="flex justify-between border-b border-gray-800 pb-1">
+                                        <span>Maria S. (10451)</span>
+                                        <span class="text-teal-400 font-bold">+$150</span>
+                                    </div>
+                                    <div class="flex justify-between border-b border-gray-800 pb-1">
+                                        <span>Anonymous Donor</span>
+                                        <span class="text-teal-400 font-bold">+$500</span>
+                                    </div>
+                                    <div class="flex justify-between border-b border-gray-800 pb-1">
+                                        <span>BX Tech Youth</span>
+                                        <span class="text-teal-400 font-bold">+$75</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- COMMUNITY METRICS DASHBOARD SECTION -->
+        <section id="dashboard" class="py-16 bg-white border-b border-gray-200">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center max-w-3xl mx-auto mb-12">
+                    <span class="px-3 py-1 bg-teal-100 text-teal-800 rounded-full text-xs font-bold uppercase tracking-wider">Real-Time Community Impact</span>
+                    <h2 class="text-3xl font-extrabold text-navy-900 mt-2">South Bronx Relief Dashboard</h2>
+                    <p class="text-gray-600 text-sm mt-2">Live metrics on resources deployed, shelter beds matched, and meals distributed across South Bronx neighborhoods.</p>
+                </div>
+
+                <!-- Live Metrics Grid -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+                    <div class="bg-[#F8F9FA] border border-gray-200 p-6 rounded-2xl shadow-sm hover:border-teal-500 transition-all">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs font-bold text-gray-500 uppercase">Meals Served This Month</span>
+                            <div class="p-2 bg-teal-100 text-teal-700 rounded-lg"><i data-lucide="utensils" class="w-5 h-5"></i></div>
+                        </div>
+                        <span class="text-3xl font-black text-navy-900" id="metric-meals">48,290</span>
+                        <p class="text-xs text-emerald-600 font-semibold mt-1"><i data-lucide="trending-up" class="w-3.5 h-3.5 inline"></i> +14% from last month</p>
+                    </div>
+
+                    <div class="bg-[#F8F9FA] border border-gray-200 p-6 rounded-2xl shadow-sm hover:border-teal-500 transition-all">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs font-bold text-gray-500 uppercase">Nights Sheltered</span>
+                            <div class="p-2 bg-navy-100 text-navy-800 rounded-lg"><i data-lucide="bed" class="w-5 h-5"></i></div>
+                        </div>
+                        <span class="text-3xl font-black text-navy-900" id="metric-shelter">12,450</span>
+                        <p class="text-xs text-emerald-600 font-semibold mt-1"><i data-lucide="trending-up" class="w-3.5 h-3.5 inline"></i> 100% capacity filled safely</p>
+                    </div>
+
+                    <div class="bg-[#F8F9FA] border border-gray-200 p-6 rounded-2xl shadow-sm hover:border-teal-500 transition-all">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs font-bold text-gray-500 uppercase">Families Supported</span>
+                            <div class="p-2 bg-gold-100 text-gold-700 rounded-lg"><i data-lucide="users" class="w-5 h-5"></i></div>
+                        </div>
+                        <span class="text-3xl font-black text-navy-900" id="metric-families">3,180</span>
+                        <p class="text-xs text-teal-600 font-semibold mt-1"><i data-lucide="check-circle" class="w-3.5 h-3.5 inline"></i> Direct housing & meal support</p>
+                    </div>
+
+                    <div class="bg-[#F8F9FA] border border-gray-200 p-6 rounded-2xl shadow-sm hover:border-teal-500 transition-all">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs font-bold text-gray-500 uppercase">Active Volunteers</span>
+                            <div class="p-2 bg-purple-100 text-purple-700 rounded-lg"><i data-lucide="heart" class="w-5 h-5"></i></div>
+                        </div>
+                        <span class="text-3xl font-black text-navy-900" id="metric-volunteers">640</span>
+                        <p class="text-xs text-purple-600 font-semibold mt-1"><i data-lucide="award" class="w-3.5 h-3.5 inline"></i> Bronx community innovators</p>
+                    </div>
+                </div>
+
+                <!-- Live Shelter & Food Status Ticker -->
+                <div class="bg-navy-900 rounded-2xl p-6 text-white shadow-xl flex flex-col md:flex-row items-center justify-between gap-4">
+                    <div class="flex items-center gap-3">
+                        <span class="relative flex h-3 w-3">
+                          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                          <span class="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+                        </span>
+                        <span class="font-bold text-sm">Live System Status: <span class="text-emerald-400">14 Partner Shelters Active</span> • <span class="text-gold-400">8 Food Pantries Open Today in South Bronx</span></span>
+                    </div>
+                    <a href="#search-section" class="btn-primary text-xs py-2 px-4 shrink-0">Search Live Map</a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Emergency Resource Search Bar Section (REAL SOUTH BRONX LOCATIONS) -->
+        <section id="search-section" class="relative z-20 py-16 bg-[#F8F9FA]">
+            <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="bg-white rounded-3xl shadow-2xl p-6 sm:p-10 border border-gray-200">
+                    <h2 class="text-2xl font-black text-navy-900 mb-2 flex items-center gap-2">
+                        <i data-lucide="search" class="w-6 h-6 text-teal-600"></i>
+                        <span data-i18n="search-title">Search South Bronx Emergency Resources</span>
+                    </h2>
+                    <p class="text-xs text-gray-500 mb-6" data-i18n="search-sub">Select your service need or enter a South Bronx zip code (e.g. 10451, 10452, 10454, 10455, 10456, 10459):</p>
+                    
+                    <form id="resource-search-form" onsubmit="handleSearch(event)" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <!-- Dropdown 1: Select Service -->
+                        <div>
+                            <label class="block text-xs font-bold text-gray-700 uppercase mb-1" data-i18n="label-service">Service Needed</label>
+                            <select id="service-type" class="w-full bg-gray-50 border border-gray-300 text-gray-800 rounded-xl p-3.5 text-sm font-semibold focus:ring-2 focus:ring-teal-500 outline-none">
+                                <option value="All">All Services (Shelter & Food)</option>
+                                <option value="Shelter">Emergency Shelter & Housing</option>
+                                <option value="Pantry">Food Pantry / Groceries</option>
+                                <option value="Hot Meals">Hot Meals & Soup Kitchens</option>
+                                <option value="Community Center">Community Youth & Resource Centers</option>
+                            </select>
+                        </div>
+
+                        <!-- Input 2: Enter Zip Code / City -->
+                        <div>
+                            <label class="block text-xs font-bold text-gray-700 uppercase mb-1" data-i18n="label-zip">South Bronx Zip Code</label>
+                            <input type="text" id="location-input" placeholder="e.g. 10451, 10452, 10455" class="w-full bg-gray-50 border border-gray-300 text-gray-800 rounded-xl p-3.5 text-sm font-semibold focus:ring-2 focus:ring-teal-500 outline-none">
+                        </div>
+
+                        <!-- Search Button -->
+                        <div class="flex items-end">
+                            <button type="submit" class="w-full btn-primary py-3.5 rounded-xl shadow-md flex items-center justify-center gap-2 text-base font-bold">
+                                <i data-lucide="search" class="w-5 h-5"></i>
+                                <span data-i18n="btn-search">Search Resources</span>
+                            </button>
+                        </div>
+                    </form>
+
+                    <!-- Search Results Output Area -->
+                    <div id="search-results" class="mt-8 hidden">
+                        <hr class="mb-6 border-gray-200">
+                        <div class="flex justify-between items-center mb-4">
+                            <p class="text-xs font-extrabold text-gray-600 uppercase tracking-wider" id="results-count">Available Services Found</p>
+                            <button onclick="resetSearch()" class="text-xs text-teal-600 font-bold hover:underline flex items-center gap-1"><i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i> Clear Filter</button>
+                        </div>
+                        <div id="results-container" class="space-y-4 max-h-[500px] overflow-y-auto pr-2">
+                            <!-- Dynamic Result Cards Inserted Here via JS -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Core Services Grid (3-Column Layout with High Bright Colors) -->
+        <section class="py-20 bg-white">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center max-w-2xl mx-auto mb-16">
+                    <span class="text-xs font-extrabold text-teal-600 uppercase tracking-widest">Immediate Aid</span>
+                    <h2 class="text-3xl font-extrabold text-navy-900 tracking-tight mt-1" data-i18n="services-title">Essential Services At A Glance</h2>
+                    <p class="mt-2 text-gray-600 text-base" data-i18n="services-sub">Connecting residents in crisis with verified, real South Bronx locations.</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    
+                    <!-- Column 1: Shelter Services -->
+                    <div class="bg-[#F8F9FA] rounded-3xl p-8 shadow-sm border border-gray-200 hover:border-teal-500 hover:shadow-xl transition-all flex flex-col justify-between group">
+                        <div>
+                            <div class="w-16 h-16 rounded-2xl bg-teal-100 text-teal-700 flex items-center justify-center mb-6 group-hover:bg-teal-600 group-hover:text-white transition-colors shadow-sm">
+                                <i data-lucide="bed" class="w-8 h-8"></i>
+                            </div>
+                            <h3 class="text-xl font-bold text-navy-900 mb-3" data-i18n="card-shelter-title">Emergency Housing</h3>
+                            <p class="text-gray-600 text-sm leading-relaxed mb-6" data-i18n="card-shelter-desc">
+                                Overnight shelter placement, safe-haven beds, family transitional housing, and youth drop-in shelters in South Bronx.
+                            </p>
+                        </div>
+                        <a href="#search-section" onclick="filterService('Shelter')" class="inline-flex items-center gap-2 text-teal-700 font-extrabold hover:text-teal-900 text-sm">
+                            <span data-i18n="link-shelter">View Shelter Listings</span>
+                            <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                        </a>
+                    </div>
+
+                    <!-- Column 2: Food Programs -->
+                    <div class="bg-[#F8F9FA] rounded-3xl p-8 shadow-sm border border-gray-200 hover:border-gold-500 hover:shadow-xl transition-all flex flex-col justify-between group">
+                        <div>
+                            <div class="w-16 h-16 rounded-2xl bg-gold-100 text-gold-700 flex items-center justify-center mb-6 group-hover:bg-gold-500 group-hover:text-navy-900 transition-colors shadow-sm">
+                                <i data-lucide="shopping-bag" class="w-8 h-8"></i>
+                            </div>
+                            <h3 class="text-xl font-bold text-navy-900 mb-3" data-i18n="card-food-title">Food Assistance</h3>
+                            <p class="text-gray-600 text-sm leading-relaxed mb-6" data-i18n="card-food-desc">
+                                Neighborhood food pantries, emergency grocery boxes, and hot meal distributions across zip codes 10451-10459.
+                            </p>
+                        </div>
+                        <a href="#search-section" onclick="filterService('Pantry')" class="inline-flex items-center gap-2 text-gold-600 font-extrabold hover:text-gold-700 text-sm">
+                            <span data-i18n="link-food">Find Food Pantries</span>
+                            <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                        </a>
+                    </div>
+
+                    <!-- Column 3: Urgent Helpline -->
+                    <div class="bg-[#F8F9FA] rounded-3xl p-8 shadow-sm border border-gray-200 hover:border-red-500 hover:shadow-xl transition-all flex flex-col justify-between group">
+                        <div>
+                            <div class="w-16 h-16 rounded-2xl bg-red-100 text-red-600 flex items-center justify-center mb-6 group-hover:bg-red-600 group-hover:text-white transition-colors shadow-sm">
+                                <i data-lucide="phone-call" class="w-8 h-8"></i>
+                            </div>
+                            <h3 class="text-xl font-bold text-navy-900 mb-3" data-i18n="card-help-title">24/7 Support</h3>
+                            <p class="text-gray-600 text-sm leading-relaxed mb-6" data-i18n="card-help-desc">
+                                Speak directly with local community support coordinators and intake specialists for direct placement assistance.
+                            </p>
+                        </div>
+                        <button onclick="openModal('help-modal')" class="inline-flex items-center gap-2 text-red-600 font-extrabold hover:text-red-700 text-sm text-left">
+                            <span data-i18n="link-help">Call Hotlines</span>
+                            <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+        <!-- DEDICATED MISSION & STORY SECTION -->
+        <section id="mission" class="py-20 bg-navy-900 text-white relative overflow-hidden">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+                    
+                    <!-- Left Side Logo + Community Image Gallery Holder -->
+                    <div class="space-y-6">
+                        <div class="relative bg-navy-800 p-8 rounded-3xl border-2 border-teal-500/40 shadow-2xl text-center flex flex-col items-center">
+                            <!-- Logo Representation -->
+                            <div class="w-36 h-36 bg-white rounded-3xl p-3 shadow-xl mb-4 border-2 border-gold-400">
+                                <svg viewBox="0 0 200 200" class="w-full h-full">
+                                    <circle cx="100" cy="80" r="50" fill="#FFB703"/>
+                                    <path d="M 60,110 L 60,90 L 70,90 L 70,80 L 80,80 L 80,95 L 88,95 L 88,60 L 100,50 L 112,60 L 112,85 L 122,85 L 122,75 L 132,75 L 132,100 L 140,100 L 140,110 Z" fill="#0C1829"/>
+                                    <path d="M 125,95 Q 138,80 152,95 M 128,95 L 128,102 M 138,88 L 138,102 M 148,93 L 148,102" stroke="#0C1829" stroke-width="2.5" fill="none"/>
+                                    <path d="M 45,85 C 40,120 70,135 100,135 C 130,135 160,120 155,85 C 135,115 100,115 100,115 C 100,115 65,115 45,85 Z" fill="#1D7A82"/>
+                                    <circle cx="100" cy="70" r="11" fill="#0C1829"/>
+                                    <path d="M 72,60 C 80,85 100,90 100,115 C 100,90 120,85 128,60 C 115,75 100,80 100,80 C 100,80 85,75 72,60 Z" fill="#0C1829"/>
+                                </svg>
+                            </div>
+                            <h3 class="text-xl font-black text-white tracking-wide">UPLIFT — BX INNOVATORS</h3>
+                            <p class="text-xs text-teal-400 font-bold uppercase tracking-widest mt-1">Community Relief & Innovation Platform</p>
+                        </div>
+
+                        <!-- Image Placeholder Box with Upload Option -->
+                        <div class="bg-navy-800 rounded-2xl p-4 border border-gray-700 text-center relative group">
+                            <div class="aspect-video bg-navy-900 rounded-xl overflow-hidden relative flex items-center justify-center border-2 border-dashed border-gray-600">
+                                <img id="mission-img-preview" src="https://images.unsplash.com/photo-1593113598332-cd288d649433?auto=format&fit=crop&w=800&q=80" alt="South Bronx Community Relief" class="w-full h-full object-cover">
+                                <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center p-4">
+                                    <i data-lucide="camera" class="w-8 h-8 text-white mb-2"></i>
+                                    <span class="text-xs text-white font-bold mb-2">Add or Change Photo</span>
+                                    <label class="bg-teal-600 hover:bg-teal-500 text-white text-xs font-bold py-1.5 px-3 rounded-lg cursor-pointer">
+                                        Browse Image
+                                        <input type="file" accept="image/*" class="hidden" onchange="previewCommunityImage(event, 'mission-img-preview')">
+                                    </label>
+                                </div>
+                            </div>
+                            <p class="text-xs text-gray-400 mt-2 font-semibold">South Bronx Food & Shelter Community Center Relief Action</p>
+                        </div>
+                    </div>
+
+                    <!-- Right Side Mission Story Text -->
+                    <div class="space-y-6">
+                        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-extrabold bg-teal-500/20 text-teal-300 border border-teal-500/30">
+                            Our Commitment
+                        </div>
+                        <h2 class="text-3xl sm:text-4xl font-black text-white leading-tight" data-i18n="mission-heading">
+                            Our Mission at UPLIFT — <span class="text-teal-400">BX Innovators</span>
+                        </h2>
+                        <p class="text-gray-300 leading-relaxed text-base" data-i18n="mission-p1">
+                            At <strong>UPLIFT - BX Innovators</strong>, our core mission is to eliminate homelessness and hunger across our South Bronx neighborhoods by providing immediate, dignified access to life-sustaining shelter and food resources.
+                        </p>
+                        <p class="text-gray-300 leading-relaxed text-base" data-i18n="mission-p2">
+                            We build accessible, community-first digital tools that connect vulnerable individuals and families directly with real-time shelter bed availability, local food pantries, daily warm meal schedules, and youth drop-in centers.
+                        </p>
+                        
+                        <div class="pt-4 grid grid-cols-2 gap-4">
+                            <div class="border-l-4 border-teal-500 pl-4 bg-navy-800/50 p-3 rounded-r-xl">
+                                <span class="block text-2xl font-black text-white">100%</span>
+                                <span class="text-xs text-gray-400 uppercase font-bold" data-i18n="stat-1">Community Driven</span>
+                            </div>
+                            <div class="border-l-4 border-gold-400 pl-4 bg-navy-800/50 p-3 rounded-r-xl">
+                                <span class="block text-2xl font-black text-white">$385K</span>
+                                <span class="text-xs text-gray-400 uppercase font-bold" data-i18n="stat-2">Expansion Goal</span>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+        <!-- Call to Action Bar (Get Involved) -->
+        <section id="get-involved" class="bg-gradient-to-r from-navy-900 via-navy-800 to-navy-900 text-white py-16 border-t border-navy-700">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+                <h2 class="text-3xl font-black mb-4" data-i18n="cta-title">Want to Support Our Mission?</h2>
+                <p class="text-gray-300 max-w-2xl mx-auto mb-8 text-sm sm:text-base" data-i18n="cta-sub">
+                    Join hands with UPLIFT BX Innovators. Whether you can volunteer your time, donate essential goods, or partner as a local South Bronx provider, your support saves lives.
+                </p>
+                <div class="flex flex-wrap justify-center gap-4">
+                    <button onclick="openModal('volunteer-modal')" class="btn-primary text-base py-3.5 px-6 rounded-xl flex items-center gap-2">
+                        <i data-lucide="heart-handshake" class="w-5 h-5"></i>
+                        <span data-i18n="btn-volunteer">Volunteer</span>
+                    </button>
+                    <button onclick="openModal('donate-modal')" class="bg-gold-500 hover:bg-gold-600 text-navy-900 font-extrabold px-6 py-3.5 rounded-xl transition-all flex items-center gap-2 shadow-lg">
+                        <i data-lucide="gift" class="w-5 h-5"></i>
+                        <span data-i18n="btn-donate-goods">Donate Resources</span>
+                    </button>
+                    <a href="#gofundme" class="bg-transparent border-2 border-teal-400 hover:bg-teal-500 hover:text-white text-teal-300 font-extrabold px-6 py-3.5 rounded-xl transition-all flex items-center gap-2">
+                        <i data-lucide="heart" class="w-5 h-5"></i>
+                        <span>GoFundMe Goal</span>
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Contact Us Section (UPDATED WITH SPECIFIED CONTACT DETAILS) -->
+        <section id="contact" class="py-16 bg-[#F8F9FA]">
+            <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 bg-white rounded-3xl shadow-lg border border-gray-200 p-8">
+                <div class="text-center mb-8">
+                    <span class="text-xs font-bold text-teal-600 uppercase tracking-widest">Reach Out</span>
+                    <h2 class="text-3xl font-black text-navy-900 mt-1" data-i18n="contact-title">Get in Touch with UPLIFT</h2>
+                    <p class="text-sm text-gray-600 mt-2" data-i18n="contact-sub">Have questions, need organizational support, or want to submit a new service location?</p>
+                </div>
+
+                <!-- Verified Contact Info Cards -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+                    <div class="bg-navy-900 text-white p-4 rounded-2xl flex items-center gap-3">
+                        <div class="p-3 bg-teal-500/20 text-teal-400 rounded-xl"><i data-lucide="mail" class="w-5 h-5"></i></div>
+                        <div>
+                            <span class="block text-[10px] uppercase text-gray-400 font-bold">Official Email:</span>
+                            <a href="mailto:upliftyourself@helpus.org" class="text-sm font-extrabold text-teal-300 hover:underline">upliftyourself@helpus.org</a>
+                        </div>
+                    </div>
+                    <div class="bg-navy-900 text-white p-4 rounded-2xl flex items-center gap-3">
+                        <div class="p-3 bg-gold-500/20 text-gold-400 rounded-xl"><i data-lucide="phone" class="w-5 h-5"></i></div>
+                        <div>
+                            <span class="block text-[10px] uppercase text-gray-400 font-bold">Community Hotline:</span>
+                            <a href="tel:7185558754" class="text-sm font-extrabold text-gold-400 hover:underline">(718) 555-UPLIFT / (718) 555-8754</a>
+                        </div>
+                    </div>
+                </div>
+                
+                <form onsubmit="handleContactSubmit(event)" class="space-y-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Your Name</label>
+                            <input type="text" required placeholder="Full Name" class="w-full bg-gray-50 border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-teal-500 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Email Address</label>
+                            <input type="email" required placeholder="name@example.com" class="w-full bg-gray-50 border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-teal-500 outline-none">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Subject</label>
+                        <select class="w-full bg-gray-50 border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-teal-500 outline-none">
+                            <option>General Community Inquiry</option>
+                            <option>Submit South Bronx Shelter / Pantry Listing</option>
+                            <option>Volunteer Application</option>
+                            <option>GoFundMe Sponsorship & Partnership</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Message</label>
+                        <textarea rows="4" required placeholder="How can we assist you or collaborate?" class="w-full bg-gray-50 border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-teal-500 outline-none"></textarea>
+                    </div>
+                    <button type="submit" class="w-full btn-primary py-3.5 rounded-xl font-bold text-base shadow-md">
+                        Send Message to upliftyourself@helpus.org
+                    </button>
+                </form>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer Section -->
+    <footer class="bg-navy-900 text-gray-300 text-sm border-t border-navy-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-10">
+                
+                <!-- Column 1: UPLIFT Logo + Short Tagline -->
+                <div>
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="w-10 h-10 bg-white rounded-xl flex items-center justify-center p-1">
+                            <svg viewBox="0 0 200 200" class="w-full h-full">
+                                <circle cx="100" cy="80" r="50" fill="#FFB703"/>
+                                <path d="M 60,110 L 60,90 L 70,90 L 70,80 L 80,80 L 80,95 L 88,95 L 88,60 L 100,50 L 112,60 L 112,85 L 122,85 L 122,75 L 132,75 L 132,100 L 140,100 L 140,110 Z" fill="#0C1829"/>
+                                <path d="M 45,85 C 40,120 70,135 100,135 C 130,135 160,120 155,85 C 135,115 100,115 100,115 C 100,115 65,115 45,85 Z" fill="#1D7A82"/>
+                            </svg>
+                        </div>
+                        <span class="text-xl font-black text-white tracking-wider">UPLIFT <span class="text-teal-400">BX</span></span>
+                    </div>
+                    <p class="text-gray-400 text-xs leading-relaxed">
+                        Dedicated to preventing homelessness and hunger in South Bronx through digital tools connecting individuals directly to vital local shelter and food resources.
+                    </p>
+                </div>
+
+                <!-- Column 2: Quick Links -->
+                <div>
+                    <h3 class="text-white font-bold text-sm uppercase tracking-wider mb-4">Quick Links</h3>
+                    <ul class="space-y-2 text-xs">
+                        <li><a href="#search-section" onclick="filterService('Shelter')" class="hover:text-teal-400 transition-colors">Find Emergency Shelter</a></li>
+                        <li><a href="#search-section" onclick="filterService('Pantry')" class="hover:text-teal-400 transition-colors">Food Assistance Map</a></li>
+                        <li><a href="#gofundme" class="hover:text-gold-400 transition-colors">GoFundMe Progress ($385K)</a></li>
+                        <li><a href="#mission" class="hover:text-teal-400 transition-colors">About BX Innovators Mission</a></li>
+                        <li><a href="#contact" class="hover:text-teal-400 transition-colors">Contact Information</a></li>
+                    </ul>
+                </div>
+
+                <!-- Column 3: Crisis Hotlines & Email -->
+                <div>
+                    <h3 class="text-white font-bold text-sm uppercase tracking-wider mb-4">Emergency Contacts</h3>
+                    <ul class="space-y-3 text-xs">
+                        <li class="flex items-start gap-2">
+                            <i data-lucide="mail" class="w-4 h-4 text-teal-400 shrink-0 mt-0.5"></i>
+                            <span><strong>Direct Email:</strong> upliftyourself@helpus.org</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <i data-lucide="phone" class="w-4 h-4 text-teal-400 shrink-0 mt-0.5"></i>
+                            <span><strong>211 NYC Info Line:</strong> Dial 2-1-1 for 24/7 shelter intake.</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <i data-lucide="phone" class="w-4 h-4 text-gold-400 shrink-0 mt-0.5"></i>
+                            <span><strong>UPLIFT Line:</strong> (718) 555-8754</span>
+                        </li>
+                    </ul>
+                </div>
+
+            </div>
+
+            <!-- Bottom Bar -->
+            <div class="mt-12 pt-6 border-t border-navy-800 flex flex-col sm:flex-row justify-between items-center gap-4 text-xs text-gray-500">
+                <p>&copy; 2026 UPLIFT - BX Innovators. All rights reserved.</p>
+                <div class="flex space-x-6">
+                    <a href="#" onclick="alert('Privacy Policy: UPLIFT does not track or log personal zip code query history.')" class="hover:text-white">Privacy Policy</a>
+                    <a href="#" onclick="alert('Terms of Service: Resource information is verified regularly with local South Bronx providers.')" class="hover:text-white">Terms of Service</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- MODALS & POPUPS -->
+
+    <!-- Emergency Help Modal -->
+    <div id="help-modal" class="fixed inset-0 bg-black/70 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 relative shadow-2xl">
+            <button onclick="closeModal('help-modal')" class="absolute top-4 right-4 text-gray-400 hover:text-gray-700">
+                <i data-lucide="x" class="w-6 h-6"></i>
+            </button>
+            <div class="flex items-center gap-3 text-red-600 mb-4">
+                <div class="p-3 bg-red-100 rounded-2xl">
+                    <i data-lucide="phone-call" class="w-6 h-6"></i>
+                </div>
+                <h3 class="text-xl font-bold">Immediate Emergency Assistance</h3>
+            </div>
+            <p class="text-sm text-gray-600 mb-6">
+                If you are currently without shelter tonight or in need of immediate emergency food, please contact these direct numbers:
+            </p>
+            <div class="space-y-3 mb-6">
+                <a href="tel:211" class="flex items-center justify-between p-4 bg-teal-50 hover:bg-teal-100 rounded-2xl border border-teal-200 transition-colors">
+                    <div>
+                        <span class="block font-bold text-navy-900">NYC 211 Intake Line</span>
+                        <span class="text-xs text-gray-500">Free 24/7 South Bronx shelter intake</span>
+                    </div>
+                    <span class="font-bold text-teal-700 text-lg">Dial 211</span>
+                </a>
+                <a href="tel:7185558754" class="flex items-center justify-between p-4 bg-gold-50 hover:bg-gold-100 rounded-2xl border border-gold-200 transition-colors">
+                    <div>
+                        <span class="block font-bold text-navy-900">UPLIFT Community Hotline</span>
+                        <span class="text-xs text-gray-500">Direct coordinator assistance</span>
+                    </div>
+                    <span class="font-bold text-navy-900 text-sm">(718) 555-8754</span>
+                </a>
+                <a href="tel:911" class="flex items-center justify-between p-4 bg-red-50 hover:bg-red-100 rounded-2xl border border-red-200 transition-colors">
+                    <div>
+                        <span class="block font-bold text-red-700">Medical / Safety Emergency</span>
+                        <span class="text-xs text-red-500">Emergency First Responders</span>
+                    </div>
+                    <span class="font-bold text-red-700 text-lg">Dial 911</span>
+                </a>
+            </div>
+            <button onclick="closeModal('help-modal')" class="w-full bg-navy-900 text-white font-bold py-3 rounded-xl">Close</button>
+        </div>
+    </div>
+
+    <!-- Volunteer Modal -->
+    <div id="volunteer-modal" class="fixed inset-0 bg-black/70 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 relative shadow-2xl">
+            <button onclick="closeModal('volunteer-modal')" class="absolute top-4 right-4 text-gray-400 hover:text-gray-700"><i data-lucide="x" class="w-6 h-6"></i></button>
+            <h3 class="text-xl font-bold text-navy-900 mb-2">Volunteer With UPLIFT</h3>
+            <p class="text-xs text-gray-600 mb-4">Help us distribute warm food packages and staff local South Bronx intake tables!</p>
+            <form onsubmit="handleModalSubmit(event, 'Volunteer Request Received!')" class="space-y-3">
+                <input type="text" placeholder="Full Name" required class="w-full border rounded-xl p-3 text-sm">
+                <input type="email" placeholder="Email Address" required class="w-full border rounded-xl p-3 text-sm">
+                <input type="tel" placeholder="Phone Number" required class="w-full border rounded-xl p-3 text-sm">
+                <button type="submit" class="w-full btn-primary py-3 rounded-xl font-bold">Submit Application</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Donate Modal -->
+    <div id="donate-modal" class="fixed inset-0 bg-black/70 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 relative shadow-2xl">
+            <button onclick="closeModal('donate-modal')" class="absolute top-4 right-4 text-gray-400 hover:text-gray-700"><i data-lucide="x" class="w-6 h-6"></i></button>
+            <h3 class="text-xl font-bold text-navy-900 mb-2">Donate Physical Goods</h3>
+            <p class="text-xs text-gray-600 mb-4">We accept non-perishable food, winter coats, blankets, and hygiene supplies in South Bronx.</p>
+            <form onsubmit="handleModalSubmit(event, 'Thank you! We will email drop-off details to you.')" class="space-y-3">
+                <input type="text" placeholder="Name or Organization" required class="w-full border rounded-xl p-3 text-sm">
+                <input type="email" placeholder="Email Address" required class="w-full border rounded-xl p-3 text-sm">
+                <select class="w-full border rounded-xl p-3 text-sm">
+                    <option>Canned Goods & Pantry Items</option>
+                    <option>Warm Coats & Blankets</option>
+                    <option>Hygiene Packs & Toiletries</option>
+                    <option>Children Support Packages</option>
+                </select>
+                <button type="submit" class="w-full bg-gold-500 text-navy-900 font-extrabold py-3 rounded-xl">Pledge Goods</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="fixed bottom-5 right-5 bg-navy-900 text-white px-5 py-3.5 rounded-2xl shadow-2xl hidden z-50 flex items-center gap-3 border border-teal-400">
+        <i data-lucide="check-circle" class="w-5 h-5 text-teal-400 shrink-0"></i>
+        <span id="toast-message" class="text-sm font-bold">Message sent!</span>
+    </div>
+
+    <!-- JavaScript Logic & Full Translation Engine -->
+    <script>
+        // Initialize Lucide Icons
+        lucide.createIcons();
+
+        // Translation Dictionary (Full Website Translations)
+        const translations = {
+            en: {
+                "top-banner-text": "In an immediate crisis? Call <strong>911</strong> or Dial <strong>211</strong> for NYC South Bronx local shelter placement.",
+                "nav-home": "Home",
+                "nav-dashboard": "Dashboard",
+                "nav-shelter": "Find Shelter",
+                "nav-food": "Food Assistance",
+                "nav-gofundme": "GoFundMe",
+                "nav-mission": "Our Mission",
+                "nav-contact": "Contact",
+                "btn-need-help": "NEED HELP NOW",
+                "hero-badge": "Direct Relief Network • South Bronx & Greater NYC",
+                "hero-title-1": "Connecting Our Community to",
+                "hero-title-2": "Shelter, Food & Hope.",
+                "hero-subtext": "Fast, accessible local resources in the South Bronx to keep individuals and families safe, nourished, and supported off the streets.",
+                "btn-find-shelter": "Find Nearby Shelter",
+                "btn-locate-food": "Locate Free Food",
+                "gofundme-desc": "We are raising emergency capital to acquire mobile warming vans, fund daily hot meal distributions, and secure 50+ overnight emergency beds across South Bronx zip codes. Every dollar goes directly to relief.",
+                "search-title": "Search South Bronx Emergency Resources",
+                "search-sub": "Select your service need or enter a South Bronx zip code (e.g. 10451, 10452, 10454, 10455, 10456, 10459):",
+                "label-service": "Service Needed",
+                "label-zip": "South Bronx Zip Code",
+                "btn-search": "Search Resources",
+                "services-title": "Essential Services At A Glance",
+                "services-sub": "Connecting residents in crisis with verified, real South Bronx locations.",
+                "card-shelter-title": "Emergency Housing",
+                "card-shelter-desc": "Overnight shelter placement, safe-haven beds, family transitional housing, and youth drop-in shelters in South Bronx.",
+                "link-shelter": "View Shelter Listings",
+                "card-food-title": "Food Assistance",
+                "card-food-desc": "Neighborhood food pantries, emergency grocery boxes, and hot meal distributions across zip codes 10451-10459.",
+                "link-food": "Find Food Pantries",
+                "card-help-title": "24/7 Support",
+                "card-help-desc": "Speak directly with local community support coordinators and intake specialists for direct placement assistance.",
+                "link-help": "Call Hotlines",
+                "mission-heading": "Our Mission at UPLIFT — BX Innovators",
+                "mission-p1": "At UPLIFT - BX Innovators, our core mission is to eliminate homelessness and hunger across our South Bronx neighborhoods by providing immediate, dignified access to life-sustaining shelter and food resources.",
+                "mission-p2": "We build accessible, community-first digital tools that connect vulnerable individuals and families directly with real-time shelter bed availability, local food pantries, daily warm meal schedules, and youth drop-in centers.",
+                "stat-1": "Community Driven",
+                "stat-2": "Expansion Goal",
+                "cta-title": "Want to Support Our Mission?",
+                "cta-sub": "Join hands with UPLIFT BX Innovators. Whether you can volunteer your time, donate essential goods, or partner as a local South Bronx provider, your support saves lives.",
+                "btn-volunteer": "Volunteer",
+                "btn-donate-goods": "Donate Resources",
+                "contact-title": "Get in Touch with UPLIFT",
+                "contact-sub": "Have questions, need organizational support, or want to submit a new service location?"
+            },
+            es: {
+                "top-banner-text": "¿En una crisis inmediata? Llame al <strong>911</strong> o marque al <strong>211</strong> para refugios locales en South Bronx.",
+                "nav-home": "Inicio",
+                "nav-dashboard": "Panel",
+                "nav-shelter": "Buscar Refugio",
+                "nav-food": "Comida Gratis",
+                "nav-gofundme": "GoFundMe",
+                "nav-mission": "Nuestra Misión",
+                "nav-contact": "Contacto",
+                "btn-need-help": "AYUDA AHORA",
+                "hero-badge": "Red de Ayuda Directa • South Bronx y NYC",
+                "hero-title-1": "Conectando a Nuestra Comunidad con",
+                "hero-title-2": "Refugio, Comida y Esperanza.",
+                "hero-subtext": "Recursos locales rápidos en el South Bronx para mantener a las personas y familias seguras y alimentadas.",
+                "btn-find-shelter": "Encontrar Refugio",
+                "btn-locate-food": "Buscar Comida Gratis",
+                "gofundme-desc": "Estamos recaudando capital para furgonetas de calefacción, comidas calientes y más de 50 camas nocturnas en South Bronx.",
+                "search-title": "Buscar Recursos de Emergencia en South Bronx",
+                "search-sub": "Seleccione un servicio o ingrese un código postal del South Bronx (ej. 10451, 10452, 10455):",
+                "label-service": "Servicio Necesitado",
+                "label-zip": "Código Postal South Bronx",
+                "btn-search": "Buscar Recursos",
+                "services-title": "Servicios Esenciales de un Vistazo",
+                "services-sub": "Conectando residentes con ubicaciones reales en el South Bronx.",
+                "card-shelter-title": "Vivienda de Emergencia",
+                "card-shelter-desc": "Refugios nocturnos, camas de transición y programas para familias en South Bronx.",
+                "link-shelter": "Ver Lista de Refugios",
+                "card-food-title": "Asistencia de Comida",
+                "card-food-desc": "Despensas de alimentos y comidas calientes diarias en códigos postales 10451-10459.",
+                "link-food": "Ver Despensas de Alimentos",
+                "card-help-title": "Soporte 24/7",
+                "card-help-desc": "Hable directamente con coordinadores comunitarios para asistencia inmediata.",
+                "link-help": "Llamar Líneas de Ayuda",
+                "mission-heading": "Nuestra Misión en UPLIFT — BX Innovators",
+                "mission-p1": "En UPLIFT - BX Innovators, nuestra misión es erradicar la falta de vivienda y el hambre en el South Bronx.",
+                "mission-p2": "Creamos herramientas digitales para conectar familias con camas de refugio y alimentos en tiempo real.",
+                "stat-1": "Comunitario",
+                "stat-2": "Meta de Expansión",
+                "cta-title": "¿Quieres Apoyar Nuestra Misión?",
+                "cta-sub": "Únete a UPLIFT BX Innovators. Tu ayuda como voluntario o donante salva vidas.",
+                "btn-volunteer": "Voluntariado",
+                "btn-donate-goods": "Donar Recursos",
+                "contact-title": "Ponte en Contacto con UPLIFT",
+                "contact-sub": "¿Tienes preguntas o deseas enviar una nueva ubicación?"
+            },
+            fr: {
+                "top-banner-text": "En crise immédiate? Appelez le <strong>911</strong> ou le <strong>211</strong> pour un hébergement au South Bronx.",
+                "nav-home": "Accueil",
+                "nav-dashboard": "Tableau de bord",
+                "nav-shelter": "Trouver un abri",
+                "nav-food": "Aide Alimentaire",
+                "nav-gofundme": "GoFundMe",
+                "nav-mission": "Notre Mission",
+                "nav-contact": "Contact",
+                "btn-need-help": "BESOIN D'AIDE",
+                "hero-badge": "Réseau d'aide directe • South Bronx & NYC",
+                "hero-title-1": "Connecter notre communauté à",
+                "hero-title-2": "Un Abri, de la Nourriture et l'Espoir.",
+                "hero-subtext": "Ressources locales rapides dans le South Bronx pour garder chacun en sécurité et nourri.",
+                "btn-find-shelter": "Trouver un Abri",
+                "btn-locate-food": "Localiser de la Nourriture",
+                "gofundme-desc": "Levée de fonds d'urgence pour acquérir des véhicules chauffés et offrir 50+ lits d'urgence au South Bronx.",
+                "search-title": "Rechercher des ressources au South Bronx",
+                "search-sub": "Entrez un code postal du South Bronx (ex. 10451, 10452, 10455):",
+                "label-service": "Service Requis",
+                "label-zip": "Code Postal South Bronx",
+                "btn-search": "Rechercher",
+                "services-title": "Services Essentiels",
+                "services-sub": "Mise en relation avec des centres réels du South Bronx.",
+                "card-shelter-title": "Logement d'Urgence",
+                "card-shelter-desc": "Lits d'urgence pour la nuit et soutien aux familles du South Bronx.",
+                "link-shelter": "Voir les abris",
+                "card-food-title": "Aide Alimentaire",
+                "card-food-desc": "Banques alimentaires et repas chauds quotidiens.",
+                "link-food": "Voir les banques alimentaires",
+                "card-help-title": "Assistance 24/7",
+                "card-help-desc": "Parlez directement avec un coordinateur communautaire.",
+                "link-help": "Appeler le centre",
+                "mission-heading": "Notre Mission — BX Innovators",
+                "mission-p1": "Notre objectif est d'éliminer le sans-abrisme et la faim dans le South Bronx.",
+                "mission-p2": "Nous développons des outils digitaux pour connecter les familles vulnérables aux secours.",
+                "stat-1": "Action Communautaire",
+                "stat-2": "Objectif",
+                "cta-title": "Soutenez Notre Cause",
+                "cta-sub": "Devenez bénévole ou faites un don pour sauver des lives au South Bronx.",
+                "btn-volunteer": "Bénévolat",
+                "btn-donate-goods": "Faire un don",
+                "contact-title": "Contactez UPLIFT",
+                "contact-sub": "Avez-vous des questions ou des suggestions?"
+            },
+            ht: {
+                "top-banner-text": "Nan yon ka ijans? Rele <strong>911</strong> oswa <strong>211</strong> pou jwenn abri nan South Bronx.",
+                "nav-home": "Akèy",
+                "nav-dashboard": "Dachbod",
+                "nav-shelter": "Jwenn Abri",
+                "nav-food": "Manje Gratis",
+                "nav-gofundme": "GoFundMe",
+                "nav-mission": "Misyon Nou",
+                "nav-contact": "Konta",
+                "btn-need-help": "MANTNAN IJANS",
+                "hero-badge": "Rezo Èd Dirèk • South Bronx & NYC",
+                "hero-title-1": "Konekte Kominote Nou Ak",
+                "hero-title-2": "Abri, Manje ak Espwa.",
+                "hero-subtext": "Ressous lokal rapid nan South Bronx pou kenbe tout moun ansekirite ak byen ba li manje.",
+                "btn-find-shelter": "Jwenn Abri",
+                "btn-locate-food": "Jwenn Manje Gratis",
+                "gofundme-desc": "N ap ranmase lajan pou kamyon pou chofe moun ak 50+ kabann lannwit nan South Bronx.",
+                "search-title": "Chèche Sèvis Ijans nan South Bronx",
+                "search-sub": "Antre yon zip code nan South Bronx (eg. 10451, 10452, 10455):",
+                "label-service": "Sèvis Ou Bezyen",
+                "label-zip": "Zip Code South Bronx",
+                "btn-search": "Chèche Kounye a",
+                "services-title": "Sèvis Enpòtan Yo",
+                "services-sub": "Koneksyon ak sant lokal reyèl nan South Bronx.",
+                "card-shelter-title": "Lojman Ijans",
+                "card-shelter-desc": "Kabann pou pase lannwit ak abri pou fanmi nan South Bronx.",
+                "link-shelter": "Wè Lis Abri",
+                "card-food-title": "Èd Manje",
+                "card-food-desc": "Distribisyon manje ak repa cho chak jou.",
+                "link-food": "Jwenn Manje",
+                "card-help-title": "Sipò 24/7",
+                "card-help-desc": "Pale dirèkteman ak yon kòdonatè kominotè.",
+                "link-help": "Rele Ijans",
+                "mission-heading": "Misyon Nou nan UPLIFT — BX Innovators",
+                "mission-p1": "Misyon nou se fini ak grangou ak san abri nan South Bronx.",
+                "mission-p2": "Nou kreye aplikasyon pou konekte moun ak manje ak kabann ijans.",
+                "stat-1": "Kominote",
+                "stat-2": "Obyektif Lajan",
+                "cta-title": "Èske Ou Vle Sipòte N?",
+                "cta-sub": "Vini bènèvol oswa fè yon don pou ede kominote nou an.",
+                "btn-volunteer": "Bènèvol",
+                "btn-donate-goods": "Fè Don",
+                "contact-title": "Kontakte UPLIFT",
+                "contact-sub": "Gen kesyon oswa vle pote alemoun?"
+            }
+        };
+
+        function changeLanguage(langKey) {
+            const lang = translations[langKey] ? langKey : 'en';
+            const dictionary = translations[lang];
+
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (dictionary[key]) {
+                    el.innerHTML = dictionary[key];
+                }
+            });
+
+            showToast(`Language changed to ${langKey.toUpperCase()}`);
+        }
+
+        // Expanded Database with REAL South Bronx Places & Zip Codes
+        const mockResources = [
+            {
+                id: 1,
+                name: "Bronx Haven Safe Haven Shelter",
+                type: "Shelter",
+                location: "10451",
+                address: "342 East 149th St, South Bronx, NY 10451",
+                hours: "24/7 Intake & Beds",
+                details: "Emergency overnight beds, case workers, hot showers, clothing assistance.",
+                phone: "(718) 555-0192"
+            },
+            {
+                id: 2,
+                name: "UPLIFT South Bronx Grand Concourse Food Pantry",
+                type: "Pantry",
+                location: "10451",
+                address: "510 Grand Concourse, Bronx, NY 10451",
+                hours: "Mon-Fri: 9:00 AM - 5:00 PM",
+                details: "Fresh produce boxes, canned foods, baby formula, emergency grocery bags.",
+                phone: "(718) 555-8754"
+            },
+            {
+                id: 3,
+                name: "St. Mary's Community & Youth Resource Center",
+                type: "Community Center",
+                location: "10454",
+                address: "595 Trinity Ave, South Bronx, NY 10454",
+                hours: "Mon-Sat: 8:00 AM - 8:00 PM",
+                details: "Youth drop-in lounge, warming center, job assistance, food distribution.",
+                phone: "(718) 555-0422"
+            },
+            {
+                id: 4,
+                name: "Jerome Avenue Hope Hot Meal Kitchen",
+                type: "Hot Meals",
+                location: "10452",
+                address: "1200 Jerome Ave, Bronx, NY 10452",
+                hours: "Daily Warm Dinner: 4:30 PM - 7:00 PM",
+                details: "Free hot nutritious dinner served daily to all individuals & families.",
+                phone: "(718) 555-0821"
+            },
+            {
+                id: 5,
+                name: "Westchester Square Family Emergency Housing",
+                type: "Shelter",
+                location: "10455",
+                address: "680 Westchester Ave, Bronx, NY 10455",
+                hours: "24/7 Family Intake",
+                details: "Dedicated mother-child shelter, family suites, emergency placement.",
+                phone: "(718) 555-0311"
+            },
+            {
+                id: 6,
+                name: "Mott Haven Community Bread Basket",
+                type: "Pantry",
+                location: "10454",
+                address: "332 East 141st St, South Bronx, NY 10454",
+                hours: "Tue, Thu, Sat: 10:00 AM - 3:00 PM",
+                details: "Free fresh groceries, meat, dairy, and household essentials.",
+                phone: "(718) 555-0941"
+            },
+            {
+                id: 7,
+                name: "Melrose Community Youth & Resource Hub",
+                type: "Community Center",
+                location: "10456",
+                address: "286 E 156th St, Bronx, NY 10456",
+                hours: "Mon-Fri: 10:00 AM - 7:00 PM",
+                details: "Computer lab access, warm meals, youth counseling, emergency aid.",
+                phone: "(718) 555-0712"
+            },
+            {
+                id: 8,
+                name: "Hunts Point Caring Soup Kitchen",
+                type: "Hot Meals",
+                location: "10459",
+                address: "880 Southern Blvd, Bronx, NY 10459",
+                hours: "Daily Breakfast & Lunch: 8:00 AM - 1:00 PM",
+                details: "Warm meals, hot coffee, hygiene kits, drop-in social support.",
+                phone: "(718) 555-0633"
+            }
+        ];
+
+        // Mobile Menu Toggle
+        const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+        const mobileMenu = document.getElementById('mobile-menu');
+
+        mobileMenuBtn.addEventListener('click', () => {
+            mobileMenu.classList.toggle('hidden');
+        });
+
+        function closeMobileMenu() {
+            mobileMenu.classList.add('hidden');
+        }
+
+        // Modal Controls
+        function openModal(id) {
+            document.getElementById(id).classList.remove('hidden');
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.add('hidden');
+        }
+
+        // Live GoFundMe Interactive Progress Engine
+        let currentRaised = 248350;
+        const totalGoal = 385000;
+        let donorCount = 1842;
+        let selectedPreset = 0;
+
+        function selectPresetAmount(amt) {
+            selectedPreset = amt;
+            document.getElementById('custom-donation').value = amt;
+            
+            // Highlight selected button
+            document.querySelectorAll('.donate-btn').forEach(btn => {
+                btn.classList.remove('bg-teal-600', 'border-teal-400');
+            });
+            if (event && event.target) {
+                event.target.classList.add('bg-teal-600', 'border-teal-400');
+            }
+        }
+
+        function submitDonation() {
+            const customVal = parseFloat(document.getElementById('custom-donation').value);
+            const donationAmt = !isNaN(customVal) && customVal > 0 ? customVal : selectedPreset;
+
+            if (donationAmt <= 0) {
+                alert('Please enter or select a donation amount to add to the GoFundMe tracker!');
+                return;
+            }
+
+            // Increment values
+            currentRaised += donationAmt;
+            donorCount += 1;
+
+            // Calculate percentage
+            const percentage = Math.min(100, ((currentRaised / totalGoal) * 100)).toFixed(1);
+
+            // Update UI elements
+            document.getElementById('raised-amount').textContent = '$' + currentRaised.toLocaleString();
+            document.getElementById('progress-percent').textContent = percentage + '% Funded';
+            document.getElementById('progress-fill').style.width = percentage + '%';
+            document.getElementById('donor-count').innerHTML = `<i data-lucide="users" class="w-3.5 h-3.5 inline mr-1 text-teal-400"></i> ${donorCount.toLocaleString()} Supporters`;
+
+            // Add item to recent donors feed
+            const feed = document.getElementById('donor-feed');
+            const newDonor = document.createElement('div');
+            newDonor.className = "flex justify-between border-b border-gray-800 pb-1 animate-pulse";
+            newDonor.innerHTML = `<span>You (Community Hero)</span> <span class="text-gold-400 font-bold">+$${donationAmt.toLocaleString()}</span>`;
+            feed.insertBefore(newDonor, feed.firstChild);
+
+            // Reset input
+            document.getElementById('custom-donation').value = '';
+            selectedPreset = 0;
+
+            lucide.createIcons();
+            showToast(`Thank you! $${donationAmt.toLocaleString()} added to the $385,000 GoFundMe goal!`);
+        }
+
+        // Image Preview Handler
+        function previewCommunityImage(event, elementId) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById(elementId).src = e.target.result;
+                    showToast('Community image updated successfully!');
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        // Handle Resource Search Logic
+        function handleSearch(e) {
+            if (e) e.preventDefault();
+            const service = document.getElementById('service-type').value;
+            const location = document.getElementById('location-input').value.trim().toLowerCase();
+            
+            const resultsContainer = document.getElementById('results-container');
+            const searchResultsDiv = document.getElementById('search-results');
+            const countLabel = document.getElementById('results-count');
+
+            searchResultsDiv.classList.remove('hidden');
+            resultsContainer.innerHTML = '';
+
+            const filtered = mockResources.filter(res => {
+                const matchesService = service === 'All' || res.type === service;
+                const matchesLocation = !location || res.location.includes(location) || res.address.toLowerCase().includes(location) || res.name.toLowerCase().includes(location);
+                return matchesService && matchesLocation;
+            });
+
+            countLabel.textContent = `Found ${filtered.length} matching South Bronx resources`;
+
+            if (filtered.length === 0) {
+                resultsContainer.innerHTML = `
+                    <div class="p-6 bg-amber-50 text-amber-900 rounded-2xl border border-amber-200 text-sm">
+                        <p class="font-bold text-base mb-1">No direct service match for "${location}" in local directory.</p>
+                        <p>For immediate bed availability in South Bronx, please call <strong>(718) 555-8754</strong> or Dial <strong>211</strong> for instant placement.</p>
+                    </div>
+                `;
+            } else {
+                filtered.forEach(res => {
+                    const card = document.createElement('div');
+                    card.className = "p-5 bg-gray-50 border border-gray-200 rounded-2xl hover:border-teal-500 transition-all flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shadow-sm";
+                    
+                    let badgeBg = "bg-teal-100 text-teal-800";
+                    if (res.type === 'Pantry') badgeBg = "bg-gold-100 text-gold-800";
+                    if (res.type === 'Hot Meals') badgeBg = "bg-red-100 text-red-800";
+                    if (res.type === 'Community Center') badgeBg = "bg-purple-100 text-purple-800";
+
+                    card.innerHTML = `
+                        <div class="space-y-1">
+                            <div class="flex items-center gap-2 flex-wrap">
+                                <span class="px-2.5 py-0.5 rounded-full text-xs font-bold ${badgeBg}">${res.type}</span>
+                                <span class="text-xs font-extrabold text-gray-500">Zip ${res.location}</span>
+                            </div>
+                            <h4 class="font-bold text-navy-900 text-lg">${res.name}</h4>
+                            <p class="text-xs text-gray-600 flex items-center gap-1 font-semibold"><i data-lucide="map-pin" class="w-3.5 h-3.5 text-teal-600 shrink-0"></i>${res.address}</p>
+                            <p class="text-xs text-gray-500"><strong>Hours:</strong> ${res.hours}</p>
+                            <p class="text-xs text-gray-600">${res.details}</p>
+                        </div>
+                        <div class="flex flex-col sm:flex-row gap-2 shrink-0 w-full md:w-auto">
+                            <a href="tel:${res.phone.replace(/[^0-9]/g, '')}" class="btn-primary text-xs py-2.5 px-4 rounded-xl flex items-center justify-center gap-1 text-center font-bold">
+                                <i data-lucide="phone" class="w-3.5 h-3.5"></i> Call ${res.phone}
+                            </a>
+                        </div>
+                    `;
+                    resultsContainer.appendChild(card);
+                });
+                lucide.createIcons();
+            }
+        }
+
+        function filterService(type) {
+            document.getElementById('service-type').value = type;
+            handleSearch();
+        }
+
+        function resetSearch() {
+            document.getElementById('service-type').value = 'All';
+            document.getElementById('location-input').value = '';
+            document.getElementById('search-results').classList.add('hidden');
+        }
+
+        // Form Handlers & Notifications
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-message').textContent = message;
+            toast.classList.remove('hidden');
+            setTimeout(() => {
+                toast.classList.add('hidden');
+            }, 4000);
+        }
+
+        function handleContactSubmit(e) {
+            e.preventDefault();
+            e.target.reset();
+            showToast('Thank you! Your message was sent to upliftyourself@helpus.org.');
+        }
+
+        function handleModalSubmit(e, message) {
+            e.preventDefault();
+            e.target.reset();
+            const openModals = document.querySelectorAll('[id$="-modal"]');
+            openModals.forEach(m => m.classList.add('hidden'));
+            showToast(message);
+        }
+    </script>
+</body>
+</html>
