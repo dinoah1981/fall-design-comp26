@@ -56,6 +56,40 @@
       workshop7: 'https://docs.google.com/presentation/d/1KNmchy1e2h3BnNTrLkisJYlLKy27qISHlwPRszvTfq8/edit',    // Thu — Practice Pitches (mixed grade)
       pitchRubric: 'https://docs.google.com/document/d/1uSlVJ3YN5bxDalS3kjDH7d-1FN_Ll_7tPMMg605B7n8/edit',      // Thu — practice-pitch scoring = the judge card (assumed; swap if a separate rubric lands)
     };
+
+    // ---- Finalists gallery (rendered into #finalists by script.js) ----
+    // Publishing a team's demo:
+    //   1. Drop the team's files into docs/finalists/<team-folder>/ — main file index.html
+    //      (any other file name works too; no spaces). Keep its css/js/images beside it.
+    //   2. Set that team's `app` to the path, e.g.  app: 'finalists/kamm/index.html'
+    //   3. Friday: flip  winner: true  on the winning teams.
+    // name: null shows a "name pending" placeholder. Cards group by grade, in this order.
+    const FINALISTS = [
+      // grade 9
+      { grade: 9,  name: null,                advisory: 'Diverio/T. Johnson/Tripp', members: ['Kelly', 'Kristina', 'Salamatu', 'Tiana'],            app: null },
+      { grade: 9,  name: null,                advisory: 'Reardon/Ryan/Losi',        members: ['Eliot', 'Snider', 'Keilee', "Shon'Lion", 'Tahrima'],  app: null },
+      { grade: 9,  name: null,                advisory: 'Magaldi/Prasad',           members: ['Ethan', 'James', 'Miguel', 'Sean'],                   app: null },
+      { grade: 9,  name: 'Kamm',              advisory: 'Mao/Cramer',               members: ['Max', 'Alani', 'Musa', 'Keziah'],                     app: null },
+      { grade: 9,  name: null,                advisory: 'Bendau/Kedia',             members: ['Ailyn', 'Amir', 'Yailyn', 'Derrick'],                 app: null },
+      // grade 10
+      { grade: 10, name: null,                advisory: 'Carapezza/Clark',          members: ['Ethel', 'Geanna', 'Jafraysi', 'Lovaya'],              app: null },
+      { grade: 10, name: null,                advisory: 'Peters/Yuen/L.Ortiz',      members: ['Chrisette', 'Elijah', 'Jacob', 'Stephany'],           app: null },
+      { grade: 10, name: null,                advisory: 'Phillips/Rodriguez',       members: ['Kenaz', 'Khamarle', 'Kwabena (Kobe)', 'Lachana'],     app: null },
+      { grade: 10, name: null,                advisory: 'Rahaman/Parcells',         members: ['Christal', 'Fatoumata', 'Janiah', 'Janmilet'],        app: null },
+      { grade: 10, name: 'NYC Crash Comfort', advisory: 'Thevenin/S.Joseph',        members: ['Dante', 'Dylan', 'Jordyn', 'Clarkston'],              app: null },
+      // grade 11
+      { grade: 11, name: 'OpenBx',            advisory: 'Agrawal/Umana',            members: ['Hever', 'Jayla', 'Jasmine', 'Carew'],                 app: null },
+      { grade: 11, name: 'Tip Tier',          advisory: 'Mosley/Enriquez',          members: ['Anayah', 'Enmanuel', 'Heidi', 'Michael'],             app: null },
+      { grade: 11, name: null,                advisory: 'Berrios/Romero',           members: ['Donel', 'Kashari', 'Melanie', 'Randell', 'Vivianne'], app: null },
+      { grade: 11, name: 'QuietSignal',       advisory: 'Gouede/Helmer',            members: ['Christal', 'Ousmane', 'Analia', 'Julian'],            app: null },
+      { grade: 11, name: null,                advisory: 'Germain/Sturdy',           members: ['Esmerlin', 'Fatomata', 'Lavie', 'Victoria'],          app: null },
+      // grade 12
+      { grade: 12, name: null,                advisory: 'Uddin/Golden',             members: ['Anyolina', 'Max', 'Jennifer'],                        app: null },
+      { grade: 12, name: 'CRUTCH',            advisory: 'Kelly/Gonzalez',           members: ['Athalia', 'Damari', 'Evelyn', 'Kenny', 'Lucas'],      app: null },
+      { grade: 12, name: null,                advisory: 'Medina/Chambers',          members: ['Ariana'],                                             app: null },
+      { grade: 12, name: 'Next Step',         advisory: 'Metchiou/Bute',            members: ['Chanel', 'Kaylie', 'Kiara', 'Viany'],                 app: null },
+      { grade: 12, name: null,                advisory: 'Skwiersky/Stewart',        members: ['Ronald', 'Steven', 'Wasiur'],                         app: null },
+    ];
   </script>
 </head>
 <body>
@@ -65,6 +99,7 @@
     <div class="nav-inner">
       <a href="#top" class="nav-logo"><span class="logo-bracket">[</span>AI4TP<span class="logo-bracket">]</span></a>
       <nav class="nav-links" id="navLinks">
+        <a href="#finalists" class="nav-live">Finalists</a>
         <a href="#challenge">The Challenge</a>
         <a href="#roles">Roles</a>
         <a href="#week">The Week</a>
@@ -100,12 +135,13 @@
           <p class="t-line t-1"><span class="t-prompt">&gt;</span> find a real problem in your school or the Bronx</p>
           <p class="t-line t-2"><span class="t-prompt">&gt;</span> build a working app with AI</p>
           <p class="t-line t-3"><span class="t-prompt">&gt;</span> pitch it like a founder</p>
-          <p class="t-line t-4"><span class="t-prompt">&gt;</span> <span class="t-status">status:</span> <span class="accent">ready_</span></p>
+          <p class="t-line t-4"><span class="t-prompt">&gt;</span> <span class="t-status">status:</span> <span class="accent">demo_day_</span></p>
         </div>
       </div>
 
       <div class="hero-actions">
-        <a href="#challenge" class="btn btn-solid">The Challenge</a>
+        <a href="#finalists" class="btn btn-solid">Demo the Finalists</a>
+        <a href="#challenge" class="btn btn-ghost">The Challenge</a>
         <a href="rules.html" class="btn btn-ghost" data-link="rulesPage">Official Rules</a>
       </div>
     </div>
@@ -116,9 +152,43 @@
     <div class="stat"><span class="stat-num">1</span><span class="stat-label">week to build</span></div>
     <div class="stat"><span class="stat-num">4</span><span class="stat-label">max team size</span></div>
     <div class="stat"><span class="stat-num">7</span><span class="stat-label">workshops</span></div>
+    <div class="stat"><span class="stat-num">20</span><span class="stat-label">finalist teams</span></div>
     <div class="stat"><span class="stat-num">$400</span><span class="stat-label">per winning team</span></div>
     <div class="stat"><span class="stat-num">OCT 26</span><span class="stat-label">CAC deadline</span></div>
   </div>
+
+  <!-- ============ FINALISTS (gallery) ============ -->
+  <section class="section section-black section-finalists" id="finalists">
+    <div class="section-inner">
+      <p class="eyebrow">// 00 — demo day</p>
+      <h2 class="section-title">The finalists.</h2>
+      <p class="section-lead">
+        Every advisory sent one team to Friday's finals in the Pit — twenty working
+        apps, built by students in a single week with AI. Demos go live here as each
+        team's build lands: open one to try it, then step through the rest.
+      </p>
+
+      <div id="finalistsGallery" class="fin-groups"></div>
+      <noscript><p class="fin-noscript mono">// enable JavaScript to load the finalist gallery</p></noscript>
+    </div>
+  </section>
+
+  <!-- Demo viewer: opened from the gallery cards, fed by FINALISTS -->
+  <dialog class="fin-viewer" id="finViewer" aria-label="Finalist demo viewer">
+    <div class="terminal-bar fin-viewer-bar">
+      <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+      <span class="fin-viewer-title mono" id="finViewerTitle"></span>
+      <span class="fin-viewer-meta mono" id="finViewerMeta"></span>
+      <div class="fin-viewer-controls">
+        <button type="button" class="fin-viewer-btn mono" id="finViewerPrev" aria-label="Previous finalist">‹ prev</button>
+        <span class="fin-viewer-count mono" id="finViewerCount"></span>
+        <button type="button" class="fin-viewer-btn mono" id="finViewerNext" aria-label="Next finalist">next ›</button>
+        <a class="fin-viewer-btn mono" id="finViewerOpen" href="#" target="_blank" rel="noopener">new tab ↗</a>
+        <button type="button" class="fin-viewer-btn fin-viewer-close mono" id="finViewerClose" aria-label="Close viewer">✕</button>
+      </div>
+    </div>
+    <iframe class="fin-viewer-frame" id="finViewerFrame" title="Finalist demo" sandbox="allow-scripts allow-same-origin allow-forms allow-modals allow-popups"></iframe>
+  </dialog>
 
   <!-- ============ THE CHALLENGE ============ -->
   <section class="section section-white" id="challenge">

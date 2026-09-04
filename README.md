@@ -11,7 +11,8 @@ then pitch it VC-style. Feeds into the 2026 Congressional App Challenge
 
 All site files live in `docs/` (GitHub Pages serves from `/docs` on `main`):
 
-- `index.html` — main page (hero, challenge, roles, week, workshops, rules digest, submission, judging)
+- `index.html` — main page (hero, finalists gallery, challenge, roles, week, workshops, rules digest, submission, judging)
+- `finalists/` — one folder per finalist team's static app demo (see `finalists/README.md`)
 - `rules.html` — full rules: CSH house rules + all 2026 Congressional App Challenge rules
 - `styles.css` — terminal-monochrome design system (Inter + JetBrains Mono, phosphor green accent)
 - `subpage.css` — rules-page styles (extends styles.css)
@@ -26,6 +27,16 @@ Entries still set to `'#'` render as disabled "// soon" placeholders.
 
 **To update a link:** edit the LINKS object in `index.html`, commit, push.
 Do NOT add links to `script.js`.
+
+## Finalist demos
+
+The `FINALISTS` array (same `<script>` as `LINKS` in `index.html`) drives the
+gallery near the top of the page: one card per team, grouped by grade, with a
+live scaled preview and an in-page viewer (prev/next across every live demo).
+
+**To publish a demo:** drop the team's files into `docs/finalists/<team>/`,
+set that team's `app` path in `FINALISTS`, push. Set `winner: true` on Friday.
+Full steps in `docs/finalists/README.md`.
 
 ## Sibling site
 
