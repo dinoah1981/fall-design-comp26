@@ -1,0 +1,1522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SameHere - You Are Not Alone</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        :root {
+            --bg-light-blue: #e0f2fe;
+            --text-dark: #0f172a;
+            --baby-pink: #fbcfe8;
+            --baby-pink-hover: #f472b6;
+            --sidebar-bg: rgba(255, 255, 255, 0.9);
+            --emergency-red: #ef4444;
+            --glass-bg: rgba(255, 255, 255, 0.85);
+            --glass-border: 1px solid rgba(255, 255, 255, 0.9);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: var(--bg-light-blue); color: var(--text-dark); min-height: 100vh; display: flex; overflow-x: hidden; position: relative; padding-bottom: 90px; }
+
+        .left-sidebar {
+            width: 280px; background: var(--sidebar-bg); backdrop-filter: blur(10px);
+            padding: 1.5rem 1rem; display: flex; flex-direction: column; gap: 1.25rem;
+            z-index: 3; position: fixed; left: 0; inset-y: 0; transition: transform 0.3s ease;
+            overflow-y: auto; border-right: var(--glass-border); box-shadow: 2px 0 10px rgba(0,0,0,0.03);
+        }
+        .left-sidebar.closed { transform: translateX(-100%); }
+        .left-sidebar-toggle-btn {
+            position: fixed; top: 20px; left: 290px; z-index: 10;
+            background: var(--baby-pink); color: #831843; border: none;
+            border-radius: 50%; width: 40px; height: 40px; font-size: 1.2rem;
+            cursor: pointer; transition: left 0.3s ease; display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .left-sidebar-toggle-btn.closed { left: 20px; }
+        .left-sidebar h2 { font-size: 1.1rem; color: #0c4a6e; margin-bottom: 0.2rem; }
+
+        .affirmation-card {
+            background: linear-gradient(135deg, #fce7f3 0%, #fbcfe8 100%);
+            border: 1px solid #f472b6; border-radius: 12px; padding: 1rem;
+        }
+        .affirmation-text { font-size: 0.9rem; color: #831843; font-style: italic; line-height: 1.4; margin: 0.6rem 0; min-height: 3rem; }
+        .affirmation-refresh-btn {
+            background: #fff; color: #be185d; border: 1px solid #f472b6;
+            border-radius: 6px; padding: 0.35rem 0.6rem; font-size: 0.75rem; font-weight: 700; cursor: pointer; width: 100%;
+        }
+
+        .journal-card { background: rgba(255, 255, 255, 0.8); border: 1px solid #cbd5e1; border-radius: 12px; padding: 1rem; display: flex; flex-direction: column; gap: 0.6rem; }
+        .journal-textarea { width: 100%; height: 100px; padding: 0.6rem; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.85rem; resize: none; outline: none; background: #fff; color: #334155; line-height: 1.4; }
+        .journal-controls { display: flex; gap: 0.4rem; }
+        .journal-btn { flex: 1; padding: 0.4rem; border: none; border-radius: 6px; font-size: 0.75rem; font-weight: 700; cursor: pointer; }
+        .journal-save { background: #0284c7; color: #fff; }
+        .journal-clear { background: #e2e8f0; color: #475569; }
+        .journal-status { font-size: 0.7rem; color: #166534; font-weight: 600; text-align: center; height: 0.9rem; }
+
+        /* Left Side Bottom Breather Widget */
+        .left-breather-card {
+            background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
+            border: 1px solid #38bdf8; border-radius: 12px; padding: 0.85rem; text-align: center;
+            box-shadow: 0 4px 12px rgba(2, 132, 199, 0.12); cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease; margin-top: auto;
+        }
+        .left-breather-card:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(2, 132, 199, 0.25); }
+        .left-breather-card h3 { color: #0c4a6e; font-size: 0.95rem; margin-bottom: 0.3rem; }
+        .left-breather-circle-container { position: relative; width: 75px; height: 75px; margin: 0.4rem auto; display: flex; align-items: center; justify-content: center; }
+        .left-breather-circle {
+            width: 35px; height: 35px; background: #38bdf8; border-radius: 50%; opacity: 0.8;
+            box-shadow: 0 0 15px rgba(56, 189, 248, 0.6);
+            animation: breathePulse 8s ease-in-out infinite;
+        }
+        @keyframes breathePulse {
+            0%, 100% { transform: scale(1); background: #38bdf8; }
+            50% { transform: scale(1.9); background: #f472b6; }
+        }
+        .left-breather-text { font-size: 0.8rem; font-weight: 700; color: #0369a1; animation: breatheText 8s ease-in-out infinite; }
+        @keyframes breatheText {
+            0%, 100% { content: "Exhale..."; color: #0369a1; }
+            50% { color: #be185d; }
+        }
+        .left-breather-hint { font-size: 0.7rem; color: #0369a1; margin-top: 0.3rem; font-weight: 600; opacity: 0.8; }
+
+        #loadingScreen {
+            position: fixed; inset: 0; background-color: var(--bg-light-blue); z-index: 9999;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            opacity: 1; transition: opacity 1.5s ease-out, visibility 1.5s ease-out;
+        }
+        #loadingScreen.fade-out { opacity: 0; visibility: hidden; pointer-events: none; }
+        .loader-logo-container {
+            width: 140px; height: 140px; background-color: #fff; border-radius: 50%;
+            display: flex; justify-content: center; align-items: center;
+            box-shadow: 0 8px 25px rgba(244, 114, 182, 0.25); margin-bottom: 1.5rem; animation: pulseLogo 2s infinite ease-in-out; padding: 8px;
+        }
+        .loader-logo-container svg { width: 100%; height: 100%; }
+        @keyframes pulseLogo { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.06); } }
+        .loader-text { font-size: 1.5rem; font-weight: 700; color: #0c4a6e; letter-spacing: 2px; text-transform: uppercase; transition: opacity 0.8s ease-in-out, transform 0.8s ease-in-out; opacity: 1; }
+        .loader-text.pulse { animation: pulseText 1.5s infinite ease-in-out; }
+        @keyframes pulseText { 0%, 100% { opacity: 0.4; } 50% { opacity: 1; } }
+        .loader-text.fade-swap { opacity: 0; transform: translateY(5px); }
+
+        .bg-blossom { position: fixed; top: 50%; left: 55%; transform: translate(-50%, -50%); width: 700px; height: 700px; opacity: 0.85; z-index: 0; animation: floatAnimation 12s ease-in-out infinite alternate; pointer-events: none; }
+        @keyframes floatAnimation { 0% { transform: translate(-50%, -50%) scale(0.98) rotate(0deg); } 100% { transform: translate(-50%, -48%) scale(1.02) rotate(3deg); } }
+
+        .petals-container { position: fixed; inset: 0; pointer-events: none; overflow: hidden; z-index: 1; }
+        .petal { position: absolute; top: -10%; background-color: #f472b6; border-radius: 150% 0 150% 0; opacity: 0.85; animation: fall linear infinite; }
+        @keyframes fall { 0% { top: -10%; transform: translateX(0) rotate(0deg); opacity: 0.9; } 100% { top: 105%; transform: translateX(180px) rotate(420deg); opacity: 0; } }
+
+        .main-content { flex: 1; padding: 2.5rem; z-index: 2; max-width: 800px; margin: 0 auto; }
+        .header-logo { display: flex; align-items: center; gap: 1.2rem; margin-bottom: 1.5rem; cursor: pointer; }
+        .logo-circle-container { width: 68px; height: 68px; background-color: #ffffff; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 15px rgba(244, 114, 182, 0.3); border: 2px solid #fbcfe8; flex-shrink: 0; padding: 4px; }
+        .logo-circle-container svg { width: 100%; height: 100%; }
+        .header-logo h1 { font-size: 2.2rem; color: #0c4a6e; letter-spacing: -0.5px; }
+
+        .intro-text, .hero-blossom-card, .service-card, .info-explanation-card, .form-card, .congrats-card, .map-section, .post-expand-card, .live-chat-box, .guide-section-card {
+            background: var(--glass-bg); backdrop-filter: blur(10px); border-radius: 16px; border: var(--glass-border); box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+        }
+        .intro-text { font-size: 1rem; line-height: 1.6; margin-bottom: 1.5rem; color: #334155; padding: 1.25rem; }
+
+        .hero-blossom-card { padding: 1.75rem; margin-bottom: 2rem; text-align: center; }
+        .tree-hero-graphic { width: 180px; height: 180px; margin: 0 auto 1rem auto; filter: drop-shadow(0 6px 12px rgba(244, 114, 182, 0.25)); }
+        .hero-blossom-card h2 { font-size: 1.5rem; color: #0c4a6e; margin-bottom: 0.5rem; }
+        .hero-blossom-card p { font-size: 0.95rem; color: #334155; line-height: 1.5; margin-bottom: 1.25rem; }
+
+        .benefits-list { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.8rem; text-align: left; margin-bottom: 1.25rem; }
+        .benefit-item { background: rgba(241, 245, 249, 0.9); padding: 0.75rem; border-radius: 10px; font-size: 0.85rem; color: #0369a1; font-weight: 600; display: flex; align-items: center; gap: 0.5rem; border: 1px solid #e2e8f0; }
+
+        .services-grid { display: flex; flex-direction: column; gap: 1rem; margin-bottom: 2rem; }
+        .service-card { padding: 1.25rem; transition: transform 0.2s ease, box-shadow 0.2s ease; cursor: pointer; }
+        .service-card:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,0.06); }
+        .service-card h3 { color: #0369a1; margin-bottom: 0.4rem; font-size: 1.05rem; }
+        .service-card p { font-size: 0.88rem; color: #475569; line-height: 1.5; }
+
+        /* Event Modal Specifics */
+        .event-detail-badge { display: inline-block; background: #e0f2fe; color: #0369a1; font-weight: 700; font-size: 0.8rem; padding: 0.25rem 0.6rem; border-radius: 6px; margin-bottom: 0.5rem; }
+        .event-meta-info { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 0.75rem; margin: 0.75rem 0 1.25rem 0; font-size: 0.88rem; color: #334155; display: flex; flex-direction: column; gap: 0.4rem; }
+
+        .page2-scene-card { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(12px); border-radius: 24px; padding: 1.5rem; border: var(--glass-border); box-shadow: 0 12px 35px rgba(244, 114, 182, 0.2); margin-bottom: 1.5rem; }
+        .scene-svg-container { width: 100%; height: 440px; border-radius: 16px; overflow: hidden; background: linear-gradient(180deg, #fef2f2 0%, #bae6fd 60%, #e0f2fe 100%); position: relative; }
+        .scene-svg { width: 100%; height: 100%; }
+        .swing-group { transform-origin: 195px 128px; animation: swingSway 3.5s ease-in-out infinite alternate; }
+        @keyframes swingSway { 0% { transform: rotate(-8deg); } 100% { transform: rotate(8deg); } }
+
+        .info-explanation-card { padding: 1.4rem 1.6rem; margin-bottom: 1.25rem; }
+        .info-explanation-card h3 { color: #0c4a6e; font-size: 1.15rem; margin-bottom: 0.6rem; }
+        .info-explanation-card p { font-size: 0.92rem; color: #334155; line-height: 1.6; }
+
+        .form-card { padding: 2rem; width: 100%; }
+        .form-card h2 { color: #0c4a6e; margin-bottom: 0.5rem; }
+        .form-card p { color: #475569; font-size: 0.95rem; margin-bottom: 1.5rem; }
+        .form-group { margin-bottom: 1.25rem; }
+        .form-group label { display: block; font-size: 0.9rem; font-weight: 600; color: #334155; margin-bottom: 0.4rem; }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 0.8rem 1rem; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.95rem; background: #fff; outline: none; }
+        .form-group textarea { resize: vertical; min-height: 90px; }
+
+        .avatar-options-grid { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+        .avatar-option-btn { width: 50px; height: 50px; border-radius: 50%; border: 2px solid #cbd5e1; background: #fff; font-size: 1.5rem; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s ease; }
+        .avatar-option-btn:hover, .avatar-option-btn.selected { border-color: var(--baby-pink-hover); background: #fce7f3; transform: scale(1.08); }
+        .pfp-preview-img { width: 50px; height: 50px; border-radius: 50%; object-fit: cover; border: 2px solid var(--baby-pink-hover); }
+
+        .random-username-box { background: #f1f5f9; border: 2px dashed #cbd5e1; padding: 0.8rem; border-radius: 8px; text-align: center; font-size: 1.1rem; font-weight: 700; color: #0c4a6e; margin-bottom: 1.25rem; }
+
+        .congrats-card { text-align: center; padding: 2.5rem 2rem; }
+        .congrats-card .user-pfp { width: 90px; height: 90px; border-radius: 50%; background: #fbcfe8; margin: 0 auto 1rem auto; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; border: 3px solid var(--baby-pink-hover); overflow: hidden; }
+        .congrats-card .user-pfp img { width: 100%; height: 100%; object-fit: cover; }
+        .congrats-card h2 { color: #0c4a6e; font-size: 1.6rem; margin-bottom: 0.5rem; }
+        .congrats-card p { color: #475569; font-size: 1rem; line-height: 1.5; margin-bottom: 1.5rem; }
+
+        .btn-group { display: flex; flex-direction: column; gap: 0.75rem; }
+        .secondary-btn { background-color: #f1f5f9; color: #334155; border: 1px solid #cbd5e1; }
+        .secondary-btn:hover { background-color: #e2e8f0; color: #0f172a; }
+        .back-link { display: inline-block; margin-top: 1rem; color: #0c4a6e; font-size: 0.9rem; font-weight: 600; cursor: pointer; text-decoration: none; }
+        .back-link:hover { text-decoration: underline; }
+
+        .map-section { padding: 1.25rem; width: 100%; }
+        #bronxMap { height: 380px; width: 100%; border-radius: 12px; z-index: 1; }
+
+        /* POST & COMMENTS STYLING */
+        .posts-expand-grid { display: flex; flex-direction: column; gap: 1.25rem; margin-top: 1rem; }
+        .post-expand-card { padding: 1.25rem; display: flex; flex-direction: column; cursor: pointer; transition: transform 0.2s ease, box-shadow 0.2s ease; }
+        .post-expand-card:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(0,0,0,0.06); }
+        .post-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem; }
+        .post-avatar { width: 42px; height: 42px; border-radius: 50%; background: #fbcfe8; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; border: 1px solid #f472b6; flex-shrink: 0; overflow: hidden; }
+        .post-avatar img { width: 100%; height: 100%; object-fit: cover; }
+        .post-author { font-weight: 700; color: #0c4a6e; font-size: 0.95rem; }
+        .post-time { font-size: 0.78rem; color: #64748b; }
+        .post-content { font-size: 0.92rem; line-height: 1.5; color: #334155; margin-bottom: 0.75rem; }
+        .post-action-bar { font-size: 0.85rem; color: #0369a1; font-weight: bold; border-top: 1px solid #e2e8f0; padding-top: 0.6rem; display: flex; align-items: center; justify-content: space-between; }
+        .comments-section { margin-top: 1rem; padding-top: 1rem; border-top: 2px dashed #bae6fd; cursor: auto; }
+        .comment-item { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 0.75rem; margin-bottom: 0.6rem; }
+        .comment-header { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.3rem; }
+        .comment-author { font-size: 0.82rem; font-weight: 700; color: #0c4a6e; }
+        .comment-text { font-size: 0.88rem; color: #334155; line-height: 1.4; }
+        .comment-input-area { display: flex; gap: 0.5rem; margin-top: 0.75rem; }
+        .comment-input-area input { flex: 1; padding: 0.6rem 0.8rem; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.85rem; outline: none; }
+
+        .live-chat-box { height: 560px; display: flex; flex-direction: column; overflow: hidden; }
+        .live-chat-header { background: #0c4a6e; color: #fff; padding: 1rem 1.25rem; display: flex; justify-content: space-between; align-items: center; }
+        .online-tag { background: #22c55e; color: #fff; font-size: 0.75rem; padding: 0.2rem 0.6rem; border-radius: 12px; font-weight: 600; }
+        .live-chat-body { flex: 1; padding: 1.25rem; overflow-y: auto; display: flex; flex-direction: column; gap: 1rem; background: #f8fafc; }
+        .peer-msg-row { display: flex; gap: 0.75rem; max-width: 88%; }
+        .peer-msg-row.self { align-self: flex-end; flex-direction: row-reverse; }
+        .peer-msg-row.system { max-width: 100%; justify-content: center; margin: 0.25rem 0; }
+        .peer-msg-bubble { background: #fff; padding: 0.75rem 1rem; border-radius: 14px; box-shadow: 0 2px 6px rgba(0,0,0,0.04); border: 1px solid #e2e8f0; }
+        .peer-msg-row.self .peer-msg-bubble { background: var(--baby-pink); border-color: #f472b6; }
+        .peer-msg-row.system .peer-msg-bubble { background: #e0f2fe; border: 1px solid #38bdf8; color: #0369a1; text-align: center; border-radius: 20px; padding: 0.6rem 1.2rem; }
+        .peer-msg-meta { font-size: 0.78rem; font-weight: 700; color: #0369a1; margin-bottom: 0.25rem; display: flex; justify-content: space-between; gap: 0.5rem; }
+        .peer-msg-text { font-size: 0.9rem; color: #334155; line-height: 1.4; }
+        .typing-indicator-row { font-size: 0.8rem; font-style: italic; color: #0369a1; display: flex; align-items: center; gap: 0.4rem; padding: 0.2rem 0.5rem; }
+        .live-chat-input-area { display: flex; padding: 0.8rem; background: #fff; border-top: 1px solid #e2e8f0; gap: 0.5rem; }
+        .live-chat-input-area input { flex: 1; padding: 0.75rem 1rem; border: 1px solid #cbd5e1; border-radius: 8px; outline: none; }
+
+        .bottom-nav-bar {
+            position: fixed; bottom: 0; inset-x: 0; height: 70px; background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(12px); border-top: 1px solid rgba(203, 213, 225, 0.8);
+            display: flex; justify-content: center; align-items: center; gap: 0.5rem; z-index: 90; padding: 0 1rem; overflow-x: auto;
+        }
+        .page-btn { background: #f1f5f9; color: #0c4a6e; border: 1px solid #cbd5e1; padding: 0.5rem 0.85rem; border-radius: 20px; font-weight: 700; font-size: 0.8rem; cursor: pointer; white-space: nowrap; }
+        .page-btn.active { background: var(--baby-pink); color: #831843; border-color: var(--baby-pink-hover); }
+        .emergency-nav-btn { background: var(--emergency-red) !important; color: #fff !important; border: none !important; }
+        .hotlines-nav-btn { background: #0284c7 !important; color: #fff !important; border: none !important; }
+
+        .ai-pet-trigger { position: fixed; bottom: 80px; right: 20px; width: 65px; height: 65px; border-radius: 50%; background: #fff; border: 3px solid var(--baby-pink-hover); display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 95; animation: bouncePet 3s infinite ease-in-out; }
+        @keyframes bouncePet { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+        .ai-chat-window { position: fixed; bottom: 155px; right: 20px; width: 320px; height: 420px; background: rgba(255, 255, 255, 0.98); border-radius: 20px; border: 2px solid var(--baby-pink); display: flex; flex-direction: column; z-index: 96; overflow: hidden; }
+        .ai-chat-header { background: #0c4a6e; color: #fff; padding: 0.8rem 1rem; display: flex; justify-content: space-between; align-items: center; font-weight: 700; }
+        .ai-close-btn { background: none; border: none; color: #e0f2fe; font-size: 1.2rem; cursor: pointer; }
+        .ai-chat-messages { flex: 1; padding: 1rem; overflow-y: auto; display: flex; flex-direction: column; gap: 0.75rem; background: #f8fafc; }
+        .msg-bubble { max-width: 80%; padding: 0.6rem 0.9rem; border-radius: 12px; font-size: 0.88rem; line-height: 1.4; }
+        .msg-pet { background: #fce7f3; color: #831843; align-self: flex-start; }
+        .msg-user { background: #0284c7; color: #fff; align-self: flex-end; }
+        .ai-chat-input-area { display: flex; padding: 0.5rem; background: #fff; border-top: 1px solid #cbd5e1; }
+        .ai-chat-input { flex: 1; border: 1px solid #cbd5e1; border-radius: 8px; padding: 0.5rem; font-size: 0.85rem; outline: none; }
+        .ai-chat-send { background: var(--baby-pink-hover); color: white; border: none; border-radius: 8px; padding: 0.5rem 0.8rem; margin-left: 0.4rem; cursor: pointer; font-weight: 600; }
+
+        .hidden-view { display: none !important; }
+        .right-sidebar { width: 250px; background: var(--sidebar-bg); backdrop-filter: blur(10px); padding: 1.5rem 1rem; display: flex; flex-direction: column; gap: 0.85rem; z-index: 3; position: fixed; right: 0; inset-y: 0; transition: transform 0.3s ease; overflow-y: auto; }
+        .right-sidebar.closed { transform: translateX(100%); }
+        .sidebar-toggle-btn { position: fixed; top: 20px; right: 260px; z-index: 10; background: var(--baby-pink); color: #831843; border: none; border-radius: 50%; width: 40px; height: 40px; font-size: 1.2rem; cursor: pointer; transition: right 0.3s ease; }
+        .sidebar-toggle-btn.closed { right: 20px; }
+
+        .action-btn { display: block; width: 100%; padding: 0.75rem 1rem; border: none; border-radius: 8px; font-size: 0.95rem; font-weight: 600; cursor: pointer; text-align: center; background-color: var(--baby-pink); color: #831843; transition: all 0.2s ease; }
+        .action-btn:hover { background-color: var(--baby-pink-hover); color: #fff; }
+        .logout-btn { background-color: #fee2e2; color: #991b1b; }
+        .logout-btn:hover { background-color: #f87171; color: #fff; }
+        .divider { border: none; border-top: 1px solid #cbd5e1; margin: 0.5rem 0; }
+
+        .breather-card {
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            border: 1px solid #bae6fd; border-radius: 12px; padding: 1rem; text-align: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.03); cursor: pointer; transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .breather-card:hover { transform: scale(1.02); box-shadow: 0 6px 16px rgba(3, 105, 161, 0.15); }
+        .breather-card h3 { color: #0c4a6e; font-size: 0.95rem; margin-bottom: 0.5rem; display: flex; align-items: center; justify-content: center; gap: 0.4rem; }
+        .breather-circle-container { position: relative; width: 90px; height: 90px; margin: 0.5rem auto; display: flex; align-items: center; justify-content: center; }
+        .breather-circle { width: 50px; height: 50px; background: #f472b6; border-radius: 50%; opacity: 0.75; box-shadow: 0 0 15px rgba(244, 114, 182, 0.4); transition: transform 0.1s linear; }
+        .breather-text { font-size: 0.85rem; font-weight: 700; color: #0369a1; margin-top: 0.4rem; height: 1.2rem; }
+        .breather-prompt { font-size: 0.75rem; color: #475569; line-height: 1.35; margin-top: 0.4rem; min-height: 2.8rem; font-style: italic; background: rgba(255, 255, 255, 0.6); padding: 0.4rem; border-radius: 6px; }
+
+        /* Full Visual Breather & Mindfulness Page */
+        .mindfulness-gallery {
+            display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-top: 1.25rem;
+        }
+        .mindful-img-card {
+            background: #fff; border-radius: 14px; overflow: hidden; border: 1px solid #bae6fd;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05); text-align: center; padding-bottom: 0.8rem;
+        }
+        .mindful-img-card svg { width: 100%; height: 160px; object-fit: cover; background: #f0f9ff; }
+        .mindful-img-card h4 { color: #0c4a6e; font-size: 1rem; margin: 0.6rem 0 0.2rem 0; }
+        .mindful-img-card p { font-size: 0.82rem; color: #475569; padding: 0 0.6rem; }
+
+        .interactive-breathing-focus {
+            background: linear-gradient(135deg, #e0f2fe 0%, #fbcfe8 100%);
+            border-radius: 20px; padding: 2rem; text-align: center; margin-bottom: 2rem; border: 2px solid #bae6fd;
+        }
+        .large-breather-circle {
+            width: 120px; height: 120px; background: #38bdf8; border-radius: 50%; margin: 1.5rem auto;
+            box-shadow: 0 0 30px rgba(56, 189, 248, 0.5);
+            animation: breatheLarge 8s ease-in-out infinite;
+        }
+        @keyframes breatheLarge {
+            0%, 100% { transform: scale(0.9); background: #0284c7; box-shadow: 0 0 20px rgba(2, 132, 199, 0.4); }
+            50% { transform: scale(1.8); background: #f472b6; box-shadow: 0 0 45px rgba(244, 114, 182, 0.7); }
+        }
+        .large-breather-status { font-size: 1.4rem; font-weight: 800; color: #0c4a6e; min-height: 2rem; }
+
+        /* Guide Page Specific Elements */
+        .guide-top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+        .back-home-btn { background: #0c4a6e; color: #ffffff; border: none; padding: 0.65rem 1.25rem; border-radius: 8px; font-weight: 700; font-size: 0.9rem; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; transition: background 0.2s ease; }
+        .back-home-btn:hover { background: #0369a1; }
+        
+        .guide-section-card { padding: 1.5rem; margin-bottom: 1.25rem; }
+        .guide-section-card h3 { color: #0c4a6e; font-size: 1.25rem; margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem; border-bottom: 2px solid #bae6fd; padding-bottom: 0.4rem; }
+        .guide-section-card p { font-size: 0.95rem; color: #334155; line-height: 1.6; margin-bottom: 0.75rem; }
+        .guide-list { list-style-type: none; padding-left: 0; }
+        .guide-list li { position: relative; padding-left: 1.5rem; margin-bottom: 0.6rem; font-size: 0.92rem; color: #334155; line-height: 1.5; }
+        .guide-list li::before { content: "•"; color: var(--baby-pink-hover); font-weight: bold; font-size: 1.4rem; position: absolute; left: 0; top: -0.2rem; }
+
+        .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.4); backdrop-filter: blur(4px); z-index: 100; justify-content: center; align-items: center; }
+        .modal-card { background: #fff; width: 90%; max-width: 460px; padding: 2rem; border-radius: 16px; position: relative; max-height: 90vh; overflow-y: auto; }
+        .close-modal { position: absolute; top: 1rem; right: 1.25rem; background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #64748b; }
+        .hotline-card { background: #f0f9ff; border: 1px solid #bae6fd; padding: 0.9rem; border-radius: 10px; margin-bottom: 0.75rem; display: flex; justify-content: space-between; align-items: center; }
+        .call-btn { background: #0284c7; color: #fff; text-decoration: none; padding: 0.4rem 0.8rem; border-radius: 6px; font-size: 0.85rem; font-weight: 700; }
+        .donation-amounts { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem; margin-bottom: 1rem; }
+        .amt-btn { background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 8px; padding: 0.6rem; font-weight: 700; color: #0c4a6e; cursor: pointer; text-align: center; }
+        .amt-btn.selected, .amt-btn:hover { background: var(--baby-pink); border-color: var(--baby-pink-hover); color: #831843; }
+        
+        .anon-toggle-container { display: flex; gap: 1rem; margin-bottom: 1rem; }
+        .anon-option { flex: 1; padding: 0.75rem; border: 1px solid #cbd5e1; border-radius: 8px; text-align: center; cursor: pointer; font-size: 0.9rem; font-weight: 600; background: #fff; }
+        .anon-option.selected { border-color: var(--baby-pink-hover); background: #fce7f3; color: #831843; }
+
+        .falling-leaf { animation: logoLeafFall linear infinite; transform-origin: center; }
+        @keyframes logoLeafFall {
+            0% { transform: translate(0, 0) rotate(0deg) scale(1); opacity: 0; }
+            15% { opacity: 0.9; }
+            85% { opacity: 0.9; }
+            100% { transform: translate(-18px, 42px) rotate(240deg) scale(0.6); opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="loadingScreen">
+        <div class="loader-logo-container">
+            <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="50" cy="50" r="48" fill="#ffffff" />
+                <circle cx="50" cy="50" r="45" fill="none" stroke="#fce7f3" stroke-width="1.5" />
+                <path d="M 18 78 Q 32 60 48 50 T 82 25" stroke="#5c3a21" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+                <path d="M 48 50 Q 55 38 68 32" stroke="#5c3a21" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+                <path d="M 32 60 Q 25 48 18 42" stroke="#5c3a21" stroke-width="2" stroke-linecap="round" fill="none"/>
+                <path d="M 62 40 Q 72 48 80 52" stroke="#5c3a21" stroke-width="1.8" stroke-linecap="round" fill="none"/>
+                <circle cx="82" cy="25" r="5" fill="#f472b6"/>
+                <circle cx="85" cy="22" r="3.5" fill="#fbcfe8"/>
+                <circle cx="68" cy="32" r="4.5" fill="#f472b6"/>
+                <circle cx="65" cy="29" r="3" fill="#fbcfe8"/>
+                <circle cx="18" cy="42" r="4" fill="#f472b6"/>
+                <circle cx="80" cy="52" r="3.8" fill="#f472b6"/>
+                <circle cx="48" cy="50" r="3.5" fill="#fbcfe8"/>
+                <path d="M 75 28 Q 78 22 84 26 Q 80 32 75 28 Z" fill="#4ade80"/>
+                <path d="M 60 35 Q 56 30 62 28 Q 65 34 60 35 Z" fill="#22c55e"/>
+                <path d="M 28 56 Q 22 54 24 48 Q 30 50 28 56 Z" fill="#4ade80"/>
+                <path d="M 70 46 Q 74 42 78 45 Q 75 50 70 46 Z" fill="#22c55e"/>
+                <path class="falling-leaf" style="animation-duration: 3s; animation-delay: 0s;" d="M 68 38 Q 63 42 66 47 Q 71 44 68 38 Z" fill="#4ade80"/>
+                <path class="falling-leaf" style="animation-duration: 3.8s; animation-delay: 1.2s;" d="M 52 48 Q 48 53 52 57 Q 56 53 52 48 Z" fill="#22c55e"/>
+                <path class="falling-leaf" style="animation-duration: 2.6s; animation-delay: 0.6s;" d="M 38 62 Q 33 65 35 70 Q 40 68 38 62 Z" fill="#4ade80"/>
+            </svg>
+        </div>
+        <div class="loader-text pulse" id="loaderText">Loading...</div>
+    </div>
+
+    <div class="petals-container" id="petalsContainer"></div>
+
+    <svg class="bg-blossom" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+        <path d="M95 190 Q100 130 90 90 Q85 70 65 45 M90 90 Q110 65 140 40 M92 110 Q125 95 155 85 M87 130 Q60 110 35 100" stroke="#5c3a21" stroke-width="8" stroke-linecap="round" fill="none"/>
+        <path d="M95 190 Q100 130 90 90 Q85 70 65 45 M90 90 Q110 65 140 40 M92 110 Q125 95 155 85 M87 130 Q60 110 35 100" stroke="#3d2314" stroke-width="4" stroke-linecap="round" fill="none"/>
+        <circle cx="60" cy="40" r="28" fill="#f472b6" opacity="0.9"/><circle cx="75" cy="30" r="22" fill="#fbcfe8" opacity="0.95"/><circle cx="45" cy="55" r="20" fill="#f472b6" opacity="0.85"/>
+        <circle cx="145" cy="35" r="32" fill="#f472b6" opacity="0.9"/><circle cx="130" cy="25" r="25" fill="#fbcfe8" opacity="0.95"/><circle cx="165" cy="50" r="22" fill="#f472b6" opacity="0.85"/>
+        <circle cx="160" cy="85" r="26" fill="#f472b6" opacity="0.9"/><circle cx="145" cy="80" r="20" fill="#fbcfe8" opacity="0.95"/><circle cx="35" cy="98" r="24" fill="#f472b6" opacity="0.9"/>
+        <circle cx="48" cy="90" r="18" fill="#fbcfe8" opacity="0.95"/><circle cx="100" cy="65" r="35" fill="#f472b6" opacity="0.9"/><circle cx="90" cy="55" r="26" fill="#fbcfe8" opacity="0.95"/>
+        <circle cx="115" cy="50" r="22" fill="#ffffff" opacity="0.7"/>
+    </svg>
+
+    <button class="left-sidebar-toggle-btn" id="leftToggleBtn" onclick="toggleLeftSidebar()">📖</button>
+    <aside class="left-sidebar" id="leftSidebar">
+        <div class="affirmation-card">
+            <h2>✨ Affirmations</h2>
+            <p class="affirmation-text" id="affirmationDisplay">Loading positive thoughts...</p>
+            <button class="affirmation-refresh-btn" onclick="getRandomAffirmation()">🌸 New Affirmation</button>
+        </div>
+
+        <hr class="divider">
+
+        <div class="journal-card">
+            <h2>📝 Mini Journal</h2>
+            <textarea id="journalInput" class="journal-textarea" placeholder="Type your thoughts, reflections, or notes here..."></textarea>
+            <div class="journal-controls">
+                <button class="journal-btn journal-save" onclick="saveJournalEntry()">Save</button>
+                <button class="journal-btn journal-clear" onclick="clearJournalEntry()">Clear</button>
+            </div>
+            <div class="journal-status" id="journalStatus"></div>
+        </div>
+
+        <hr class="divider">
+
+        <!-- Left Side Bottom Breather Widget -->
+        <div class="left-breather-card" onclick="openBreatherExpandedPage()">
+            <h3>🫁 Take a Breather</h3>
+            <div class="left-breather-circle-container">
+                <div class="left-breather-circle"></div>
+            </div>
+            <div class="left-breather-text" id="leftBreatherStatus">Inhale... Exhale...</div>
+            <div class="left-breather-hint">Click to Expand & Focus ↗</div>
+        </div>
+    </aside>
+
+    <main class="main-content" id="mainContent">
+        <header class="header-logo" onclick="switchPage(1)">
+            <div class="logo-circle-container">
+                <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="50" cy="50" r="48" fill="#ffffff" />
+                    <circle cx="50" cy="50" r="45" fill="none" stroke="#fce7f3" stroke-width="1.5" />
+                    <path d="M 18 78 Q 32 60 48 50 T 82 25" stroke="#5c3a21" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+                    <path d="M 48 50 Q 55 38 68 32" stroke="#5c3a21" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+                    <path d="M 32 60 Q 25 48 18 42" stroke="#5c3a21" stroke-width="2" stroke-linecap="round" fill="none"/>
+                    <path d="M 62 40 Q 72 48 80 52" stroke="#5c3a21" stroke-width="1.8" stroke-linecap="round" fill="none"/>
+                    <circle cx="82" cy="25" r="5" fill="#f472b6"/>
+                    <circle cx="85" cy="22" r="3.5" fill="#fbcfe8"/>
+                    <circle cx="68" cy="32" r="4.5" fill="#f472b6"/>
+                    <circle cx="65" cy="29" r="3" fill="#fbcfe8"/>
+                    <circle cx="18" cy="42" r="4" fill="#f472b6"/>
+                    <circle cx="80" cy="52" r="3.8" fill="#f472b6"/>
+                    <circle cx="48" cy="50" r="3.5" fill="#fbcfe8"/>
+                    <path d="M 75 28 Q 78 22 84 26 Q 80 32 75 28 Z" fill="#4ade80"/>
+                    <path d="M 60 35 Q 56 30 62 28 Q 65 34 60 35 Z" fill="#22c55e"/>
+                    <path d="M 28 56 Q 22 54 24 48 Q 30 50 28 56 Z" fill="#4ade80"/>
+                    <path d="M 70 46 Q 74 42 78 45 Q 75 50 70 46 Z" fill="#22c55e"/>
+                    <path class="falling-leaf" style="animation-duration: 3s; animation-delay: 0s;" d="M 68 38 Q 63 42 66 47 Q 71 44 68 38 Z" fill="#4ade80"/>
+                    <path class="falling-leaf" style="animation-duration: 3.8s; animation-delay: 1.2s;" d="M 52 48 Q 48 53 52 57 Q 56 53 52 48 Z" fill="#22c55e"/>
+                    <path class="falling-leaf" style="animation-duration: 2.6s; animation-delay: 0.6s;" d="M 38 62 Q 33 65 35 70 Q 40 68 38 62 Z" fill="#4ade80"/>
+                </svg>
+            </div>
+            <h1>SameHere</h1>
+        </header>
+
+        <div id="homeView" class="view-section">
+            <p class="intro-text">
+                <strong>Welcome to Page 1: Home & Comprehensive Resources.</strong> Whether you feel overwhelmed, confused, or unsure where to turn, SameHere is designed to be your safe sanctuary. Below you will find detailed support options created specifically for teenagers and young adults.
+            </p>
+
+            <div class="hero-blossom-card">
+                <svg class="tree-hero-graphic" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M95 190 Q100 130 90 90 Q85 70 65 45 M90 90 Q110 65 140 40 M92 110 Q125 95 155 85 M87 130 Q60 110 35 100" stroke="#5c3a21" stroke-width="8" stroke-linecap="round" fill="none"/>
+                    <path d="M95 190 Q100 130 90 90 Q85 70 65 45 M90 90 Q110 65 140 40 M92 110 Q125 95 155 85 M87 130 Q60 110 35 100" stroke="#3d2314" stroke-width="4" stroke-linecap="round" fill="none"/>
+                    <circle cx="60" cy="40" r="28" fill="#f472b6" opacity="0.9"/><circle cx="75" cy="30" r="22" fill="#fbcfe8" opacity="0.95"/><circle cx="45" cy="55" r="20" fill="#f472b6" opacity="0.85"/>
+                    <circle cx="145" cy="35" r="32" fill="#f472b6" opacity="0.9"/><circle cx="130" cy="25" r="25" fill="#fbcfe8" opacity="0.95"/><circle cx="165" cy="50" r="22" fill="#f472b6" opacity="0.85"/>
+                    <circle cx="160" cy="85" r="26" fill="#f472b6" opacity="0.9"/><circle cx="145" cy="80" r="20" fill="#fbcfe8" opacity="0.95"/><circle cx="35" cy="98" r="24" fill="#f472b6" opacity="0.9"/>
+                    <circle cx="48" cy="90" r="18" fill="#fbcfe8" opacity="0.95"/><circle cx="100" cy="65" r="35" fill="#f472b6" opacity="0.9"/><circle cx="90" cy="55" r="26" fill="#fbcfe8" opacity="0.95"/>
+                    <circle cx="115" cy="50" r="22" fill="#ffffff" opacity="0.7"/>
+                </svg>
+                <h2>The Cherry Blossom Tree of Renewal</h2>
+                <p>In wellness and healing, cherry blossoms symbolize hope, growth, and fresh beginnings. Reaching out for help isn't a sign of weakness—it is the ultimate act of self-care and strength.</p>
+                <div class="benefits-list">
+                    <div class="benefit-item">🌸 Relieves Stress & Anxiety</div>
+                    <div class="benefit-item">🌿 Restores Hope & Renewal</div>
+                    <div class="benefit-item">💖 Builds Stronger Connections</div>
+                    <div class="benefit-item">✨ Encourages Safe Expression</div>
+                </div>
+                <button class="action-btn" onclick="switchPage(2)" style="max-width: 280px; margin: 0 auto;">View Page 2 Peaceful Scene →</button>
+            </div>
+
+            <div class="services-grid">
+                <div class="service-card" id="cardTherapy">
+                    <h3>Therapy Choices & Professional Guidance</h3>
+                    <p>Connect with licensed counselors and empathetic professionals who specialize in working through stress, anxiety, family challenges, and emotional wellness.</p>
+                </div>
+                <div class="service-card" id="cardPeer" onclick="switchPage(4)">
+                    <h3>Live Real-People Peer Chat (Page 4)</h3>
+                    <p>Connect live in real-time with peers who understand what you are going through. Skip AI and talk directly to human peers!</p>
+                </div>
+                <div class="service-card" id="cardDV">
+                    <h3>Domestic & Family Safety Assistance</h3>
+                    <p>Confidential safety planning, housing emergency contacts, and immediate crisis assistance tailored to keep you protected.</p>
+                </div>
+                <div class="service-card" id="cardCrisis">
+                    <h3>24/7 Hotline Access & Immediate Help</h3>
+                    <p>Use our bottom navigation bar to immediately call crisis hotlines or trigger emergency assistance directly when in danger.</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="sceneView" class="view-section hidden-view">
+            <div class="page2-scene-card">
+                <h2 style="color:#0c4a6e; font-size: 1.4rem; margin-bottom:0.4rem; text-align: center;">Garden of Reflection</h2>
+                <p style="color:#475569; font-size: 0.9rem; text-align: center; margin-bottom: 1rem;">Take a quiet moment to pause, breathe, and unwind under the blossom tree on Page 2.</p>
+                <div class="scene-svg-container">
+                    <svg class="scene-svg" viewBox="0 0 500 500" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+                        <defs>
+                            <radialGradient id="pastelSunGlow" cx="50%" cy="50%" r="50%">
+                                <stop offset="0%" stop-color="#fff7ed" stop-opacity="1"/><stop offset="40%" stop-color="#fef3c7" stop-opacity="0.9"/><stop offset="80%" stop-color="#fbcfe8" stop-opacity="0.5"/><stop offset="100%" stop-color="#e0f2fe" stop-opacity="0"/>
+                            </radialGradient>
+                            <linearGradient id="grassGrad" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#86efac"/><stop offset="40%" stop-color="#4ade80"/><stop offset="100%" stop-color="#15803d"/></linearGradient>
+                            <linearGradient id="barkGrad" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#3d2314"/><stop offset="30%" stop-color="#5c3a21"/><stop offset="70%" stop-color="#78350f"/><stop offset="100%" stop-color="#27140a"/></linearGradient>
+                            <linearGradient id="shirtGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#fda4af"/><stop offset="100%" stop-color="#e11d48"/></linearGradient>
+                        </defs>
+                        <circle cx="380" cy="90" r="110" fill="url(#pastelSunGlow)"/><circle cx="380" cy="90" r="42" fill="#fef08a" opacity="0.9"/><circle cx="380" cy="90" r="32" fill="#ffffff" opacity="0.8"/>
+                        <path d="M-20 420 Q180 370 520 430 L520 520 L-20 520 Z" fill="#86efac" opacity="0.7"/>
+                        <path d="M-10 440 Q150 400 320 440 Q420 460 510 430 L510 520 L-10 520 Z" fill="url(#grassGrad)"/>
+                        <path d="M140 455 C160 380 145 300 170 220 C185 170 210 130 250 80 L220 75 C180 120 150 160 130 220 C110 280 115 380 90 455 Z" fill="url(#barkGrad)"/>
+                        <path d="M145 250 Q90 220 30 200 Q20 195 10 190 L12 202 Q85 230 135 270 Z" fill="url(#barkGrad)"/>
+                        <path d="M165 210 Q210 150 280 125 L285 137 Q220 160 175 220 Z" fill="url(#barkGrad)"/>
+                        <circle cx="60" cy="160" r="50" fill="#fbcfe8" opacity="0.85"/><circle cx="150" cy="100" r="70" fill="#fbcfe8" opacity="0.9"/><circle cx="230" cy="60" r="75" fill="#f472b6" opacity="0.85"/><circle cx="320" cy="70" r="70" fill="#fbcfe8" opacity="0.9"/>
+                        <g class="swing-group">
+                            <circle cx="210" cy="130" r="3" fill="#3d2314"/><circle cx="250" cy="133" r="3" fill="#3d2314"/>
+                            <line x1="210" y1="130" x2="215" y2="330" stroke="#5c3a21" stroke-width="2.5"/>
+                            <line x1="250" y1="133" x2="252" y2="330" stroke="#5c3a21" stroke-width="2.5"/>
+                            <rect x="205" y="330" width="54" height="8" rx="3" fill="#5c3a21" stroke="#3d2314" stroke-width="1"/>
+                            <circle cx="230" cy="270" r="11" fill="#fde047"/>
+                            <path d="M220 281 C220 276 240 276 240 281 L243 315 L217 315 Z" fill="url(#shirtGrad)"/>
+                            <path d="M220 284 Q212 300 215 305" stroke="#fde047" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+                            <path d="M240 284 Q248 300 250 305" stroke="#fde047" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+                            <path d="M220 315 L220 334 L216 358" stroke="#0284c7" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                            <path d="M240 315 L240 334 L244 358" stroke="#0284c7" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                            <ellipse cx="214" cy="359" rx="4" ry="2.5" fill="#1e293b"/><ellipse cx="246" cy="359" rx="4" ry="2.5" fill="#1e293b"/>
+                        </g>
+                    </svg>
+                </div>
+            </div>
+            <div class="info-explanation-card">
+                <h3>🌸 Why We Picked the Cherry Blossom</h3>
+                <p>Cherry blossoms (Sakura) represent <strong>transience, resilience, and beautiful new beginnings</strong>. Though petals fall, the tree returns stronger and more radiant every single spring.</p>
+            </div>
+            <div class="info-explanation-card">
+                <h3>💙 Why We Built SameHere</h3>
+                <p>SameHere was founded out of a critical mission: to eradicate loneliness and provide a non-judgmental space for teenagers and young adults.</p>
+            </div>
+        </div>
+
+        <div id="postsView" class="view-section hidden-view">
+            <h2 style="color: #0c4a6e; margin-bottom: 0.3rem;">Page 3: Peer Support Feed & Story Highlights</h2>
+            <p style="color: #475569; margin-bottom: 1.25rem;">Browse posts shared by peers. Tap any post to view comments and reply!</p>
+            <div class="form-card" style="margin-bottom: 1.5rem;">
+                <h2>Share What You're Struggling With</h2>
+                <p>Post anonymously or with your profile to get supportive advice from peers.</p>
+                <form id="postForm" onsubmit="handlePostSubmit(event)">
+                    <div class="form-group"><textarea id="postContent" required placeholder="Describe what you are going through right now..."></textarea></div>
+                    <button type="submit" class="action-btn">Post to Feed</button>
+                </form>
+            </div>
+            
+            <div class="posts-expand-grid" id="postsExpandGrid">
+                <!-- Post 1 -->
+                <div class="post-expand-card" onclick="toggleComments(this)">
+                    <div class="post-header">
+                        <div class="post-avatar">🌸</div>
+                        <div>
+                            <div class="post-author">HopefulBlossom</div>
+                            <div class="post-time">10 mins ago</div>
+                        </div>
+                    </div>
+                    <div class="post-content">Lately I've been feeling extremely overwhelmed with school and finals. My anxiety makes it hard to sleep...</div>
+                    <div class="post-action-bar">
+                        <span class="comment-count-label">💬 2 Peer Responses</span>
+                        <span style="font-size:0.75rem;">Tap to expand/reply ▼</span>
+                    </div>
+                    <div class="comments-section hidden-view" onclick="event.stopPropagation();">
+                        <div class="comments-list">
+                            <div class="comment-item">
+                                <div class="comment-header"><span class="comment-author">🎧 Leo R.</span></div>
+                                <div class="comment-text">I know exactly how you feel! Try taking a 10 minute break before bed without any screens.</div>
+                            </div>
+                            <div class="comment-item">
+                                <div class="comment-header"><span class="comment-author">⭐ Taylor P.</span></div>
+                                <div class="comment-text">Sending you strength! You got this 💖</div>
+                            </div>
+                        </div>
+                        <div class="comment-input-area">
+                            <input type="text" placeholder="Write a supportive comment..." onkeypress="if(event.key==='Enter') addComment(this)">
+                            <button class="action-btn" style="width:auto; padding: 0.5rem 1rem; font-size:0.8rem;" onclick="addComment(this.previousElementSibling)">Reply</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Post 2 -->
+                <div class="post-expand-card" onclick="toggleComments(this)">
+                    <div class="post-header">
+                        <div class="post-avatar">🌱</div>
+                        <div>
+                            <div class="post-author">QuietEcho</div>
+                            <div class="post-time">1 hour ago</div>
+                        </div>
+                    </div>
+                    <div class="post-content">Having a hard time opening up to my family about my mental health. I'm afraid they won't take it seriously...</div>
+                    <div class="post-action-bar">
+                        <span class="comment-count-label">💬 1 Peer Response</span>
+                        <span style="font-size:0.75rem;">Tap to expand/reply ▼</span>
+                    </div>
+                    <div class="comments-section hidden-view" onclick="event.stopPropagation();">
+                        <div class="comments-list">
+                            <div class="comment-item">
+                                <div class="comment-header"><span class="comment-author">🐱 Sam K.</span></div>
+                                <div class="comment-text">Writing your feelings down on paper first can help a lot when talking to family!</div>
+                            </div>
+                        </div>
+                        <div class="comment-input-area">
+                            <input type="text" placeholder="Write a supportive comment..." onkeypress="if(event.key==='Enter') addComment(this)">
+                            <button class="action-btn" style="width:auto; padding: 0.5rem 1rem; font-size:0.8rem;" onclick="addComment(this.previousElementSibling)">Reply</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="liveChatView" class="view-section hidden-view">
+            <h2 style="color: #0c4a6e; margin-bottom: 0.3rem;">Page 4: Live Chat with Real Peers</h2>
+            <p style="color: #475569; margin-bottom: 1.25rem;">This room connects you directly with REAL PEOPLE and peers—no AI bot responses here.</p>
+            <div class="live-chat-box">
+                <div class="live-chat-header"><h3>👥 Live Peer Room #1</h3><span class="online-tag">🟢 14 Peers Online</span></div>
+                <div class="live-chat-body" id="liveChatBody">
+                    <div class="peer-msg-row">
+                        <div class="post-avatar">🌸</div>
+                        <div class="peer-msg-bubble">
+                            <div class="peer-msg-meta"><span>Maya S.</span></div>
+                            <div class="peer-msg-text">Hey everyone... I'm feeling super stressed out today 😔 I have back-to-back major exams coming up, and I haven't been able to sleep for more than 3 hours a night because my brain won't turn off. Every time I lay down, my mind races about failing and letting my parents down...</div>
+                        </div>
+                    </div>
+                    
+                    <div class="peer-msg-row system">
+                        <div class="peer-msg-bubble">
+                            <div class="peer-msg-text">💬 <strong>Are you struggling too?</strong> Feel free to vent your issues below! Our community is here to support you with tailored advice, fun distractions, or practical sleep tips.</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="live-chat-input-area">
+                    <input type="text" id="liveChatInput" placeholder="Vent or share your issue here..." onkeypress="if(event.key==='Enter') sendLiveChatMessage()">
+                    <button class="action-btn" onclick="sendLiveChatMessage()" style="width:auto; padding: 0.75rem 1.2rem;">Send</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- NEW EXPANDED BREATHING & MINDFULNESS PAGE WITH IMAGES TO THINK ABOUT -->
+        <div id="breatherExpandedView" class="view-section hidden-view">
+            <div class="guide-top-bar">
+                <button class="back-home-btn" onclick="switchPage(1)">
+                    🏠 Back to Homepage
+                </button>
+            </div>
+
+            <div class="interactive-breathing-focus">
+                <h2 style="color: #0c4a6e; font-size: 1.8rem;">🌬️ Guided Breathing Sanctuary</h2>
+                <p style="color: #0369a1; font-weight: 600; margin-top: 0.4rem;">Follow the rhythm below: Inhale deeply as the circle grows, and exhale slowly as it shrinks.</p>
+                
+                <div class="large-breather-circle"></div>
+                <div class="large-breather-status" id="largeBreatherText">Breathe In... Breathe Out...</div>
+            </div>
+
+            <div class="guide-section-card">
+                <h3>🌄 Peaceful Imagery for Reflection</h3>
+                <p>When our minds get crowded, focusing on serene visuals can help anchor us in the present moment. Take a moment to reflect on these images:</p>
+                
+                <div class="mindfulness-gallery">
+                    <!-- Image Card 1: Mountain Horizon -->
+                    <div class="mindful-img-card">
+                        <svg viewBox="0 0 200 120" xmlns="http://www.w3.org/2000/svg">
+                            <defs>
+                                <linearGradient id="sky1" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#fdba74"/><stop offset="100%" stop-color="#bae6fd"/></linearGradient>
+                            </defs>
+                            <rect width="200" height="120" fill="url(#sky1)"/>
+                            <circle cx="100" cy="70" r="25" fill="#fef08a" opacity="0.9"/>
+                            <polygon points="-20,120 40,60 100,120" fill="#0284c7" opacity="0.7"/>
+                            <polygon points="50,120 120,40 190,120" fill="#0369a1" opacity="0.8"/>
+                            <polygon points="110,120 160,70 220,120" fill="#0c4a6e"/>
+                        </svg>
+                        <h4>Quiet Horizons</h4>
+                        <p>Picture standing atop a mountain where the air is calm and clear. What burdens can you leave behind today?</p>
+                    </div>
+
+                    <!-- Image Card 2: Calm Ocean Ripples -->
+                    <div class="mindful-img-card">
+                        <svg viewBox="0 0 200 120" xmlns="http://www.w3.org/2000/svg">
+                            <defs>
+                                <linearGradient id="sea1" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#38bdf8"/><stop offset="100%" stop-color="#1e3a8a"/></linearGradient>
+                            </defs>
+                            <rect width="200" height="120" fill="url(#sea1)"/>
+                            <path d="M 0 40 Q 50 30 100 40 T 200 40 L 200 120 L 0 120 Z" fill="#0284c7" opacity="0.5"/>
+                            <path d="M 0 65 Q 50 55 100 65 T 200 65 L 200 120 L 0 120 Z" fill="#0369a1" opacity="0.6"/>
+                            <circle cx="160" cy="30" r="15" fill="#fff" opacity="0.8"/>
+                        </svg>
+                        <h4>Gentle Ocean Waves</h4>
+                        <p>Thoughts are like ocean waves—they ebb and flow. Let them drift past without holding onto them.</p>
+                    </div>
+
+                    <!-- Image Card 3: Deep Forest Path -->
+                    <div class="mindful-img-card">
+                        <svg viewBox="0 0 200 120" xmlns="http://www.w3.org/2000/svg">
+                            <rect width="200" height="120" fill="#bbf7d0"/>
+                            <path d="M 70 120 L 95 60 L 105 60 L 130 120 Z" fill="#fef08a" opacity="0.8"/>
+                            <circle cx="30" cy="50" r="40" fill="#15803d"/>
+                            <circle cx="70" cy="40" r="35" fill="#166534"/>
+                            <circle cx="130" cy="40" r="35" fill="#166534"/>
+                            <circle cx="170" cy="50" r="40" fill="#15803d"/>
+                        </svg>
+                        <h4>Forest Solitude</h4>
+                        <p>Imagine walking down a quiet forest path, feeling grounded and connected with nature step by step.</p>
+                    </div>
+
+                    <!-- Image Card 4: Night Sky Starlight -->
+                    <div class="mindful-img-card">
+                        <svg viewBox="0 0 200 120" xmlns="http://www.w3.org/2000/svg">
+                            <rect width="200" height="120" fill="#0f172a"/>
+                            <circle cx="30" cy="30" r="1.5" fill="#fff"/>
+                            <circle cx="70" cy="20" r="2" fill="#fff"/>
+                            <circle cx="140" cy="40" r="1" fill="#fff"/>
+                            <circle cx="180" cy="25" r="2.5" fill="#fff"/>
+                            <path d="M 160 30 A 25 25 0 1 0 185 55 A 20 20 0 1 1 160 30 Z" fill="#fef08a"/>
+                        </svg>
+                        <h4>Infinite Night Sky</h4>
+                        <p>Underneath the vast starry sky, remember that you are allowed to rest and simply just be.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="guide-section-card">
+                <h3>📖 Comprehensive App Usage & Navigational Instructions</h3>
+                <ul class="guide-list">
+                    <li><strong>Page 1 (Home & Resources):</strong> Access mental health tools, hotlines, and therapy resources.</li>
+                    <li><strong>Page 2 (Garden of Reflection):</strong> Interactive cherry blossom scenery for relaxing visual breaks.</li>
+                    <li><strong>Page 3 (Peer Feed):</strong> Share struggles and leave supportive comments on peer posts.</li>
+                    <li><strong>Page 4 (Real Peer Chat):</strong> Live real-time support chat room with human peers.</li>
+                </ul>
+            </div>
+
+            <div style="margin-top: 1.5rem; text-align: center;">
+                <button class="action-btn" onclick="switchPage(1)" style="max-width: 300px; margin: 0 auto; background: #0c4a6e; color: #fff;">
+                    🏠 Return to Homepage
+                </button>
+            </div>
+        </div>
+
+        <div id="profileEditView" class="view-section hidden-view">
+            <div class="form-card">
+                <h2>Edit Your Profile</h2>
+                <form id="profileEditForm" onsubmit="handleProfileUpdate(event)">
+                    <div class="form-group"><label>Username</label><input type="text" id="editUsername" required></div>
+                    <div class="form-group"><label>First Name</label><input type="text" id="editFirstName" required></div>
+                    <div class="form-group"><label>Bio / About Me</label><textarea id="editBio"></textarea></div>
+                    <button type="submit" class="action-btn">Save Profile Updates</button>
+                </form>
+                <span class="back-link" onclick="switchPage(1)">← Back to Home</span>
+            </div>
+        </div>
+
+        <div id="guestView" class="view-section hidden-view">
+            <div class="form-card" style="text-align: center;">
+                <h2>Welcome Guest</h2>
+                <p style="margin-bottom: 1rem;">Choose an icon for your guest profile:</p>
+                <form id="guestForm" onsubmit="handleGuestSubmit(event)">
+                    <div class="form-group" style="display: flex; justify-content: center;">
+                        <div class="avatar-options-grid" style="justify-content: center;">
+                            <button type="button" class="avatar-option-btn selected" onclick="selectGuestIcon('🌸', this)">🌸</button>
+                            <button type="button" class="avatar-option-btn" onclick="selectGuestIcon('🌱', this)">🌱</button>
+                            <button type="button" class="avatar-option-btn" onclick="selectGuestIcon('🐱', this)">🐱</button>
+                            <button type="button" class="avatar-option-btn" onclick="selectGuestIcon('⭐', this)">⭐</button>
+                            <button type="button" class="avatar-option-btn" onclick="selectGuestIcon('🎨', this)">🎨</button>
+                            <button type="button" class="avatar-option-btn" onclick="selectGuestIcon('🎧', this)">🎧</button>
+                        </div>
+                    </div>
+                    <div class="random-username-box" id="randomGuestNameDisplay" style="margin-top: 1rem;">Generating...</div>
+                    <button type="submit" class="action-btn">Start as Guest</button>
+                </form>
+                <span class="back-link" onclick="switchPage(1)">← Back to Home</span>
+            </div>
+        </div>
+
+        <div id="signupView" class="view-section hidden-view">
+            <div class="form-card">
+                <h2>Join SameHere</h2>
+                <form id="signupForm" onsubmit="handleSignupSubmit(event)">
+                    <div class="form-group"><label>First Name</label><input type="text" id="firstName" required></div>
+                    <div class="form-group"><label>Username</label><input type="text" id="username" required></div>
+                    <div class="form-group"><label>Gmail Address</label><input type="email" id="email" required pattern="[a-zA-Z0-9._%+-]+@gmail\.com$"></div>
+                    <div class="form-group"><label>Password</label><input type="password" id="password" required minlength="6" placeholder="At least 6 characters"></div>
+                    
+                    <div class="form-group">
+                        <label>Choose Profile Picture / Icon</label>
+                        <div class="avatar-selection-container">
+                            <p style="font-size:0.85rem; color:#64748b; margin-bottom:0.25rem;">Select an icon:</p>
+                            <div class="avatar-options-grid">
+                                <button type="button" class="avatar-option-btn selected" onclick="selectAvatarIcon('🌸', this)">🌸</button>
+                                <button type="button" class="avatar-option-btn" onclick="selectAvatarIcon('🌱', this)">🌱</button>
+                                <button type="button" class="avatar-option-btn" onclick="selectAvatarIcon('🐱', this)">🐱</button>
+                                <button type="button" class="avatar-option-btn" onclick="selectAvatarIcon('⭐', this)">⭐</button>
+                                <button type="button" class="avatar-option-btn" onclick="selectAvatarIcon('🎨', this)">🎨</button>
+                                <button type="button" class="avatar-option-btn" onclick="selectAvatarIcon('🎧', this)">🎧</button>
+                            </div>
+                            <p style="font-size:0.85rem; color:#64748b; margin:0.5rem 0 0.25rem 0;">Or upload your own profile photo:</p>
+                            <input type="file" id="pfpUpload" accept="image/*" onchange="handlePfpUpload(event)" style="padding:0.4rem;">
+                            <div id="pfpPreviewContainer" class="hidden-view" style="display:flex; align-items:center; gap:0.5rem; margin-top:0.5rem;">
+                                <span style="font-size:0.85rem; color:#334155; font-weight:600;">Custom Photo Preview:</span>
+                                <img id="pfpPreviewImg" class="pfp-preview-img" src="" alt="PFP Preview">
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="action-btn">Sign Up</button>
+                </form>
+                <span class="back-link" onclick="switchPage(1)">← Back to Home</span>
+            </div>
+        </div>
+
+        <div id="congratsView" class="view-section hidden-view">
+            <div class="congrats-card">
+                <div class="user-pfp" id="congratsPFP">🌸</div>
+                <h2 id="congratsTitle">Congrats! 🎉</h2>
+                <p id="congratsText">Welcome to SameHere! Access all tools or view our App Guide in the bottom sidebar.</p>
+                <div class="btn-group">
+                    <button class="action-btn" onclick="openBreatherExpandedPage()">View App Guide & Instructions</button>
+                    <button class="action-btn secondary-btn" onclick="switchPage(1)">Go directly to Home</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="mapView" class="view-section hidden-view">
+            <div class="map-section"><h2>Bronx Support Map</h2><div id="bronxMap"></div></div>
+            <span class="back-link" onclick="switchPage(1)">← Back to Home</span>
+        </div>
+
+        <!-- UPDATED LOCAL SUPPORT EVENTS SECTION WITH CLICKABLE RSVP MODAL LOGIC -->
+        <div id="eventsView" class="view-section hidden-view">
+            <h2 style="color: #0c4a6e; margin-bottom: 0.3rem;">Local Support Events</h2>
+            <p style="color: #475569; margin-bottom: 1.25rem;">Click any event below to view location details, learn why it's hosted, and RSVP!</p>
+            <div class="services-grid">
+                <div class="service-card" onclick="openEventRSVP('Teen Mental Health Circle', 'South Bronx Haven • Tuesdays, 5 PM', 'South Bronx Haven (123 Community Lane, Bronx, NY)', 'This event is hosted to build a safe, non-judgmental space for teens to share daily life stresses, practice mindfulness exercises, and bond with peers who understand.')">
+                    <h3>Teen Mental Health Circle 📍</h3>
+                    <p>South Bronx Haven • Tuesdays, 5 PM</p>
+                    <span style="font-size:0.8rem; color:#0284c7; font-weight:700; margin-top:0.4rem; display:inline-block;">Click for Details & RSVP →</span>
+                </div>
+                <div class="service-card" onclick="openEventRSVP('Art & Expression Healing Workshop', 'Bronx Youth Center • Thursdays, 4:30 PM', 'Bronx Youth Center (456 Expression Way, Bronx, NY)', 'Art therapy provides a creative channel for unexpressed emotions. Join us to paint, sketch, and unwind with guided art prompts.')">
+                    <h3>Art & Expression Healing Workshop 🎨</h3>
+                    <p>Bronx Youth Center • Thursdays, 4:30 PM</p>
+                    <span style="font-size:0.8rem; color:#0284c7; font-weight:700; margin-top:0.4rem; display:inline-block;">Click for Details & RSVP →</span>
+                </div>
+                <div class="service-card" onclick="openEventRSVP('Mindful Nature & Park Walk', 'Van Cortlandt Park • Saturdays, 11 AM', 'Van Cortlandt Park (Meet at Park Entrance, Bronx, NY)', 'Connecting with nature lowers cortisol and improves mood. Take a relaxing walk through green spaces with guided breathing stops.')">
+                    <h3>Mindful Nature & Park Walk 🌿</h3>
+                    <p>Van Cortlandt Park • Saturdays, 11 AM</p>
+                    <span style="font-size:0.8rem; color:#0284c7; font-weight:700; margin-top:0.4rem; display:inline-block;">Click for Details & RSVP →</span>
+                </div>
+            </div>
+            <span class="back-link" onclick="switchPage(1)">← Back to Home</span>
+        </div>
+
+        <div id="volunteerView" class="view-section hidden-view">
+            <div class="form-card">
+                <h2>Volunteer With SameHere 🤝</h2>
+                <p>Join our team to support youth mental health and peer connection.</p>
+                <form id="volunteerForm" onsubmit="handleVolunteerSubmit(event)">
+                    <div class="form-group">
+                        <label>First Name</label>
+                        <input type="text" id="volFirstName" placeholder="Enter your first name" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Last Name</label>
+                        <input type="text" id="volLastName" placeholder="Enter your last name" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Gmail Address</label>
+                        <input type="email" id="volGmail" placeholder="example@gmail.com" required pattern="[a-zA-Z0-9._%+-]+@gmail\.com$">
+                    </div>
+                    <div class="form-group">
+                        <label>Phone Number</label>
+                        <input type="tel" id="volPhone" placeholder="(123) 456-7890" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Volunteer Options</label>
+                        <select id="volOption" required>
+                            <option value="" disabled selected>Select a volunteer role...</option>
+                            <option value="peer_chat_moderator">Peer Chat Support Moderator</option>
+                            <option value="event_coordinator">Community Event Coordinator</option>
+                            <option value="social_media">Social Media & Outreach Helper</option>
+                            <option value="resource_builder">Resource Guide Builder</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="action-btn">Submit Application</button>
+                </form>
+                <span class="back-link" onclick="switchPage(1)">← Back to Home</span>
+            </div>
+        </div>
+
+        <div id="volunteerCongratsView" class="view-section hidden-view">
+            <div class="congrats-card">
+                <div class="user-pfp">🤝</div>
+                <h2>Congrats! 🎉</h2>
+                <p>Thank you for applying to volunteer with SameHere! We will review your application and update you via email/phone if you get accepted.</p>
+                <button class="action-btn" onclick="switchPage(1)">Return to Home</button>
+            </div>
+        </div>
+
+        <div id="donateView" class="view-section hidden-view">
+            <div class="form-card">
+                <h2>Support Our Mission 💖</h2>
+                <form id="donateForm" onsubmit="handleDonateSubmit(event)">
+                    <div class="form-group"><label>Select Donation Amount</label>
+                        <div class="donation-amounts">
+                            <div class="amt-btn selected" onclick="selectDonationAmt('$5', this)">$5</div>
+                            <div class="amt-btn" onclick="selectDonationAmt('$10', this)">$10</div>
+                            <div class="amt-btn" onclick="selectDonationAmt('$25', this)">$25</div>
+                            <div class="amt-btn" onclick="selectDonationAmt('$50', this)">$50</div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Donor Identity</label>
+                        <div class="anon-toggle-container">
+                            <div class="anon-option selected" id="optName" onclick="setAnonymous(false)">Type Name</div>
+                            <div class="anon-option" id="optAnon" onclick="setAnonymous(true)">Stay Anonymous</div>
+                        </div>
+                    </div>
+                    <div class="form-group" id="donorNameGroup">
+                        <label>Your Name</label>
+                        <input type="text" id="donorName" placeholder="Enter your name">
+                    </div>
+                    <button type="submit" class="action-btn">Complete Donation</button>
+                </form>
+                <span class="back-link" onclick="switchPage(1)">← Back to Home</span>
+            </div>
+        </div>
+
+        <div id="donationSuccessView" class="view-section hidden-view">
+            <div class="congrats-card">
+                <div class="user-pfp">💖</div>
+                <h2 id="donationHeader">Congrats & Thank You! 🎉</h2>
+                <p id="donationCongratsText">Your contribution makes a huge difference in supporting youth mental health!</p>
+                <button class="action-btn" onclick="switchPage(1)">Return to Home</button>
+            </div>
+        </div>
+
+        <!-- RSVP CONGRATS / CONFIRMATION VIEW -->
+        <div id="eventRsvpSuccessView" class="view-section hidden-view">
+            <div class="congrats-card">
+                <div class="user-pfp">🎟️</div>
+                <h2 id="rsvpCongratsTitle">Congrats! 🎉</h2>
+                <p id="rsvpCongratsText">You are officially registered! We will notify you via email and phone when it's time for the event.</p>
+                <button class="action-btn" onclick="showView('eventsView')">Back to Local Events</button>
+            </div>
+        </div>
+    </main>
+
+    <nav class="bottom-nav-bar">
+        <button class="page-btn active" id="btnPage1" onclick="switchPage(1)">Page 1: Home</button>
+        <button class="page-btn" id="btnPage2" onclick="switchPage(2)">Page 2: Scene</button>
+        <button class="page-btn" id="btnPage3" onclick="switchPage(3)">Page 3: Posts</button>
+        <button class="page-btn" id="btnPage4" onclick="switchPage(4)">Page 4: Real Peer Chat</button>
+        <button class="page-btn hotlines-nav-btn" onclick="toggleModal('hotlinesModal', true)">📞 Hotlines</button>
+        <button class="page-btn emergency-nav-btn" onclick="toggleModal('emergencyModal', true)">🚨 EMERGENCY</button>
+    </nav>
+
+    <div class="ai-pet-trigger" onclick="toggleElement('aiChatWindow')" title="Talk with Milo">🐱</div>
+    <div class="ai-chat-window hidden-view" id="aiChatWindow">
+        <div class="ai-chat-header"><span>🐱 Milo Companion</span><button class="ai-close-btn" onclick="toggleElement('aiChatWindow')">&times;</button></div>
+        <div class="ai-chat-messages" id="aiMessages"><div class="msg-bubble msg-pet">Hi! I'm Milo 🐱. How are you feeling today? Tell me a bit about your day.</div></div>
+        <div class="ai-chat-input-area">
+            <input type="text" id="aiInput" class="ai-chat-input" placeholder="Say something..." onkeypress="if(event.key==='Enter') sendAIMessage()">
+            <button class="ai-chat-send" onclick="sendAIMessage()">Send</button>
+        </div>
+    </div>
+
+    <button class="sidebar-toggle-btn" id="toggleBtn" onclick="toggleSidebar()">✕</button>
+    <aside class="right-sidebar" id="rightSidebar">
+        <h2>Account</h2>
+        <div id="guestNavBtns">
+            <button class="action-btn" onclick="showView('signupView')">Sign Up</button>
+            <button class="action-btn" onclick="openGuestView()">Continue as Guest</button>
+        </div>
+        <div id="userNavBtns" class="hidden-view">
+            <button class="action-btn" onclick="openProfileEdit()" style="background:#e0f2fe; color:#0369a1;">✏️ Edit Profile</button>
+            <button class="action-btn logout-btn" onclick="handleLogout()">🚪 Log Out</button>
+        </div>
+        <hr class="divider">
+
+        <div class="breather-card" onclick="openBreatherExpandedPage()">
+            <h3>📖 How to Use App</h3>
+            <div class="breather-circle-container">
+                <div class="breather-circle" id="breatherCircle"></div>
+            </div>
+            <div class="breather-text" id="breatherText">Questions?</div>
+            <div class="breather-prompt" id="breatherPrompt">Tap here to open full instructions on how to navigate SameHere!</div>
+            <div style="font-size:0.7rem; color:#0369a1; margin-top:0.3rem; font-weight:bold;">Tap for Info Page ↗</div>
+        </div>
+
+        <hr class="divider">
+        <h2>Community</h2>
+        <button class="action-btn" onclick="showView('mapView')">Support Map (Bronx)</button>
+        <button class="action-btn" onclick="showView('eventsView')">Local Support Events</button>
+        <button class="action-btn" onclick="showView('volunteerView')" style="background:#dcfce7; color:#15803d;">🤝 Volunteer</button>
+        <button class="action-btn" onclick="showView('donateView')" style="background:#fce7f3; color:#9d174d;">💖 Donate</button>
+    </aside>
+
+    <div class="modal-overlay" id="hotlinesModal">
+        <div class="modal-card">
+            <button class="close-modal" onclick="toggleModal('hotlinesModal', false)">&times;</button>
+            <h2>Support Hotlines</h2>
+            <div class="hotline-card"><div class="hotline-info"><h4>988 Crisis Lifeline</h4></div><a href="tel:988" class="call-btn">Call 988</a></div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="emergencyModal">
+        <div class="modal-card" style="border-top: 6px solid var(--emergency-red);">
+            <button class="close-modal" onclick="toggleModal('emergencyModal', false)">&times;</button>
+            <h2 style="color: var(--emergency-red);">🚨 Emergency Assistance Warning</h2>
+            <p>Are you sure you want to trigger emergency calls?</p>
+            <div class="btn-group" style="margin-top:1rem;">
+                <a href="tel:911" class="action-btn" style="background: var(--emergency-red); color: white; text-decoration:none;">Yes, Call 911</a>
+                <button class="action-btn secondary-btn" onclick="toggleModal('emergencyModal', false)">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="logoutModal">
+        <div class="modal-card">
+            <button class="close-modal" onclick="toggleModal('logoutModal', false)">&times;</button>
+            <h2 style="color: #0c4a6e; margin-bottom: 0.5rem;">Log Out</h2>
+            <p style="color: #475569; margin-bottom: 1.5rem;">Are you sure you want to log out?</p>
+            <div class="btn-group">
+                <button class="action-btn logout-btn" onclick="confirmLogout()">Yes, Log Out</button>
+                <button class="action-btn secondary-btn" onclick="toggleModal('logoutModal', false)">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- EVENT DETAILS & RSVP MODAL -->
+    <div class="modal-overlay" id="eventRsvpModal">
+        <div class="modal-card">
+            <button class="close-modal" onclick="toggleModal('eventRsvpModal', false)">&times;</button>
+            <span class="event-detail-badge" id="modalEventBadge">Support Event</span>
+            <h2 id="modalEventTitle" style="color: #0c4a6e; margin-bottom: 0.4rem;">Event Name</h2>
+            <div class="event-meta-info">
+                <div>📍 <strong>Location:</strong> <span id="modalEventLocation">Location Details</span></div>
+                <div>💡 <strong>Why Hosted:</strong> <span id="modalEventWhy">Purpose of this event</span></div>
+            </div>
+
+            <form id="eventRsvpForm" onsubmit="handleEventRsvpSubmit(event)">
+                <h3 style="color: #0c4a6e; font-size: 1rem; margin-bottom: 0.8rem;">RSVP For This Event</h3>
+                <div class="form-group">
+                    <label>Full Name</label>
+                    <input type="text" id="rsvpName" placeholder="Enter your full name" required>
+                </div>
+                <div class="form-group">
+                    <label>Gmail Address</label>
+                    <input type="email" id="rsvpGmail" placeholder="example@gmail.com" required pattern="[a-zA-Z0-9._%+-]+@gmail\.com$">
+                </div>
+                <div class="form-group">
+                    <label>Phone Number</label>
+                    <input type="tel" id="rsvpPhone" placeholder="(123) 456-7890" required>
+                </div>
+                <button type="submit" class="action-btn">Confirm & RSVP</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        let currentUsername = 'GuestUser', isSignedUp = false, generatedGuestName = '', map;
+        let selectedPfpType = 'icon'; 
+        let selectedPfpValue = '🌸'; 
+        let selectedDonationAmount = '$5';
+        let isAnonymousDonor = false;
+        let activeEventTitle = '';
+        
+        const affirmationsList = [
+            "You are strong enough to handle whatever comes your way today.",
+            "It's okay to take things one step and one breath at a time.",
+            "Your feelings are valid, and you deserve support and kindness.",
+            "You are capable of growing through difficult moments.",
+            "Taking care of your mental peace is a superpower.",
+            "You don't have to carry everything by yourself—it's okay to reach out.",
+            "Every day is a fresh opportunity to blossom anew."
+        ];
+
+        function getRandomAffirmation() {
+            const display = document.getElementById('affirmationDisplay');
+            if (display) {
+                const randomAffirmation = affirmationsList[Math.floor(Math.random() * affirmationsList.length)];
+                display.textContent = `"${randomAffirmation}"`;
+            }
+        }
+
+        function saveJournalEntry() {
+            const text = document.getElementById('journalInput').value;
+            localStorage.setItem('sameHere_journalText', text);
+            const status = document.getElementById('journalStatus');
+            status.textContent = 'Saved!';
+            setTimeout(() => { status.textContent = ''; }, 2000);
+        }
+
+        function clearJournalEntry() {
+            document.getElementById('journalInput').value = '';
+            localStorage.removeItem('sameHere_journalText');
+            const status = document.getElementById('journalStatus');
+            status.textContent = 'Cleared!';
+            setTimeout(() => { status.textContent = ''; }, 2000);
+        }
+
+        function loadJournalEntry() {
+            const savedText = localStorage.getItem('sameHere_journalText');
+            if (savedText) {
+                document.getElementById('journalInput').value = savedText;
+            }
+        }
+
+        function toggleLeftSidebar() {
+            const sidebar = document.getElementById('leftSidebar');
+            const btn = document.getElementById('leftToggleBtn');
+            sidebar.classList.toggle('closed');
+            btn.classList.toggle('closed');
+            btn.innerHTML = sidebar.classList.contains('closed') ? '📖' : '✕';
+        }
+
+        let aiStage = 0;
+        let aiData = { emotion: '', moment: '', trigger: '' };
+
+        const sleepAdviceResponses = [
+            "I completely hear you! When exam anxiety ruins my sleep, I use the **4-7-8 breathing technique** (inhale for 4s, hold for 7s, exhale for 8s). It slows down your heart rate and really calms a racing brain!",
+            "Maya, don't be too hard on yourself. Try setting a **20-minute wind-down rule**: put screens away, dim lights, and listen to ocean sounds or rain noises. Giving your brain a peaceful runway helps you drift off faster.",
+            "I used to struggle with sleep during finals too! A great distraction is **progressive muscle relaxation**—tense up your toes for 5 seconds, then relax them, then move up to your calves and arms. It redirects your focused energy away from stressful thoughts!"
+        ];
+
+        const generalAdviceResponses = [
+            "Thank you for sharing that with us. You're definitely not alone in this—we're all here to support you! 💖",
+            "I hear you! It takes a lot of courage to put that into words. Just know that your feelings are 100% valid.",
+            "Whenever I feel super overwhelmed, taking a quick break, grabbing a warm glass of water, or visiting the Garden of Reflection on Page 2 helps clear my mind."
+        ];
+
+        const simulatedPeers = [
+            { name: "Leo R.", avatar: "🎧" },
+            { name: "Sam K.", avatar: "🌱" },
+            { name: "Taylor P.", avatar: "⭐" }
+        ];
+
+        function openBreatherExpandedPage() {
+            document.querySelectorAll('.bottom-nav-bar .page-btn').forEach(btn => btn.classList.remove('active'));
+            showView('breatherExpandedView');
+            const rightSidebar = document.getElementById('rightSidebar');
+            if(!rightSidebar.classList.contains('closed')) {
+                toggleSidebar();
+            }
+            const leftSidebar = document.getElementById('leftSidebar');
+            if(!leftSidebar.classList.contains('closed')) {
+                toggleLeftSidebar();
+            }
+        }
+
+        function showView(viewId) {
+            document.querySelectorAll('.view-section').forEach(v => v.classList.add('hidden-view'));
+            document.getElementById(viewId).classList.remove('hidden-view');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            if (viewId === 'mapView') initMap();
+        }
+
+        function switchPage(pageNum) {
+            document.querySelectorAll('.bottom-nav-bar .page-btn').forEach(btn => btn.classList.remove('active'));
+            const btn = document.getElementById(`btnPage${pageNum}`);
+            if(btn) btn.classList.add('active');
+            const pages = ['homeView', 'sceneView', 'postsView', 'liveChatView'];
+            showView(pages[pageNum - 1]);
+        }
+
+        function toggleElement(id) { document.getElementById(id).classList.toggle('hidden-view'); }
+        function toggleModal(id, show) { document.getElementById(id).style.display = show ? 'flex' : 'none'; }
+        function toggleSidebar() {
+            const sidebar = document.getElementById('rightSidebar');
+            const toggleBtn = document.getElementById('toggleBtn');
+            sidebar.classList.toggle('closed');
+            toggleBtn.classList.toggle('closed');
+            toggleBtn.innerHTML = sidebar.classList.contains('closed') ? '☰' : '✕';
+        }
+
+        /* EVENT RSVP MODAL & RSVP HANDLER */
+        function openEventRSVP(title, badgeTime, locationStr, whyStr) {
+            activeEventTitle = title;
+            document.getElementById('modalEventTitle').textContent = title;
+            document.getElementById('modalEventBadge').textContent = badgeTime;
+            document.getElementById('modalEventLocation').textContent = locationStr;
+            document.getElementById('modalEventWhy').textContent = whyStr;
+            
+            // Auto-fill form fields if user is logged in
+            if(isSignedUp) {
+                const userEmail = document.getElementById('email').value || '';
+                const userName = document.getElementById('firstName').value || currentUsername;
+                if(userEmail) document.getElementById('rsvpGmail').value = userEmail;
+                if(userName && userName !== 'GuestUser') document.getElementById('rsvpName').value = userName;
+            }
+
+            toggleModal('eventRsvpModal', true);
+        }
+
+        function handleEventRsvpSubmit(e) {
+            e.preventDefault();
+            const rsvpName = document.getElementById('rsvpName').value.trim();
+            const rsvpGmail = document.getElementById('rsvpGmail').value.trim();
+
+            toggleModal('eventRsvpModal', false);
+            
+            document.getElementById('rsvpCongratsTitle').textContent = `Congrats, ${rsvpName}! 🎉`;
+            document.getElementById('rsvpCongratsText').textContent = `You are successfully registered for "${activeEventTitle}"! We sent a confirmation to ${rsvpGmail} and will notify you when it's time for the event.`;
+            
+            showView('eventRsvpSuccessView');
+            document.getElementById('eventRsvpForm').reset();
+        }
+
+        function selectAvatarIcon(iconEmoji, element) {
+            selectedPfpType = 'icon';
+            selectedPfpValue = iconEmoji;
+            document.querySelectorAll('#signupView .avatar-option-btn').forEach(b => b.classList.remove('selected'));
+            element.classList.add('selected');
+            document.getElementById('pfpUpload').value = '';
+            document.getElementById('pfpPreviewContainer').classList.add('hidden-view');
+        }
+
+        function selectGuestIcon(iconEmoji, element) {
+            selectedPfpType = 'icon';
+            selectedPfpValue = iconEmoji;
+            document.querySelectorAll('#guestView .avatar-option-btn').forEach(b => b.classList.remove('selected'));
+            element.classList.add('selected');
+        }
+
+        function handlePfpUpload(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    selectedPfpType = 'custom';
+                    selectedPfpValue = e.target.result;
+                    const previewImg = document.getElementById('pfpPreviewImg');
+                    previewImg.src = e.target.result;
+                    document.getElementById('pfpPreviewContainer').classList.remove('hidden-view');
+                    document.querySelectorAll('#signupView .avatar-option-btn').forEach(b => b.classList.remove('selected'));
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function renderPfpHTML() {
+            if (selectedPfpType === 'custom') {
+                return `<img src="${selectedPfpValue}" alt="PFP">`;
+            } else {
+                return selectedPfpValue || '🌸';
+            }
+        }
+
+        function updateNavState() {
+            const guestBtns = document.getElementById('guestNavBtns');
+            const userBtns = document.getElementById('userNavBtns');
+            if (isSignedUp) {
+                guestBtns.classList.add('hidden-view');
+                userBtns.classList.remove('hidden-view');
+            } else {
+                guestBtns.classList.remove('hidden-view');
+                userBtns.classList.add('hidden-view');
+            }
+        }
+
+        function openGuestView() {
+            generatedGuestName = `Guest_${Math.floor(Math.random()*8999 + 1000)}`;
+            document.getElementById('randomGuestNameDisplay').textContent = generatedGuestName;
+            selectedPfpType = 'icon';
+            selectedPfpValue = '🌸';
+            showView('guestView');
+        }
+
+        function handleGuestSubmit(e) {
+            e.preventDefault();
+            currentUsername = generatedGuestName;
+            isSignedUp = false;
+            document.getElementById('congratsPFP').innerHTML = renderPfpHTML();
+            updateNavState();
+            showView('congratsView');
+        }
+
+        function handleSignupSubmit(e) {
+            e.preventDefault();
+            currentUsername = document.getElementById('username').value.trim() || 'User';
+            isSignedUp = true;
+            document.getElementById('congratsPFP').innerHTML = renderPfpHTML();
+            updateNavState();
+            showView('congratsView');
+            document.getElementById('signupForm').reset();
+            document.getElementById('pfpPreviewContainer').classList.add('hidden-view');
+        }
+
+        function handleLogout() {
+            toggleModal('logoutModal', true);
+        }
+
+        function confirmLogout() {
+            toggleModal('logoutModal', false);
+            window.location.reload();
+        }
+
+        function selectDonationAmt(amountStr, btnElement) {
+            selectedDonationAmount = amountStr;
+            document.querySelectorAll('.donation-amounts .amt-btn').forEach(b => b.classList.remove('selected'));
+            btnElement.classList.add('selected');
+        }
+
+        function setAnonymous(status) {
+            isAnonymousDonor = status;
+            const donorNameGroup = document.getElementById('donorNameGroup');
+            const optName = document.getElementById('optName');
+            const optAnon = document.getElementById('optAnon');
+            
+            if (status) {
+                optAnon.classList.add('selected');
+                optName.classList.remove('selected');
+                donorNameGroup.style.display = 'none';
+            } else {
+                optName.classList.add('selected');
+                optAnon.classList.remove('selected');
+                donorNameGroup.style.display = 'block';
+            }
+        }
+
+        function handleDonateSubmit(e) {
+            e.preventDefault();
+            let name = document.getElementById('donorName').value.trim();
+            let donorDisplayName = (isAnonymousDonor || !name) ? "Anonymous Hero" : name;
+            
+            document.getElementById('donationHeader').textContent = `Congrats, ${donorDisplayName}! 🎉`;
+            document.getElementById('donationCongratsText').textContent = `Thank you so much for your generous ${selectedDonationAmount} donation! Your support makes a huge difference in helping youth mental health.`;
+            showView('donationSuccessView');
+            document.getElementById('donateForm').reset();
+            setAnonymous(false);
+        }
+
+        function handleVolunteerSubmit(e) {
+            e.preventDefault();
+            showView('volunteerCongratsView');
+            document.getElementById('volunteerForm').reset();
+        }
+
+        function openProfileEdit() {
+            if (!isSignedUp) {
+                alert("Guests cannot edit profiles. Please Sign Up first!");
+                showView('signupView');
+            } else showView('profileEditView');
+        }
+
+        function initMap() {
+            if(!map) {
+                map = L.map('bronxMap').setView([40.8448, -73.8648], 12);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+                L.marker([40.8225, -73.9215]).addTo(map).bindPopup("<b>South Bronx Youth Haven</b>");
+            } else setTimeout(() => map.invalidateSize(), 200);
+        }
+
+        /* FEED POSTING & COMMENT SYSTEM */
+        function toggleComments(postCard) {
+            const commentsSec = postCard.querySelector('.comments-section');
+            commentsSec.classList.toggle('hidden-view');
+        }
+
+        function addComment(inputElem) {
+            const text = inputElem.value.trim();
+            if(!text) return;
+
+            const commentsList = inputElem.closest('.comments-section').querySelector('.comments-list');
+            const commentCard = document.createElement('div');
+            commentCard.className = 'comment-item';
+            commentCard.innerHTML = `
+                <div class="comment-header"><span class="comment-author">${currentUsername}</span></div>
+                <div class="comment-text">${text}</div>
+            `;
+            commentsList.appendChild(commentCard);
+            inputElem.value = '';
+
+            // Update response counter label
+            const postCard = inputElem.closest('.post-expand-card');
+            const countLabel = postCard.querySelector('.comment-count-label');
+            const totalComments = commentsList.querySelectorAll('.comment-item').length;
+            countLabel.textContent = `💬 ${totalComments} Peer ${totalComments === 1 ? 'Response' : 'Responses'}`;
+        }
+
+        function handlePostSubmit(e) {
+            e.preventDefault();
+            const text = document.getElementById('postContent').value;
+            const postCard = document.createElement('div');
+            postCard.className = 'post-expand-card';
+            postCard.setAttribute('onclick', 'toggleComments(this)');
+            postCard.innerHTML = `
+                <div class="post-header">
+                    <div class="post-avatar">${renderPfpHTML()}</div>
+                    <div>
+                        <div class="post-author">${currentUsername}</div>
+                        <div class="post-time">Just now</div>
+                    </div>
+                </div>
+                <div class="post-content">${text}</div>
+                <div class="post-action-bar">
+                    <span class="comment-count-label">💬 0 Peer Responses</span>
+                    <span style="font-size:0.75rem;">Tap to expand/reply ▼</span>
+                </div>
+                <div class="comments-section hidden-view" onclick="event.stopPropagation();">
+                    <div class="comments-list"></div>
+                    <div class="comment-input-area">
+                        <input type="text" placeholder="Write a supportive comment..." onkeypress="if(event.key==='Enter') addComment(this)">
+                        <button class="action-btn" style="width:auto; padding: 0.5rem 1rem; font-size:0.8rem;" onclick="addComment(this.previousElementSibling)">Reply</button>
+                    </div>
+                </div>
+            `;
+            document.getElementById('postsExpandGrid').prepend(postCard);
+            document.getElementById('postForm').reset();
+        }
+
+        function sendLiveChatMessage() {
+            const input = document.getElementById('liveChatInput');
+            const messageText = input.value.trim();
+            if(!messageText) return;
+            
+            const chatBody = document.getElementById('liveChatBody');
+            const msgRow = document.createElement('div');
+            msgRow.className = 'peer-msg-row self';
+            msgRow.innerHTML = `<div class="post-avatar">${renderPfpHTML()}</div><div class="peer-msg-bubble"><div class="peer-msg-meta"><span>You (${currentUsername})</span></div><div class="peer-msg-text">${messageText}</div></div>`;
+            chatBody.appendChild(msgRow);
+            input.value = '';
+            chatBody.scrollTop = chatBody.scrollHeight;
+
+            triggerPeerResponses(messageText);
+        }
+
+        function triggerPeerResponses(userMsgText) {
+            const chatBody = document.getElementById('liveChatBody');
+            const isSleepOrStress = /sleep|insomnia|tired|stress|exam|test|anxious|anxiety|hard to sleep|awake/i.test(userMsgText);
+            
+            const shuffledPeers = [...simulatedPeers].sort(() => 0.5 - Math.random());
+            const peer = shuffledPeers[0];
+
+            const typingDelay = 1800;
+            const responseDelay = typingDelay + 2200;
+
+            setTimeout(() => {
+                const typingElem = document.createElement('div');
+                typingElem.className = 'typing-indicator-row';
+                typingElem.id = `typing-${peer.name.replace(/\s+/g, '')}`;
+                typingElem.innerHTML = `<span>💬 ${peer.name} is typing advice & support...</span>`;
+                chatBody.appendChild(typingElem);
+                chatBody.scrollTop = chatBody.scrollHeight;
+            }, typingDelay);
+
+            setTimeout(() => {
+                const typingElem = document.getElementById(`typing-${peer.name.replace(/\s+/g, '')}`);
+                if (typingElem) typingElem.remove();
+
+                const responsePool = isSleepOrStress ? sleepAdviceResponses : generalAdviceResponses;
+                const randomMsg = responsePool[Math.floor(Math.random() * responsePool.length)];
+
+                const peerMsgRow = document.createElement('div');
+                peerMsgRow.className = 'peer-msg-row';
+                peerMsgRow.innerHTML = `
+                    <div class="post-avatar">${peer.avatar}</div>
+                    <div class="peer-msg-bubble">
+                        <div class="peer-msg-meta"><span>${peer.name}</span></div>
+                        <div class="peer-msg-text">${randomMsg}</div>
+                    </div>
+                `;
+                chatBody.appendChild(peerMsgRow);
+                chatBody.scrollTop = chatBody.scrollHeight;
+            }, responseDelay);
+        }
+
+        function sendAIMessage() {
+            const input = document.getElementById('aiInput');
+            const text = input.value.trim();
+            if(!text) return;
+            
+            const container = document.getElementById('aiMessages');
+            container.innerHTML += `<div class="msg-bubble msg-user">${text}</div>`;
+            input.value = '';
+            container.scrollTop = container.scrollHeight;
+
+            setTimeout(() => {
+                let reply = "";
+                if (aiStage === 0) {
+                    aiData.emotion = text;
+                    reply = "🐱 I hear you, and your feelings are completely valid. When today did you first notice this heavy or negative feeling starting to creep in?";
+                    aiStage = 1;
+                } else if (aiStage === 1) {
+                    aiData.moment = text;
+                    reply = "🐱 Thanks for opening up. What specific event, conversation, or thought right around then triggered that shift for you?";
+                    aiStage = 2;
+                } else if (aiStage === 2) {
+                    aiData.trigger = text;
+                    reply = `🐱 <strong>Root Analysis:</strong> Your emotional shift began around <em>"${aiData.moment}"</em>, primarily triggered by <em>"${aiData.trigger}"</em>.<br><br>` +
+                            `<strong>Personalized Self-Care Routine:</strong><br>` +
+                            `• 🍃 <strong>5-Min Reset:</strong> Step away, close your eyes, and take 4 deep box breaths.<br>` +
+                            `• 📝 <strong>Reframe:</strong> Write down 1 thing within your control and let go of the rest.<br>` +
+                            `• 🌸 <strong>Unwind:</strong> Visit our Page 2 Garden of Reflection scene or play your favorite song.`;
+                    aiStage = 0; 
+                }
+                container.innerHTML += `<div class="msg-bubble msg-pet">${reply}</div>`;
+                container.scrollTop = container.scrollHeight;
+            }, 600);
+        }
+
+        // Synchronize dynamic text for breather elements
+        setInterval(() => {
+            const leftStatus = document.getElementById('leftBreatherStatus');
+            const largeStatus = document.getElementById('largeBreatherText');
+            const now = Date.now() % 8000;
+            let text = "Inhale...";
+            if (now > 4000) {
+                text = "Exhale...";
+            }
+            if (leftStatus) leftStatus.textContent = text;
+            if (largeStatus) largeStatus.textContent = text;
+        }, 200);
+
+        window.onload = function() {
+            const container = document.getElementById('petalsContainer');
+            for (let i = 0; i < 25; i++) {
+                const el = document.createElement('div');
+                el.classList.add('petal');
+                el.style.width = `${Math.random() * 10 + 10}px`;
+                el.style.height = `${Math.random() * 14 + 10}px`;
+                el.style.left = `${Math.random() * 100}vw`;
+                el.style.animationDuration = `${Math.random() * 6 + 6}s`;
+                container.appendChild(el);
+            }
+
+            getRandomAffirmation();
+            loadJournalEntry();
+
+            setTimeout(() => {
+                const loaderText = document.getElementById('loaderText');
+                loaderText.classList.remove('pulse');
+                loaderText.classList.add('fade-swap');
+                setTimeout(() => {
+                    loaderText.textContent = "SameHere";
+                    loaderText.classList.remove('fade-swap');
+                    setTimeout(() => document.getElementById('loadingScreen').classList.add('fade-out'), 1000);
+                }, 800);
+            }, 1200);
+        };
+    </script>
+</body>
+</html>
