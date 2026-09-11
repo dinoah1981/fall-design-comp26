@@ -63,7 +63,7 @@ function renderFinalists() {
         <div class="terminal-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="terminal-name">${escapeHtml(file)}</span></div>
         ${preview}
         <div class="fin-body">
-          ${t.winner ? '<p class="fin-stamp mono">&#9733; winning team</p>' : ''}
+          ${t.winner ? `<p class="fin-stamp mono">&#9733; grade ${t.grade} winner</p>` : ''}
           ${title}
           <p class="fin-advisory mono">// advisory: ${escapeHtml(t.advisory)}</p>
           <p class="fin-members">${escapeHtml(joinNames(t.members))}</p>

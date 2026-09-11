@@ -1175,7 +1175,7 @@ body {
 
 .fin-card.is-winner {
   border-color: var(--green);
-  box-shadow: 0 0 0 1px var(--green), 0 0 32px var(--green-glow);
+  box-shadow: 0 0 0 2px var(--green), 0 0 32px var(--green-glow);
 }
 
 .fin-card .terminal-name {
